@@ -1,0 +1,33 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      next-react:
+        patterns: ['next', 'react', 'react-dom', '@types/react*', 'eslint-config-next']
+      antd:
+        patterns: ['antd', '@ant-design/*']
+      testing:
+        patterns: ['vitest', '@vitest/*', '@testing-library/*', '@playwright/test', 'jsdom']
+      lint-format:
+        patterns: ['eslint*', 'prettier', '@commitlint/*', 'lint-staged', 'husky']
+    commit-message:
+      prefix: chore
+      include: scope
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: ci
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: chore

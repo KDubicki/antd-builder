@@ -1,0 +1,13 @@
+allowBuilds:
+  '@google/genai': false
+  esbuild: true
+  protobufjs: false
+  sharp: true
+  unrs-resolver: true
+minimumReleaseAgeExclude:
+  - prettier@3.9.10
+auditConfig:
+  ignoreGhsas:
+    # braces ReDoS via eslint-config-next > fast-glob > micromatch. Dev-only (lint time,
+    # trusted glob input) and no patched release exists on npm. Re-check when braces > 3.0.3 ships.
+    - GHSA-vfj7-8cjw-p6xm
