@@ -30,6 +30,19 @@ describe('Editor', () => {
     expect(useEditorStore.getState().selectedId).toBeNull();
   });
 
+  it('does not delete while a side-panel control has focus', () => {
+    useEditorStore.setState({
+      root: { ...createRoot(), children: [createNode('Button', 'btn')] },
+      selectedId: 'btn',
+    });
+    render(<Editor />);
+    fireEvent.keyDown(screen.getByLabelText('Danger'), { key: 'Backspace' });
+    expect(useEditorStore.getState().root.children).toHaveLength(1);
+
+    fireEvent.keyDown(screen.getByTestId('canvas'), { key: 'Delete' });
+    expect(useEditorStore.getState().root.children).toHaveLength(0);
+  });
+
   it('ignores shortcuts while typing in a field', () => {
     useEditorStore.setState({
       root: { ...createRoot(), children: [createNode('Input', 'in')] },

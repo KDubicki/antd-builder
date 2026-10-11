@@ -13,7 +13,7 @@ import { App as AntApp, ConfigProvider, Layout, Tag, Typography, theme } from 'a
 import { useEffect, useId, useState } from 'react';
 import { Canvas } from '@/components/canvas/Canvas';
 import { nodeChainAt } from '@/components/canvas/nodeChain';
-import { Inspector } from '@/components/inspector/Inspector';
+import { INSPECTOR_LABEL, Inspector } from '@/components/inspector/Inspector';
 import { Palette } from '@/components/palette/Palette';
 import { type DragData, planDrop } from '@/lib/editor/drop';
 import { useEditorStore } from '@/lib/editor/store';
@@ -58,6 +58,11 @@ function isEditableTarget(target: EventTarget | null): boolean {
   );
 }
 
+/** Inspector controls (switches, selects) keep focus after edits; Delete must not hit the node. */
+function isInspectorTarget(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement && !!target.closest(`[aria-label="${INSPECTOR_LABEL}"]`);
+}
+
 /** Delete/Backspace removes the selected node, Escape clears the selection. */
 function useEditorShortcuts() {
   useEffect(() => {
@@ -65,7 +70,8 @@ function useEditorShortcuts() {
       if (isEditableTarget(event.target)) return;
       const { selectedId, removeNode, select } = useEditorStore.getState();
       if (event.key === 'Escape') select(null);
-      if ((event.key === 'Delete' || event.key === 'Backspace') && selectedId) {
+      const isDelete = event.key === 'Delete' || event.key === 'Backspace';
+      if (isDelete && selectedId && !isInspectorTarget(event.target)) {
         event.preventDefault();
         removeNode(selectedId);
       }

@@ -17,6 +17,8 @@ import { ROOT_ID, useEditorStore } from '@/lib/editor/store';
 import { type PropDefinition, getComponentMeta } from '@/lib/registry';
 import { findNode } from '@/lib/tree';
 
+export const INSPECTOR_LABEL = 'Inspector';
+
 interface FieldProps {
   id: string;
   def: PropDefinition;
@@ -92,7 +94,7 @@ export function Inspector() {
   const isRoot = node.id === ROOT_ID;
 
   return (
-    <Flex vertical gap="middle" style={{ padding: token.padding }} aria-label="Inspector">
+    <Flex vertical gap="middle" style={{ padding: token.padding }} aria-label={INSPECTOR_LABEL}>
       <Flex justify="space-between" align="start" gap="small">
         <div>
           <Typography.Title level={5} style={{ margin: 0 }}>
