@@ -1,10 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { createTheme } from '@/lib/theme';
 import { findNode } from '@/lib/tree';
 import { ROOT_ID, createRoot, useEditorStore } from './store';
 
 const state = () => useEditorStore.getState();
 
-beforeEach(() => useEditorStore.setState({ root: createRoot(), selectedId: null }));
+beforeEach(() =>
+  useEditorStore.setState({ root: createRoot(), theme: createTheme(), selectedId: null }),
+);
 
 describe('editor store', () => {
   it('adds a node with default props and selects it', () => {
@@ -56,5 +59,20 @@ describe('editor store', () => {
     expect(state().selectedId).toBe('x');
     state().select(null);
     expect(state().selectedId).toBeNull();
+  });
+
+  it('edits and resets the theme', () => {
+    state().setThemeMode('dark');
+    state().setCompact(true);
+    state().setThemeToken('colorPrimary', '#722ed1');
+    state().setThemeToken('borderRadius', 4);
+    state().setThemeToken('borderRadius', undefined);
+    expect(state().theme).toEqual({
+      mode: 'dark',
+      compact: true,
+      token: { colorPrimary: '#722ed1' },
+    });
+    state().resetTheme();
+    expect(state().theme).toEqual(createTheme());
   });
 });

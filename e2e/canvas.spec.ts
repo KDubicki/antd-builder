@@ -90,3 +90,31 @@ test('edits the selected component in the inspector', async ({ page }) => {
   await inspector.getByRole('button', { name: 'Delete component' }).click();
   await expect(button).toHaveCount(0);
 });
+
+test('previews theme changes live on the canvas only', async ({ page }) => {
+  await page.goto('/');
+  const canvas = page.getByTestId('canvas');
+  await dragTo(
+    page,
+    page.getByLabel('Component palette').getByText('Button', { exact: true }),
+    canvas,
+  );
+  const button = canvas.getByRole('button', { name: 'Button' });
+  await expect(button).toHaveCSS('background-color', 'rgb(22, 119, 255)');
+
+  await page.getByRole('tab', { name: 'Theme' }).click();
+  const themeEditor = page.getByLabel('Theme editor');
+  await themeEditor.getByText('Dark').click();
+  await expect(canvas).toHaveCSS('background-color', 'rgb(20, 20, 20)');
+  // The editor chrome keeps its own (light) theme.
+  await expect(page.locator('.ant-layout-sider').first()).toHaveCSS(
+    'background-color',
+    'rgb(255, 255, 255)',
+  );
+
+  await themeEditor.getByLabel('Border radius').fill('0');
+  await expect(button).toHaveCSS('border-radius', '0px');
+
+  await themeEditor.getByRole('button', { name: 'Reset theme' }).click();
+  await expect(canvas).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+});

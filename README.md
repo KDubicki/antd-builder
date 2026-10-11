@@ -183,7 +183,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). To report security issues, see [SECURITY
 - [x] Component registry: metadata for antd components (props, defaults, allowed children)
 - [x] Canvas with drag and drop, selection, and nesting
 - [x] Inspector panel generated from the registry
-- [ ] Theme editor (tokens, light/dark algorithm) with live preview
+- [x] Theme editor (tokens, light/dark algorithm) with live preview
 - [ ] Save/load the project JSON
 - [ ] Export TSX through `src/lib/codegen`
 

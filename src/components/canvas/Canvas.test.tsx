@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ROOT_ID, createRoot, useEditorStore } from '@/lib/editor/store';
 import { components, createNode } from '@/lib/registry';
+import { createTheme } from '@/lib/theme';
 import type { BuilderNode } from '@/lib/schema';
 import { Canvas } from './Canvas';
 import { renderers } from './renderers';
@@ -15,7 +16,11 @@ const renderCanvas = () =>
   );
 
 const setRoot = (children: BuilderNode[]) =>
-  useEditorStore.setState({ root: { ...createRoot(), children }, selectedId: null });
+  useEditorStore.setState({
+    root: { ...createRoot(), children },
+    theme: createTheme(),
+    selectedId: null,
+  });
 
 beforeEach(() => setRoot([]));
 
@@ -72,5 +77,12 @@ describe('Canvas', () => {
     setRoot([{ id: 'x', component: 'Marquee', props: {}, children: [] }]);
     renderCanvas();
     expect(screen.getByText('Unknown component: Marquee')).toBeInTheDocument();
+  });
+
+  it('renders under the project theme', () => {
+    useEditorStore.setState({ theme: { mode: 'dark', compact: false, token: {} } });
+    renderCanvas();
+    // Dark algorithm: colorBgContainer is #141414.
+    expect(screen.getByTestId('canvas')).toHaveStyle({ background: 'rgb(20, 20, 20)' });
   });
 });

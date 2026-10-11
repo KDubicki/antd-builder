@@ -1,12 +1,13 @@
 'use client';
 
 import { useDraggable, useDroppable } from '@dnd-kit/core';
-import { Typography, theme } from 'antd';
-import type { MouseEvent } from 'react';
+import { ConfigProvider, Typography, theme } from 'antd';
+import { type MouseEvent, useMemo } from 'react';
 import type { DragData } from '@/lib/editor/drop';
 import { ROOT_ID, useEditorStore } from '@/lib/editor/store';
 import { getComponentMeta } from '@/lib/registry';
 import type { BuilderNode } from '@/lib/schema';
+import { toThemeConfig } from '@/lib/theme';
 import { NODE_ID_ATTR } from './nodeChain';
 import { renderers } from './renderers';
 
@@ -76,7 +77,7 @@ function CanvasNode({ node }: { node: BuilderNode }) {
   );
 }
 
-export function Canvas() {
+function CanvasSurface() {
   const { token } = theme.useToken();
   const root = useEditorStore((state) => state.root);
   const selectedId = useEditorStore((state) => state.selectedId);
@@ -103,5 +104,16 @@ export function Canvas() {
       )}
       <CanvasNode node={root} />
     </div>
+  );
+}
+
+/** The canvas renders under the project theme, so theme edits preview live. */
+export function Canvas() {
+  const projectTheme = useEditorStore((state) => state.theme);
+  const themeConfig = useMemo(() => toThemeConfig(projectTheme), [projectTheme]);
+  return (
+    <ConfigProvider theme={themeConfig}>
+      <CanvasSurface />
+    </ConfigProvider>
   );
 }

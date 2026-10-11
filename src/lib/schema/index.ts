@@ -39,11 +39,22 @@ export const pageSchema = z.object({
 });
 export type Page = z.infer<typeof pageSchema>;
 
+/**
+ * Serializable theme. antd's `ThemeConfig` holds algorithm functions, so the project stores
+ * the choices instead and `lib/theme` turns them into a `ThemeConfig`.
+ */
+export const projectThemeSchema = z.object({
+  mode: z.enum(['light', 'dark']),
+  compact: z.boolean(),
+  /** antd seed token overrides, e.g. `{ colorPrimary: '#722ed1', borderRadius: 8 }`. */
+  token: z.record(z.string(), z.union([z.string(), z.number()])),
+});
+export type ProjectTheme = z.infer<typeof projectThemeSchema>;
+
 export const projectSchema = z.object({
   version: z.literal(1),
   name: z.string(),
-  /** antd ThemeConfig (tokens, algorithm, component overrides). */
-  theme: z.record(z.string(), z.unknown()),
+  theme: projectThemeSchema,
   pages: z.array(pageSchema),
   customComponents: z.array(customComponentSchema),
 });

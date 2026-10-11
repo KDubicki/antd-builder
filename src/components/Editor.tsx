@@ -9,12 +9,13 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import { App as AntApp, ConfigProvider, Layout, Tag, Typography, theme } from 'antd';
+import { App as AntApp, ConfigProvider, Layout, Tabs, Tag, Typography, theme } from 'antd';
 import { useEffect, useId, useState } from 'react';
 import { Canvas } from '@/components/canvas/Canvas';
 import { nodeChainAt } from '@/components/canvas/nodeChain';
-import { INSPECTOR_LABEL, Inspector } from '@/components/inspector/Inspector';
+import { Inspector } from '@/components/inspector/Inspector';
 import { Palette } from '@/components/palette/Palette';
+import { ThemeEditor } from '@/components/theme/ThemeEditor';
 import { type DragData, planDrop } from '@/lib/editor/drop';
 import { useEditorStore } from '@/lib/editor/store';
 import { getComponentMeta } from '@/lib/registry';
@@ -58,9 +59,11 @@ function isEditableTarget(target: EventTarget | null): boolean {
   );
 }
 
-/** Inspector controls (switches, selects) keep focus after edits; Delete must not hit the node. */
-function isInspectorTarget(target: EventTarget | null): boolean {
-  return target instanceof HTMLElement && !!target.closest(`[aria-label="${INSPECTOR_LABEL}"]`);
+const SIDE_PANEL_ATTR = 'data-side-panel';
+
+/** Side-panel controls (switches, selects) keep focus after edits; Delete must not hit the node. */
+function isSidePanelTarget(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement && !!target.closest(`[${SIDE_PANEL_ATTR}]`);
 }
 
 /** Delete/Backspace removes the selected node, Escape clears the selection. */
@@ -71,7 +74,7 @@ function useEditorShortcuts() {
       const { selectedId, removeNode, select } = useEditorStore.getState();
       if (event.key === 'Escape') select(null);
       const isDelete = event.key === 'Delete' || event.key === 'Backspace';
-      if (isDelete && selectedId && !isInspectorTarget(event.target)) {
+      if (isDelete && selectedId && !isSidePanelTarget(event.target)) {
         event.preventDefault();
         removeNode(selectedId);
       }
@@ -112,7 +115,15 @@ export function Editor() {
                 <Canvas />
               </Content>
               <Sider width={320} theme="light" style={{ overflow: 'auto' }}>
-                <Inspector />
+                <div {...{ [SIDE_PANEL_ATTR]: '' }}>
+                  <Tabs
+                    centered
+                    items={[
+                      { key: 'props', label: 'Properties', children: <Inspector /> },
+                      { key: 'theme', label: 'Theme', children: <ThemeEditor /> },
+                    ]}
+                  />
+                </div>
               </Sider>
             </Layout>
           </Layout>
