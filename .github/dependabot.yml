@@ -5,6 +5,10 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    ignore:
+      # Types must match the runtime (Node 24 LTS, see .nvmrc); bump together with it.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
     groups:
       next-react:
         patterns: ['next', 'react', 'react-dom', '@types/react*', 'eslint-config-next']
@@ -29,5 +33,9 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    ignore:
+      # Stay on Node 24 LTS (see .nvmrc); major upgrades are done deliberately.
+      - dependency-name: node
+        update-types: ['version-update:semver-major']
     commit-message:
       prefix: chore
