@@ -19,6 +19,7 @@ jobs:
     name: CodeQL
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: read
       security-events: write
     steps:
@@ -28,10 +29,14 @@ jobs:
           languages: javascript-typescript
           queries: security-and-quality
       - uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          # Code scanning uploads need GitHub Advanced Security on private repos.
+          upload: ${{ github.event.repository.private && 'never' || 'always' }}
 
   dependency-review:
     name: Dependency review
-    if: github.event_name == 'pull_request'
+    # Requires GitHub Advanced Security on private repos; `pnpm audit` in CI covers it meanwhile.
+    if: github.event_name == 'pull_request' && !github.event.repository.private
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -58,6 +63,7 @@ jobs:
     name: Container image scan
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: read
       security-events: write
     steps:
@@ -78,14 +84,14 @@ jobs:
           ignore-unfixed: true
           exit-code: '1'
       - name: Report all findings to code scanning
-        if: always()
+        if: always() && !github.event.repository.private
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: antd-builder:${{ github.sha }}
           format: sarif
           output: trivy-results.sarif
           skip-setup-trivy: true
-      - if: always()
+      - if: always() && !github.event.repository.private
         uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
           sarif_file: trivy-results.sarif
