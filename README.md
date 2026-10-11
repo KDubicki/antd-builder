@@ -184,7 +184,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). To report security issues, see [SECURITY
 - [x] Canvas with drag and drop, selection, and nesting
 - [x] Inspector panel generated from the registry
 - [x] Theme editor (tokens, light/dark algorithm) with live preview
-- [ ] Save/load the project JSON
+- [x] Save/load the project JSON
 - [ ] Export TSX through `src/lib/codegen`
 
 **LLM integration**

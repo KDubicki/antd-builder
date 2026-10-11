@@ -1,0 +1,81 @@
+import { describe, expect, it } from 'vitest';
+import { ROOT_ID, createRoot } from '@/lib/editor/store';
+import { createNode } from '@/lib/registry';
+import type { BuilderNode } from '@/lib/schema';
+import { createTheme } from '@/lib/theme';
+import { parseProject, projectFileName, toProject } from '.';
+
+const content = {
+  name: 'Shop',
+  root: {
+    ...createRoot(),
+    children: [{ ...createNode('Card', 'card'), children: [createNode('Button', 'btn')] }],
+  },
+  theme: { ...createTheme(), mode: 'dark' as const, token: { colorPrimary: '#722ed1' } },
+};
+
+const withRoot = (root: BuilderNode) =>
+  JSON.stringify({ ...toProject(content), pages: [{ id: 'home', name: 'Home', root }] });
+
+describe('project files', () => {
+  it('round-trips through JSON', () => {
+    expect(parseProject(JSON.stringify(toProject(content)))).toEqual({ ok: true, content });
+  });
+
+  it('builds a versioned single-page project', () => {
+    expect(toProject(content)).toMatchObject({
+      version: 1,
+      name: 'Shop',
+      pages: [{ id: 'home', name: 'Home', root: content.root }],
+      customComponents: [],
+    });
+  });
+
+  it('normalizes the page root id', () => {
+    const result = parseProject(withRoot({ ...content.root, id: 'page-root' }));
+    expect(result.ok && result.content.root.id).toBe(ROOT_ID);
+  });
+
+  it('rejects invalid JSON', () => {
+    expect(parseProject('{')).toEqual({ ok: false, error: 'The file is not valid JSON.' });
+  });
+
+  it('rejects documents that do not match the schema', () => {
+    const result = parseProject(JSON.stringify({ ...toProject(content), version: 2 }));
+    expect(result.ok).toBe(false);
+    expect(!result.ok && result.error).toMatch(/^Invalid project file: version:/);
+  });
+
+  it('rejects projects without pages', () => {
+    expect(parseProject(JSON.stringify({ ...toProject(content), pages: [] }))).toEqual({
+      ok: false,
+      error: 'The project has no pages.',
+    });
+  });
+
+  it('rejects unknown components, broken nesting and duplicate ids', () => {
+    const root: BuilderNode = {
+      ...createRoot(),
+      children: [
+        { id: 'x', component: 'Marquee', props: {}, children: [] },
+        createNode('Col', 'col'),
+        createNode('Tag', 'col'),
+        createNode('Tag', ROOT_ID),
+      ],
+    };
+    const result = parseProject(withRoot(root));
+    expect(result.ok).toBe(false);
+    expect(!result.ok && result.error).toBe(
+      'Invalid page tree: Unknown component "Marquee"; "Col" can\'t be placed inside "Flex"; ' +
+        `Duplicate node id "col"; Duplicate node id "${ROOT_ID}"`,
+    );
+  });
+});
+
+describe('projectFileName', () => {
+  it('slugifies the project name', () => {
+    expect(projectFileName('My Shop — v2!')).toBe('my-shop-v2.json');
+    expect(projectFileName('Landing', 'tsx')).toBe('landing.tsx');
+    expect(projectFileName('???')).toBe('project.json');
+  });
+});

@@ -75,4 +75,18 @@ describe('editor store', () => {
     state().resetTheme();
     expect(state().theme).toEqual(createTheme());
   });
+
+  it('renames and loads projects', () => {
+    state().setName('Shop');
+    expect(state().name).toBe('Shop');
+
+    const root = {
+      ...createRoot(),
+      children: [{ id: 't', component: 'Tag', props: {}, children: [] }],
+    };
+    const theme = { mode: 'dark' as const, compact: false, token: {} };
+    state().select('t');
+    state().loadProject({ name: 'Loaded', root, theme });
+    expect(state()).toMatchObject({ name: 'Loaded', root, theme, selectedId: null });
+  });
 });

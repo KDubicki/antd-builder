@@ -27,4 +27,7 @@ globalThis.ResizeObserver ??= class {
   disconnect() {}
 };
 
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  localStorage.clear();
+});

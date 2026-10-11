@@ -23,6 +23,7 @@ export function createRoot(): BuilderNode {
 }
 
 export interface EditorState {
+  name: string;
   /** Root of the page being edited. It is fixed: it can't be moved or removed. */
   root: BuilderNode;
   theme: ProjectTheme;
@@ -39,9 +40,15 @@ export interface EditorState {
   /** Overrides a seed token; `undefined` restores antd's default. */
   setThemeToken: (key: string, value: string | number | undefined) => void;
   resetTheme: () => void;
+  setName: (name: string) => void;
+  /** Replaces the whole project (e.g. after opening a file) and clears the selection. */
+  loadProject: (content: { name: string; root: BuilderNode; theme: ProjectTheme }) => void;
 }
 
+export const DEFAULT_PROJECT_NAME = 'Untitled project';
+
 export const useEditorStore = create<EditorState>()((set) => ({
+  name: DEFAULT_PROJECT_NAME,
   root: createRoot(),
   theme: createTheme(),
   selectedId: null,
@@ -74,4 +81,6 @@ export const useEditorStore = create<EditorState>()((set) => ({
       return { theme: { ...state.theme, token } };
     }),
   resetTheme: () => set({ theme: createTheme() }),
+  setName: (name) => set({ name }),
+  loadProject: ({ name, root, theme }) => set({ name, root, theme, selectedId: null }),
 }));

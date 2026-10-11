@@ -15,6 +15,8 @@ import { Canvas } from '@/components/canvas/Canvas';
 import { nodeChainAt } from '@/components/canvas/nodeChain';
 import { Inspector } from '@/components/inspector/Inspector';
 import { Palette } from '@/components/palette/Palette';
+import { ProjectActions } from '@/components/project/ProjectActions';
+import { useAutosave } from '@/components/project/autosave';
 import { ThemeEditor } from '@/components/theme/ThemeEditor';
 import { type DragData, planDrop } from '@/lib/editor/drop';
 import { useEditorStore } from '@/lib/editor/store';
@@ -25,10 +27,19 @@ const { Header, Sider, Content } = Layout;
 function AppHeader() {
   const { token } = theme.useToken();
   return (
-    <Header>
+    <Header
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: token.margin,
+        paddingInline: token.paddingLG,
+      }}
+    >
       <Typography.Text style={{ color: token.colorTextLightSolid }} strong>
         antd-builder
       </Typography.Text>
+      <ProjectActions />
     </Header>
   );
 }
@@ -89,6 +100,7 @@ export function Editor() {
   const [dragging, setDragging] = useState<DragData | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   useEditorShortcuts();
+  useAutosave();
 
   return (
     <ConfigProvider>
