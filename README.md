@@ -44,6 +44,9 @@ antd-builder/
 │   ├── components/             # Editor UI: palette, canvas, inspector (client components)
 │   └── lib/
 │       ├── schema/             # Project / page / node types + Zod validation
+│       ├── registry/           # antd component metadata: props, defaults, nesting rules
+│       ├── tree/               # Immutable page-tree operations and drop resolution
+│       ├── editor/             # Editor state (Zustand) and drag-and-drop planning
 │       ├── codegen/            # Page tree → TSX
 │       ├── ai/                 # Gemini calls (server-only)
 │       ├── csp.ts              # Content-Security-Policy builder
@@ -178,7 +181,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). To report security issues, see [SECURITY
 **MVP**
 
 - [x] Component registry: metadata for antd components (props, defaults, allowed children)
-- [ ] Canvas with drag and drop, selection, and nesting
+- [x] Canvas with drag and drop, selection, and nesting
 - [ ] Inspector panel generated from the registry
 - [ ] Theme editor (tokens, light/dark algorithm) with live preview
 - [ ] Save/load the project JSON

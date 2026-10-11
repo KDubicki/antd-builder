@@ -1,0 +1,124 @@
+import { describe, expect, it } from 'vitest';
+import type { BuilderNode } from '@/lib/schema';
+import { findNode, findParent, insertNode, isWithin, moveNode, removeNode, resolveDrop } from '.';
+
+const node = (id: string, component: string, children: BuilderNode[] = []): BuilderNode => ({
+  id,
+  component,
+  props: {},
+  children,
+});
+
+// root(Flex) > [card(Card) > [btn(Button)], row(Row) > [col(Col)], tag(Tag)]
+const tree = node('root', 'Flex', [
+  node('card', 'Card', [node('btn', 'Button')]),
+  node('row', 'Row', [node('col', 'Col')]),
+  node('tag', 'Tag'),
+]);
+
+const ids = (n: BuilderNode): string[] => n.children.map((c) => c.id);
+
+describe('lookup', () => {
+  it('finds nodes and parents', () => {
+    expect(findNode(tree, 'btn')?.component).toBe('Button');
+    expect(findNode(tree, 'nope')).toBeUndefined();
+    expect(findParent(tree, 'btn')?.id).toBe('card');
+    expect(findParent(tree, 'root')).toBeUndefined();
+  });
+
+  it('checks subtree membership', () => {
+    expect(isWithin(tree, 'card', 'btn')).toBe(true);
+    expect(isWithin(tree, 'card', 'card')).toBe(true);
+    expect(isWithin(tree, 'card', 'col')).toBe(false);
+    expect(isWithin(tree, 'nope', 'btn')).toBe(false);
+  });
+});
+
+describe('insertNode', () => {
+  it('inserts at the index without mutating the original', () => {
+    const next = insertNode(tree, node('x', 'Tag'), { parentId: 'root', index: 1 });
+    expect(ids(next)).toEqual(['card', 'x', 'row', 'tag']);
+    expect(ids(tree)).toEqual(['card', 'row', 'tag']);
+  });
+
+  it('clamps the index and keeps untouched subtrees shared', () => {
+    const next = insertNode(tree, node('x', 'Tag'), { parentId: 'card', index: 99 });
+    expect(ids(findNode(next, 'card')!)).toEqual(['btn', 'x']);
+    expect(findNode(next, 'row')).toBe(findNode(tree, 'row'));
+  });
+});
+
+describe('removeNode', () => {
+  it('removes a nested node', () => {
+    expect(ids(findNode(removeNode(tree, 'btn'), 'card')!)).toEqual([]);
+  });
+
+  it('ignores the root and unknown ids', () => {
+    expect(removeNode(tree, 'root')).toBe(tree);
+    expect(removeNode(tree, 'nope')).toBe(tree);
+  });
+});
+
+describe('moveNode', () => {
+  it('moves a node into another parent', () => {
+    const next = moveNode(tree, 'tag', { parentId: 'card', index: 0 });
+    expect(ids(findNode(next, 'card')!)).toEqual(['tag', 'btn']);
+    expect(ids(next)).toEqual(['card', 'row']);
+  });
+
+  it('accounts for the removed slot when moving forward within a parent', () => {
+    expect(ids(moveNode(tree, 'card', { parentId: 'root', index: 3 }))).toEqual([
+      'row',
+      'tag',
+      'card',
+    ]);
+    expect(ids(moveNode(tree, 'tag', { parentId: 'root', index: 0 }))).toEqual([
+      'tag',
+      'card',
+      'row',
+    ]);
+  });
+
+  it('refuses to move a node into itself or its descendants', () => {
+    expect(moveNode(tree, 'card', { parentId: 'btn', index: 0 })).toBe(tree);
+    expect(moveNode(tree, 'card', { parentId: 'card', index: 0 })).toBe(tree);
+  });
+
+  it('ignores the root and unknown ids', () => {
+    expect(moveNode(tree, 'root', { parentId: 'card', index: 0 })).toBe(tree);
+    expect(moveNode(tree, 'nope', { parentId: 'card', index: 0 })).toBe(tree);
+  });
+});
+
+describe('resolveDrop', () => {
+  it('appends to the innermost accepting container', () => {
+    expect(resolveDrop(tree, ['card', 'root'], 'Tag')).toEqual({ parentId: 'card', index: 1 });
+  });
+
+  it('inserts after a leaf when its parent accepts the component', () => {
+    expect(resolveDrop(tree, ['btn', 'card', 'root'], 'Tag')).toEqual({
+      parentId: 'card',
+      index: 1,
+    });
+    expect(resolveDrop(tree, ['tag', 'root'], 'Card')).toEqual({ parentId: 'root', index: 3 });
+  });
+
+  it('respects nesting rules, falling back to outer containers', () => {
+    // A Row only takes Cols, so a Button dropped on it lands after it in the root.
+    expect(resolveDrop(tree, ['row', 'root'], 'Button')).toEqual({ parentId: 'root', index: 2 });
+    expect(resolveDrop(tree, ['row', 'root'], 'Col')).toEqual({ parentId: 'row', index: 1 });
+    expect(resolveDrop(tree, ['card', 'root'], 'Col')).toBeNull();
+  });
+
+  it('skips the moving node and its descendants', () => {
+    expect(resolveDrop(tree, ['btn', 'card', 'root'], 'Card', 'card')).toEqual({
+      parentId: 'root',
+      index: 3,
+    });
+  });
+
+  it('ignores ids that are not in the tree', () => {
+    expect(resolveDrop(tree, ['ghost', 'root'], 'Tag')).toEqual({ parentId: 'root', index: 3 });
+    expect(resolveDrop(tree, [], 'Tag')).toBeNull();
+  });
+});
