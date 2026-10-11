@@ -177,7 +177,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). To report security issues, see [SECURITY
 
 **MVP**
 
-- [ ] Component registry: metadata for antd components (props, defaults, allowed children)
+- [x] Component registry: metadata for antd components (props, defaults, allowed children)
 - [ ] Canvas with drag and drop, selection, and nesting
 - [ ] Inspector panel generated from the registry
 - [ ] Theme editor (tokens, light/dark algorithm) with live preview
