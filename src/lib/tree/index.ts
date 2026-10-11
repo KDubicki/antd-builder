@@ -64,6 +64,21 @@ export function removeNode(root: BuilderNode, id: string): BuilderNode {
   }));
 }
 
+/** Merges `patch` into a node's props; `undefined` values remove the prop. */
+export function updateNodeProps(
+  root: BuilderNode,
+  id: string,
+  patch: Readonly<Record<string, unknown>>,
+): BuilderNode {
+  return mapNode(root, id, (node) => {
+    const props = { ...node.props, ...patch };
+    for (const [key, value] of Object.entries(patch)) {
+      if (value === undefined) delete props[key];
+    }
+    return { ...node, props };
+  });
+}
+
 /** Moves a node to `target`. `target.index` refers to the parent's children before the move. */
 export function moveNode(root: BuilderNode, id: string, target: DropTarget): BuilderNode {
   const node = findNode(root, id);

@@ -63,3 +63,30 @@ test('enforces nesting rules on drop', async ({ page }) => {
   const colBox = await col.boundingBox();
   expect(colBox!.width / rowBox!.width).toBeCloseTo(0.5, 1);
 });
+
+test('edits the selected component in the inspector', async ({ page }) => {
+  await page.goto('/');
+  const palette = page.getByLabel('Component palette');
+  const canvas = page.getByTestId('canvas');
+  const inspector = page.getByLabel('Inspector');
+
+  await expect(page.getByText(/Select a component on the canvas/)).toBeVisible();
+
+  // A freshly dropped node is selected, so the inspector shows its props right away.
+  await dragTo(page, palette.getByText('Button', { exact: true }), canvas);
+  await expect(inspector.getByRole('heading', { name: 'Button' })).toBeVisible();
+
+  await inspector.getByLabel('Label').fill('Save changes');
+  const button = canvas.getByRole('button', { name: 'Save changes' });
+  await expect(button).toBeVisible();
+
+  await inspector.getByLabel('Danger').click();
+  await expect(button).toHaveClass(/ant-btn-dangerous/);
+
+  await inspector.getByLabel('Type').click();
+  await page.getByTitle('dashed').click();
+  await expect(button).toHaveClass(/ant-btn-dashed/);
+
+  await inspector.getByRole('button', { name: 'Delete component' }).click();
+  await expect(button).toHaveCount(0);
+});

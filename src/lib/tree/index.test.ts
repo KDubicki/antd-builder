@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import type { BuilderNode } from '@/lib/schema';
-import { findNode, findParent, insertNode, isWithin, moveNode, removeNode, resolveDrop } from '.';
+import {
+  findNode,
+  findParent,
+  insertNode,
+  isWithin,
+  moveNode,
+  removeNode,
+  resolveDrop,
+  updateNodeProps,
+} from '.';
 
 const node = (id: string, component: string, children: BuilderNode[] = []): BuilderNode => ({
   id,
@@ -56,6 +65,26 @@ describe('removeNode', () => {
   it('ignores the root and unknown ids', () => {
     expect(removeNode(tree, 'root')).toBe(tree);
     expect(removeNode(tree, 'nope')).toBe(tree);
+  });
+});
+
+describe('updateNodeProps', () => {
+  it('merges props and removes undefined ones', () => {
+    const base = insertNode(
+      tree,
+      { ...node('x', 'Tag'), props: { color: 'red', children: 'Hi' } },
+      {
+        parentId: 'root',
+        index: 0,
+      },
+    );
+    const next = updateNodeProps(base, 'x', { children: 'Bye', color: undefined, bordered: true });
+    expect(findNode(next, 'x')?.props).toEqual({ children: 'Bye', bordered: true });
+    expect(findNode(base, 'x')?.props).toEqual({ color: 'red', children: 'Hi' });
+  });
+
+  it('ignores unknown ids', () => {
+    expect(updateNodeProps(tree, 'nope', { a: 1 })).toBe(tree);
   });
 });
 

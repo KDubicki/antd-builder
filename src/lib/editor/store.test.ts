@@ -45,6 +45,12 @@ describe('editor store', () => {
     expect(state().root).toBe(before);
   });
 
+  it('updates props', () => {
+    const id = state().addNode('Button', { parentId: ROOT_ID, index: 0 });
+    state().updateProps(id, { children: 'Save', type: undefined });
+    expect(findNode(state().root, id)?.props).toEqual({ children: 'Save' });
+  });
+
   it('selects and deselects', () => {
     state().select('x');
     expect(state().selectedId).toBe('x');

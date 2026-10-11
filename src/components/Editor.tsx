@@ -13,6 +13,7 @@ import { App as AntApp, ConfigProvider, Layout, Tag, Typography, theme } from 'a
 import { useEffect, useId, useState } from 'react';
 import { Canvas } from '@/components/canvas/Canvas';
 import { nodeChainAt } from '@/components/canvas/nodeChain';
+import { Inspector } from '@/components/inspector/Inspector';
 import { Palette } from '@/components/palette/Palette';
 import { type DragData, planDrop } from '@/lib/editor/drop';
 import { useEditorStore } from '@/lib/editor/store';
@@ -104,8 +105,8 @@ export function Editor() {
               <Content style={{ overflow: 'auto' }}>
                 <Canvas />
               </Content>
-              <Sider width={320} theme="light">
-                {/* Inspector: props, theme tokens, AI prompt */}
+              <Sider width={320} theme="light" style={{ overflow: 'auto' }}>
+                <Inspector />
               </Sider>
             </Layout>
           </Layout>

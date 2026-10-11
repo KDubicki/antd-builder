@@ -1,7 +1,14 @@
 import { create } from 'zustand';
 import { createNode } from '@/lib/registry';
 import type { BuilderNode } from '@/lib/schema';
-import { type DropTarget, insertNode, isWithin, moveNode, removeNode } from '@/lib/tree';
+import {
+  type DropTarget,
+  insertNode,
+  isWithin,
+  moveNode,
+  removeNode,
+  updateNodeProps,
+} from '@/lib/tree';
 
 export const ROOT_ID = 'root';
 
@@ -23,6 +30,8 @@ export interface EditorState {
   addNode: (component: string, target: DropTarget) => string;
   moveNode: (id: string, target: DropTarget) => void;
   removeNode: (id: string) => void;
+  /** Merges `patch` into a node's props; `undefined` values remove the prop. */
+  updateProps: (id: string, patch: Readonly<Record<string, unknown>>) => void;
 }
 
 export const useEditorStore = create<EditorState>()((set) => ({
@@ -46,4 +55,5 @@ export const useEditorStore = create<EditorState>()((set) => ({
         state.selectedId && isWithin(state.root, id, state.selectedId) ? null : state.selectedId,
     }));
   },
+  updateProps: (id, patch) => set((state) => ({ root: updateNodeProps(state.root, id, patch) })),
 }));

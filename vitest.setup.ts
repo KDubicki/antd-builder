@@ -20,4 +20,11 @@ Object.defineProperty(window, 'matchMedia', {
   }),
 });
 
+// antd's autosizing inputs and virtual lists observe element size, which jsdom does not implement.
+globalThis.ResizeObserver ??= class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+
 afterEach(() => cleanup());
