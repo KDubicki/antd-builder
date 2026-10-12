@@ -159,3 +159,30 @@ test('undoes and redoes edits', async ({ page }) => {
   await page.keyboard.press('ControlOrMeta+z');
   await expect(canvas.getByRole('button', { name: 'Button' })).toBeVisible();
 });
+
+test('copies, cuts and pastes components', async ({ page }) => {
+  await page.goto('/');
+  const palette = page.getByLabel('Component palette');
+  const canvas = page.getByTestId('canvas');
+
+  await dragTo(page, palette.getByText('Button', { exact: true }), canvas);
+  await dragTo(page, palette.getByText('Card', { exact: true }), canvas);
+  const buttons = canvas.getByRole('button', { name: 'Button' });
+  const cardButtons = canvas.locator('.ant-card').getByRole('button');
+
+  // Copy the button, then paste into the selected card.
+  await buttons.first().click();
+  await page.keyboard.press('ControlOrMeta+c');
+  await canvas.getByText('Card title').click();
+  await page.keyboard.press('ControlOrMeta+v');
+  await expect(cardButtons).toHaveCount(1);
+  await expect(buttons).toHaveCount(2);
+
+  // Cutting the card removes it with its contents; pasting brings it back after the selection.
+  await canvas.getByText('Card title').click();
+  await page.keyboard.press('ControlOrMeta+x');
+  await expect(canvas.locator('.ant-card')).toHaveCount(0);
+  await buttons.first().click();
+  await page.keyboard.press('ControlOrMeta+v');
+  await expect(cardButtons).toHaveCount(1);
+});

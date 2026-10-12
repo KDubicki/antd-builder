@@ -4,12 +4,14 @@ import type { BuilderNode, ProjectTheme } from '@/lib/schema';
 import { createTheme } from '@/lib/theme';
 import {
   type DropTarget,
+  cloneNode,
   duplicateNode,
   findNode,
   insertNode,
   isWithin,
   moveNode,
   removeNode,
+  resolveDrop,
   updateNodeProps,
 } from '@/lib/tree';
 
@@ -55,6 +57,18 @@ export interface EditorState {
   removeNode: (id: string) => void;
   /** Copies a node (and its subtree) right after itself and selects the copy. */
   duplicateNode: (id: string) => void;
+  /** Copied subtree, a snapshot taken at copy time. Not part of the project or the history. */
+  clipboard: BuilderNode | null;
+  /** Puts a copy of node `id` on the clipboard. The root can't be copied. */
+  copyNode: (id: string) => void;
+  /** Copies node `id` to the clipboard and removes it. */
+  cutNode: (id: string) => void;
+  /**
+   * Pastes a fresh copy of the clipboard into the selected node if it accepts it, otherwise
+   * right after it (the page root when nothing is selected), and selects it. Returns the new
+   * node's id, or `null` when there is nothing to paste or no valid place for it.
+   */
+  pasteNode: () => string | null;
   /**
    * Merges `patch` into a node's props; `undefined` values remove the prop.
    * With `coalesce`, quick successive edits of the same props become one undo step (typing).
@@ -118,7 +132,7 @@ function restore(state: EditorState, entry: HistoryEntry): Partial<EditorState> 
   };
 }
 
-export const useEditorStore = create<EditorState>()((set) => ({
+export const useEditorStore = create<EditorState>()((set, get) => ({
   name: DEFAULT_PROJECT_NAME,
   root: createRoot(),
   theme: createTheme(),
@@ -173,6 +187,27 @@ export const useEditorStore = create<EditorState>()((set) => ({
       const result = duplicateNode(state.root, id);
       return result ? commit(state, { root: result.root, selectedId: result.id }) : state;
     }),
+  clipboard: null,
+  copyNode: (id) => {
+    const node = id === ROOT_ID ? undefined : findNode(get().root, id);
+    if (node) set({ clipboard: structuredClone(node) });
+  },
+  cutNode: (id) => {
+    get().copyNode(id);
+    get().removeNode(id);
+  },
+  pasteNode: () => {
+    const { clipboard, root, selectedId } = get();
+    if (!clipboard) return null;
+    const anchor = selectedId && findNode(root, selectedId) ? selectedId : ROOT_ID;
+    const target = resolveDrop(root, [anchor], clipboard.component);
+    if (!target) return null;
+    const node = cloneNode(clipboard);
+    set((state) =>
+      commit(state, { root: insertNode(state.root, node, target), selectedId: node.id }),
+    );
+    return node.id;
+  },
   updateProps: (id, patch, options) =>
     set((state) =>
       commit(

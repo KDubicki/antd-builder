@@ -13,6 +13,7 @@ beforeEach(() =>
     past: [],
     future: [],
     lastEdit: null,
+    clipboard: null,
   }),
 );
 
@@ -221,5 +222,83 @@ describe('undo/redo', () => {
     state().undo();
     state().loadProject({ name: 'X', root: createRoot(), theme: createTheme() });
     expect(state()).toMatchObject({ past: [], future: [], lastEdit: null });
+  });
+});
+
+describe('copy/cut/paste', () => {
+  it('pastes a fresh copy after a non-container selection', () => {
+    const tag = state().addNode('Tag', { parentId: ROOT_ID, index: 0 });
+    state().updateProps(tag, { children: 'Hot' });
+    state().copyNode(tag);
+    state().updateProps(tag, { children: 'Changed' }); // the clipboard is a snapshot
+
+    const first = state().pasteNode();
+    const second = state().pasteNode();
+    expect(state().root.children.map((c) => c.id)).toEqual([tag, first, second]);
+    expect(first).not.toBe(second);
+    expect(findNode(state().root, first!)?.props.children).toBe('Hot');
+    expect(state().selectedId).toBe(second);
+  });
+
+  it('pastes into a selected container that accepts the node', () => {
+    const tag = state().addNode('Tag', { parentId: ROOT_ID, index: 0 });
+    const card = state().addNode('Card', { parentId: ROOT_ID, index: 1 });
+    state().copyNode(tag);
+    state().select(card);
+    const pasted = state().pasteNode();
+    expect(findNode(state().root, card)?.children.map((c) => c.id)).toEqual([pasted]);
+  });
+
+  it('pastes onto the page when nothing (or a stale node) is selected', () => {
+    const tag = state().addNode('Tag', { parentId: ROOT_ID, index: 0 });
+    state().copyNode(tag);
+    state().select(null);
+    const a = state().pasteNode();
+    state().select('gone');
+    const b = state().pasteNode();
+    expect(state().root.children.map((c) => c.id)).toEqual([tag, a, b]);
+  });
+
+  it('copies subtrees with fresh ids throughout', () => {
+    const card = state().addNode('Card', { parentId: ROOT_ID, index: 0 });
+    const inner = state().addNode('Tag', { parentId: card, index: 0 });
+    state().copyNode(card);
+    state().select(null);
+    const pastedId = state().pasteNode();
+    const pasted = findNode(state().root, pastedId!);
+    expect(pasted?.children).toHaveLength(1);
+    expect(pasted?.children[0]?.id).not.toBe(inner);
+  });
+
+  it('respects nesting rules and does nothing without a valid spot', () => {
+    const row = state().addNode('Row', { parentId: ROOT_ID, index: 0 });
+    const col = state().addNode('Col', { parentId: row, index: 0 });
+    state().copyNode(col);
+    state().select(null);
+    const before = state().root;
+    expect(state().pasteNode()).toBeNull(); // a column can't go on the page
+    expect(state().root).toBe(before);
+
+    state().select(col); // ...but next to another column it can
+    const pasted = state().pasteNode();
+    expect(findNode(state().root, row)?.children.map((c) => c.id)).toEqual([col, pasted]);
+  });
+
+  it('cuts a node in one undo step', () => {
+    const tag = state().addNode('Tag', { parentId: ROOT_ID, index: 0 });
+    state().cutNode(tag);
+    expect(state().root.children).toEqual([]);
+    expect(state().clipboard?.id).toBe(tag);
+    state().undo();
+    expect(state().root.children.map((c) => c.id)).toEqual([tag]);
+  });
+
+  it('ignores the root, missing nodes and an empty clipboard', () => {
+    expect(state().pasteNode()).toBeNull();
+    state().copyNode(ROOT_ID);
+    state().copyNode('missing');
+    state().cutNode(ROOT_ID);
+    expect(state().clipboard).toBeNull();
+    expect(state().past).toEqual([]);
   });
 });

@@ -6,7 +6,13 @@ import { createNode } from '@/lib/registry';
 import { Editor, handleDragEnd } from './Editor';
 
 beforeEach(() =>
-  useEditorStore.setState({ root: createRoot(), selectedId: null, past: [], future: [] }),
+  useEditorStore.setState({
+    root: createRoot(),
+    selectedId: null,
+    past: [],
+    future: [],
+    clipboard: null,
+  }),
 );
 
 describe('Editor', () => {
@@ -101,6 +107,42 @@ describe('Editor', () => {
     fireEvent.click(undo);
     fireEvent.click(redo);
     expect(children()).toHaveLength(1);
+  });
+
+  it('copies, cuts and pastes nodes with keyboard shortcuts', () => {
+    useEditorStore.setState({
+      root: { ...createRoot(), children: [createNode('Tag', 't1')] },
+      selectedId: 't1',
+    });
+    render(<Editor />);
+    const ids = () => useEditorStore.getState().root.children.map((c) => c.id);
+    const press = (key: string) => {
+      const event = new KeyboardEvent('keydown', { key, ctrlKey: true, cancelable: true });
+      window.dispatchEvent(event);
+      return event.defaultPrevented;
+    };
+
+    expect(press('v')).toBe(false); // nothing copied yet: native paste
+    expect(press('c')).toBe(true);
+    expect(press('v')).toBe(true);
+    expect(ids()).toHaveLength(2);
+
+    const pasted = ids()[1]!;
+    expect(press('x')).toBe(true);
+    expect(ids()).toEqual(['t1']);
+    expect(useEditorStore.getState().clipboard?.id).toBe(pasted);
+  });
+
+  it('leaves Ctrl/Cmd+C to the browser while page text is highlighted', () => {
+    useEditorStore.setState({
+      root: { ...createRoot(), children: [createNode('Tag', 't1')] },
+      selectedId: 't1',
+    });
+    render(<Editor />);
+    window.getSelection()!.selectAllChildren(screen.getByText('antd-builder'));
+    fireEvent.keyDown(window, { key: 'c', metaKey: true });
+    expect(useEditorStore.getState().clipboard).toBeNull();
+    window.getSelection()!.removeAllRanges();
   });
 
   it('ignores shortcuts while typing in a field', () => {

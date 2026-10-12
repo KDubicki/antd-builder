@@ -82,17 +82,24 @@ function isSidePanelTarget(target: EventTarget | null): boolean {
   return target instanceof HTMLElement && !!target.closest(`[${SIDE_PANEL_ATTR}]`);
 }
 
+/** Whether the user has highlighted page text, which Ctrl/Cmd+C should copy natively. */
+function hasTextSelection(): boolean {
+  const selection = window.getSelection();
+  return !!selection && !selection.isCollapsed && selection.toString() !== '';
+}
+
 /**
- * Delete/Backspace removes the selected node, Ctrl/Cmd+D duplicates it, Escape clears the
- * selection, Ctrl/Cmd+Z undoes and Ctrl/Cmd+Shift+Z or Ctrl+Y redoes. Text fields keep their
- * own native shortcuts.
+ * Delete/Backspace removes the selected node, Ctrl/Cmd+D duplicates it, Ctrl/Cmd+C/X/V copy,
+ * cut and paste nodes, Escape clears the selection, Ctrl/Cmd+Z undoes and Ctrl/Cmd+Shift+Z or
+ * Ctrl+Y redoes. Text fields keep their own native shortcuts.
  */
 function useEditorShortcuts() {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (isEditableTarget(event.target)) return;
-      const { selectedId, removeNode, duplicateNode, select, undo, redo } =
-        useEditorStore.getState();
+      const state = useEditorStore.getState();
+      const { selectedId, removeNode, duplicateNode, select, undo, redo } = state;
+      const { copyNode, cutNode, pasteNode } = state;
       if (event.key === 'Escape') select(null);
       const isMod = event.metaKey || event.ctrlKey;
       const key = event.key.toLowerCase();
@@ -103,6 +110,12 @@ function useEditorShortcuts() {
         event.preventDefault();
         undo();
       }
+      if (isMod && (key === 'c' || key === 'x') && selectedId && !hasTextSelection()) {
+        event.preventDefault();
+        if (key === 'c') copyNode(selectedId);
+        else cutNode(selectedId);
+      }
+      if (isMod && key === 'v' && pasteNode()) event.preventDefault();
       if (isMod && key === 'd' && selectedId) {
         event.preventDefault(); // browsers bookmark the page on Ctrl/Cmd+D
         duplicateNode(selectedId);
