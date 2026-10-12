@@ -2,7 +2,7 @@ import { DndContext } from '@dnd-kit/core';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ROOT_ID, createRoot, useEditorStore } from '@/lib/editor/store';
-import { components, createNode } from '@/lib/registry';
+import { components, createNode, createPlaceableNode } from '@/lib/registry';
 import { createTheme } from '@/lib/theme';
 import type { BuilderNode } from '@/lib/schema';
 import { Canvas } from './Canvas';
@@ -30,15 +30,7 @@ describe('Canvas', () => {
   });
 
   it('renders every registry component with its default props', () => {
-    const containerFor = (name: string) =>
-      name === 'Col' ? 'Row' : name === 'Form.Item' ? 'Form' : undefined;
-    setRoot(
-      components.map((meta) => {
-        const parent = containerFor(meta.name);
-        const node = createNode(meta.name, meta.name);
-        return parent ? { ...createNode(parent, `${meta.name}-parent`), children: [node] } : node;
-      }),
-    );
+    setRoot(components.map((meta) => createPlaceableNode(meta.name, meta.name)));
     const { container } = renderCanvas();
     for (const meta of components) {
       expect(

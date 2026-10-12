@@ -6,14 +6,18 @@ import { Palette } from './Palette';
 
 describe('Palette', () => {
   it('lists every registry component under its category', () => {
-    render(
+    const { container } = render(
       <DndContext>
         <Palette />
       </DndContext>,
     );
-    for (const label of Object.values(categoryLabels)) {
-      expect(screen.getByText(label)).toBeInTheDocument();
-    }
+    const used = new Set(components.map((meta) => meta.category));
+    const headings = [...container.querySelectorAll('strong')].map((el) => el.textContent);
+    expect(headings).toEqual(
+      Object.entries(categoryLabels)
+        .filter(([category]) => used.has(category as keyof typeof categoryLabels))
+        .map(([, label]) => label),
+    );
     for (const meta of components) {
       expect(screen.getByTitle(meta.description)).toHaveTextContent(meta.label);
     }

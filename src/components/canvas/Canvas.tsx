@@ -66,10 +66,14 @@ function CanvasNode({ node }: { node: BuilderNode }) {
         <Component {...node.props} />
       ) : (
         <Component {...node.props}>
-          {node.children.length > 0 ? (
-            node.children.map((child) => <CanvasNode key={child.id} node={child} />)
-          ) : (
+          {node.children.length === 0 ? (
             <EmptyContainer />
+          ) : node.children.length === 1 ? (
+            // A lone child goes in as an element, not an array: single-child wrappers like
+            // Dropdown or Tooltip use React.Children.only.
+            <CanvasNode node={node.children[0]!} />
+          ) : (
+            node.children.map((child) => <CanvasNode key={child.id} node={child} />)
           )}
         </Component>
       )}
@@ -92,6 +96,8 @@ function CanvasSurface() {
       style={{
         minHeight: '100%',
         padding: token.paddingLG,
+        // Fixed-position components (FloatButton…) are placed relative to the canvas, not the editor.
+        contain: 'layout',
         background: isOver ? token.colorPrimaryBg : token.colorBgContainer,
         transition: `background ${token.motionDurationFast}`,
       }}

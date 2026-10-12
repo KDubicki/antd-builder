@@ -2,7 +2,7 @@ import path from 'node:path';
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 import { createRoot } from '@/lib/editor/store';
-import { components, createNode } from '@/lib/registry';
+import { components, createNode, createPlaceableNode } from '@/lib/registry';
 import type { BuilderNode } from '@/lib/schema';
 import { createTheme } from '@/lib/theme';
 import { collectImports, generatePage, nodeToJsx, pageComponentName } from '.';
@@ -103,6 +103,17 @@ describe('nodeToJsx', () => {
 });
 
 describe('collectImports', () => {
+  it('gives empty components that require children an explicit null child', () => {
+    const group = { ...createNode('FloatButton.Group', 'g'), children: [] };
+    expect(nodeToJsx(group)).toBe('<FloatButton.Group>{null}</FloatButton.Group>');
+    expect(nodeToJsx({ ...createNode('Card', 'c'), props: {} })).toBe('<Card />');
+  });
+
+  it('writes structured props as JSON expressions', () => {
+    const crumbs = { ...createNode('Breadcrumb', 'b'), props: { items: [{ title: 'Home' }] } };
+    expect(nodeToJsx(crumbs)).toBe('<Breadcrumb items={[{"title":"Home"}]} />');
+  });
+
   it('collects top-level antd component names', () => {
     expect([...collectImports(tree)].sort()).toEqual(['Form', 'Input']);
   });
@@ -187,14 +198,9 @@ describe('generatePage', () => {
   });
 
   it('produces code that type-checks against antd for every registry component', () => {
-    const parentFor: Record<string, string> = { Col: 'Row', 'Form.Item': 'Form' };
     const everything: BuilderNode = {
       ...createRoot(),
-      children: components.map((meta) => {
-        const node = createNode(meta.name);
-        const parent = parentFor[meta.name];
-        return parent ? { ...createNode(parent), children: [node] } : node;
-      }),
+      children: components.map((meta) => createPlaceableNode(meta.name)),
     };
     const source = generatePage({
       name: 'Everything',

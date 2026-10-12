@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ROOT_ID, createRoot, useEditorStore } from '@/lib/editor/store';
 import { createNode } from '@/lib/registry';
@@ -112,6 +112,53 @@ describe('Inspector', () => {
     expect(original?.id).toBe('tag');
     expect(copy).toMatchObject({ component: 'Tag', props: { children: 'New' } });
     expect(useEditorStore.getState().selectedId).toBe(copy?.id);
+  });
+
+  it('edits JSON props, keeping invalid drafts off the node', () => {
+    select(createNode('Breadcrumb', 'bc'));
+    render(<Inspector />);
+    const field = screen.getByLabelText('Items');
+    expect(JSON.parse((field as HTMLTextAreaElement).value)).toEqual(propsOf('bc')?.items);
+
+    fireEvent.change(field, { target: { value: '[{"title":"Home"}]' } });
+    expect(propsOf('bc')?.items).toEqual([{ title: 'Home' }]);
+
+    fireEvent.change(field, { target: { value: '[{"title":' } });
+    expect(field).toHaveAttribute('aria-invalid', 'true');
+    expect(propsOf('bc')?.items).toEqual([{ title: 'Home' }]);
+    fireEvent.blur(field); // an invalid draft stays for the user to fix
+    expect(field).toHaveValue('[{"title":');
+
+    fireEvent.change(field, { target: { value: '[]' } });
+    expect(field).toHaveAttribute('aria-invalid', 'false');
+    fireEvent.blur(field); // a valid draft is reformatted from the node
+    expect(field).toHaveValue('[]');
+
+    fireEvent.change(field, { target: { value: '  ' } });
+    expect(propsOf('bc')).not.toHaveProperty('items');
+    fireEvent.blur(field);
+    expect(field).toHaveValue('');
+  });
+
+  it('shows JSON changes made elsewhere (e.g. undo) when not editing', () => {
+    select(createNode('Breadcrumb', 'bc'));
+    render(<Inspector />);
+    act(() => useEditorStore.getState().updateProps('bc', { items: [{ title: 'X' }] }));
+    expect(JSON.parse((screen.getByLabelText('Items') as HTMLTextAreaElement).value)).toEqual([
+      { title: 'X' },
+    ]);
+  });
+
+  it('stores booleans that differ from a true antd default', () => {
+    select(createNode('Anchor', 'a'));
+    render(<Inspector />);
+    const affix = screen.getByLabelText('Stick on scroll');
+    expect(affix).not.toBeChecked(); // registry default: false
+    fireEvent.click(affix);
+    expect(propsOf('a')).not.toHaveProperty('affix'); // true is antd's default
+    expect(affix).toBeChecked();
+    fireEvent.click(affix);
+    expect(propsOf('a')?.affix).toBe(false);
   });
 
   it('edits the page root but does not offer to delete it', () => {

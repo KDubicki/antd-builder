@@ -1,25 +1,39 @@
 import {
   Alert,
+  Anchor,
+  Breadcrumb,
   Button,
   Card,
   Checkbox,
   Col,
   Divider,
+  Dropdown,
   Flex,
+  FloatButton,
   Form,
   Input,
   InputNumber,
+  Layout,
+  Masonry,
+  Menu,
+  Pagination,
   Row,
   Space,
+  Steps,
   Switch,
+  Tabs,
   Tag,
   Typography,
 } from 'antd';
 import type { ComponentType } from 'react';
+import { SplitterAdapter, SplitterPanelBody } from './adapters';
 
 type AnyProps = Record<string, unknown>;
 
-/** Maps registry component names to the antd components rendered on the canvas. */
+/**
+ * Maps registry component names to the antd components rendered on the canvas. Props come from
+ * the registry, so the map is loosely typed; codegen tests type-check the real prop types.
+ */
 export const renderers: Readonly<Record<string, ComponentType<AnyProps>>> = {
   Flex,
   Space,
@@ -27,10 +41,30 @@ export const renderers: Readonly<Record<string, ComponentType<AnyProps>>> = {
   Col,
   Card,
   Divider,
+  Layout,
+  'Layout.Header': Layout.Header,
+  'Layout.Sider': Layout.Sider,
+  'Layout.Content': Layout.Content,
+  'Layout.Footer': Layout.Footer,
+  'Space.Compact': Space.Compact,
+  Splitter: SplitterAdapter,
+  'Splitter.Panel': SplitterPanelBody,
+  Masonry,
   Button,
+  FloatButton,
+  'FloatButton.Group': FloatButton.Group,
+  'FloatButton.BackTop': FloatButton.BackTop,
   'Typography.Title': Typography.Title,
   'Typography.Paragraph': Typography.Paragraph,
   'Typography.Text': Typography.Text,
+  'Typography.Link': Typography.Link,
+  Anchor,
+  Breadcrumb,
+  Dropdown,
+  Menu,
+  Pagination,
+  Steps,
+  Tabs,
   Form,
   'Form.Item': Form.Item,
   Input,
@@ -39,4 +73,4 @@ export const renderers: Readonly<Record<string, ComponentType<AnyProps>>> = {
   Switch,
   Alert,
   Tag,
-} as Record<string, ComponentType<AnyProps>>;
+} as unknown as Record<string, ComponentType<AnyProps>>;

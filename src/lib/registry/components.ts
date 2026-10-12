@@ -2,6 +2,14 @@ import type { ComponentMeta, PropDefinition } from './types';
 
 const sizes = ['small', 'large'] as const;
 const text = (label: string): PropDefinition => ({ type: 'string', label });
+const bool = (label: string): PropDefinition => ({ type: 'boolean', label });
+const json = (label: string): PropDefinition => ({ type: 'json', label });
+const orientation: PropDefinition = {
+  type: 'enum',
+  label: 'Orientation',
+  options: ['horizontal', 'vertical'],
+};
+const layoutParts = ['Layout.Header', 'Layout.Sider', 'Layout.Content', 'Layout.Footer'];
 
 /** Metadata for the antd components available in the palette. */
 export const components: readonly ComponentMeta[] = [
@@ -101,6 +109,124 @@ export const components: readonly ComponentMeta[] = [
     children: 'none',
   },
 
+  {
+    name: 'Layout',
+    label: 'Layout',
+    category: 'layout',
+    description: 'Page frame with header, sider, content and footer.',
+    props: { hasSider: bool('Has sider') },
+    defaultProps: {},
+    children: ['Layout', ...layoutParts],
+    defaultChildren: ['Layout.Header', 'Layout.Content', 'Layout.Footer'],
+  },
+  {
+    name: 'Layout.Header',
+    label: 'Layout header',
+    category: 'layout',
+    description: 'Top bar of a layout.',
+    props: {},
+    defaultProps: {},
+    children: 'any',
+    parents: ['Layout'],
+  },
+  {
+    name: 'Layout.Sider',
+    label: 'Layout sider',
+    category: 'layout',
+    description: 'Side bar of a layout, optionally collapsible.',
+    props: {
+      width: { type: 'number', label: 'Width (px)', min: 0 },
+      theme: { type: 'enum', label: 'Theme', options: ['light', 'dark'] },
+      collapsible: bool('Collapsible'),
+      collapsed: bool('Collapsed'),
+      reverseArrow: bool('Reverse arrow'),
+    },
+    defaultProps: { width: 200, theme: 'light' },
+    children: 'any',
+    parents: ['Layout'],
+  },
+  {
+    name: 'Layout.Content',
+    label: 'Layout content',
+    category: 'layout',
+    description: 'Main area of a layout.',
+    props: {},
+    defaultProps: {},
+    children: 'any',
+    parents: ['Layout'],
+  },
+  {
+    name: 'Layout.Footer',
+    label: 'Layout footer',
+    category: 'layout',
+    description: 'Bottom bar of a layout.',
+    props: {},
+    defaultProps: {},
+    children: 'any',
+    parents: ['Layout'],
+  },
+  {
+    name: 'Space.Compact',
+    label: 'Compact space',
+    category: 'layout',
+    description: 'Joins inputs and buttons into one compact group.',
+    props: {
+      orientation,
+      size: { type: 'enum', label: 'Size', options: ['small', 'middle', 'large'] },
+      block: bool('Full width'),
+    },
+    defaultProps: {},
+    children: 'any',
+  },
+  {
+    name: 'Splitter',
+    label: 'Splitter',
+    category: 'layout',
+    description: 'Resizable panels. Holds splitter panels.',
+    props: { orientation, lazy: bool('Lazy resize') },
+    defaultProps: {},
+    children: ['Splitter.Panel'],
+    defaultChildren: ['Splitter.Panel', 'Splitter.Panel'],
+  },
+  {
+    name: 'Splitter.Panel',
+    label: 'Splitter panel',
+    category: 'layout',
+    description: 'One resizable panel of a splitter.',
+    props: {
+      defaultSize: text('Default size (px or %)'),
+      min: text('Min size'),
+      max: text('Max size'),
+      resizable: { type: 'boolean', label: 'Resizable', default: true },
+      collapsible: bool('Collapsible'),
+    },
+    defaultProps: {},
+    children: 'any',
+    parents: ['Splitter'],
+  },
+  {
+    name: 'Masonry',
+    label: 'Masonry',
+    category: 'layout',
+    description: 'Cards of varying height packed into columns.',
+    props: {
+      columns: { type: 'number', label: 'Columns', min: 1, max: 12 },
+      gutter: { type: 'number', label: 'Gutter (px)', min: 0 },
+      items: json('Items'),
+    },
+    defaultProps: {
+      columns: 3,
+      gutter: 16,
+      items: [
+        { key: '1', data: 1, children: 'First' },
+        { key: '2', data: 2, children: 'Second item with more text to make it taller' },
+        { key: '3', data: 3, children: 'Third' },
+        { key: '4', data: 4, children: 'Fourth' },
+      ],
+    },
+    children: 'none',
+  },
+
   // General
   {
     name: 'Button',
@@ -120,6 +246,52 @@ export const components: readonly ComponentMeta[] = [
       disabled: { type: 'boolean', label: 'Disabled' },
     },
     defaultProps: { children: 'Button', type: 'primary' },
+    children: 'none',
+  },
+
+  {
+    name: 'FloatButton',
+    label: 'Float button',
+    category: 'general',
+    description: 'Button floating at the bottom right of the page.',
+    props: {
+      // antd only supports content on square buttons.
+      content: text('Content'),
+      tooltip: text('Tooltip'),
+      type: { type: 'enum', label: 'Type', options: ['default', 'primary'] },
+      shape: { type: 'enum', label: 'Shape', options: ['circle', 'square'] },
+      href: text('Link'),
+    },
+    defaultProps: { type: 'primary', shape: 'square' },
+    children: 'none',
+  },
+  {
+    name: 'FloatButton.Group',
+    label: 'Float button group',
+    category: 'general',
+    description: 'Stack of float buttons, optionally behind a trigger.',
+    props: {
+      shape: { type: 'enum', label: 'Shape', options: ['circle', 'square'] },
+      trigger: { type: 'enum', label: 'Trigger', options: ['click', 'hover'] },
+      placement: { type: 'enum', label: 'Placement', options: ['top', 'left', 'right', 'bottom'] },
+    },
+    defaultProps: {},
+    children: ['FloatButton', 'FloatButton.BackTop'],
+    childrenRequired: true,
+    defaultChildren: ['FloatButton', 'FloatButton'],
+  },
+  {
+    name: 'FloatButton.BackTop',
+    label: 'Back to top',
+    category: 'general',
+    description: 'Float button that scrolls the page back to the top.',
+    props: {
+      visibilityHeight: { type: 'number', label: 'Show after scrolling (px)', min: 0 },
+      tooltip: text('Tooltip'),
+      shape: { type: 'enum', label: 'Shape', options: ['circle', 'square'] },
+      type: { type: 'enum', label: 'Type', options: ['default', 'primary'] },
+    },
+    defaultProps: { visibilityHeight: 0 },
     children: 'none',
   },
 
@@ -161,6 +333,191 @@ export const components: readonly ComponentMeta[] = [
       code: { type: 'boolean', label: 'Code' },
     },
     defaultProps: { children: 'Text' },
+    children: 'none',
+  },
+
+  {
+    name: 'Typography.Link',
+    label: 'Link',
+    category: 'typography',
+    description: 'Hyperlink styled as text.',
+    props: {
+      children: text('Text'),
+      href: text('URL'),
+      target: { type: 'enum', label: 'Open in', options: ['_self', '_blank'] },
+      type: { type: 'enum', label: 'Type', options: ['secondary', 'success', 'warning', 'danger'] },
+      strong: bool('Bold'),
+      underline: bool('Underline'),
+      disabled: bool('Disabled'),
+    },
+    defaultProps: { children: 'Link', href: '#' },
+    children: 'none',
+  },
+
+  // Navigation
+  {
+    name: 'Anchor',
+    label: 'Anchor',
+    category: 'navigation',
+    description: 'In-page links to sections, highlighting the one in view.',
+    props: {
+      items: json('Items'),
+      direction: { type: 'enum', label: 'Direction', options: ['vertical', 'horizontal'] },
+      affix: { type: 'boolean', label: 'Stick on scroll', default: true },
+      offsetTop: { type: 'number', label: 'Offset top (px)', min: 0 },
+    },
+    defaultProps: {
+      affix: false,
+      items: [
+        { key: 'intro', href: '#intro', title: 'Introduction' },
+        { key: 'usage', href: '#usage', title: 'Usage' },
+        { key: 'api', href: '#api', title: 'API' },
+      ],
+    },
+    children: 'none',
+  },
+  {
+    name: 'Breadcrumb',
+    label: 'Breadcrumb',
+    category: 'navigation',
+    description: 'Path to the current page.',
+    props: { items: json('Items'), separator: text('Separator') },
+    defaultProps: {
+      items: [{ title: 'Home' }, { title: 'Library', href: '#' }, { title: 'Data' }],
+    },
+    children: 'none',
+  },
+  {
+    name: 'Dropdown',
+    label: 'Dropdown',
+    category: 'navigation',
+    description: 'Menu that opens from the wrapped element.',
+    props: {
+      menu: json('Menu'),
+      placement: {
+        type: 'enum',
+        label: 'Placement',
+        options: ['bottomLeft', 'bottom', 'bottomRight', 'topLeft', 'top', 'topRight'],
+      },
+      arrow: bool('Arrow'),
+      disabled: bool('Disabled'),
+    },
+    defaultProps: {
+      menu: {
+        items: [
+          { key: 'edit', label: 'Edit' },
+          { key: 'duplicate', label: 'Duplicate' },
+          { type: 'divider' },
+          { key: 'delete', label: 'Delete', danger: true },
+        ],
+      },
+    },
+    children: 'any',
+    maxChildren: 1,
+  },
+  {
+    name: 'Menu',
+    label: 'Menu',
+    category: 'navigation',
+    description: 'Navigation menu: horizontal, vertical or inline.',
+    props: {
+      items: json('Items'),
+      mode: { type: 'enum', label: 'Mode', options: ['horizontal', 'vertical', 'inline'] },
+      theme: { type: 'enum', label: 'Theme', options: ['light', 'dark'] },
+      selectedKeys: json('Selected keys'),
+    },
+    defaultProps: {
+      mode: 'horizontal',
+      selectedKeys: ['home'],
+      items: [
+        { key: 'home', label: 'Home' },
+        { key: 'products', label: 'Products' },
+        {
+          key: 'more',
+          label: 'More',
+          children: [
+            { key: 'about', label: 'About' },
+            { key: 'contact', label: 'Contact' },
+          ],
+        },
+      ],
+    },
+    children: 'none',
+  },
+  {
+    name: 'Pagination',
+    label: 'Pagination',
+    category: 'navigation',
+    description: 'Page selector for long lists.',
+    props: {
+      total: { type: 'number', label: 'Total items', min: 0 },
+      pageSize: { type: 'number', label: 'Page size', min: 1 },
+      align: { type: 'enum', label: 'Align', options: ['start', 'center', 'end'] },
+      size: { type: 'enum', label: 'Size', options: ['small', 'middle', 'large'] },
+      simple: bool('Simple'),
+      showSizeChanger: bool('Page size changer'),
+      showQuickJumper: bool('Quick jumper'),
+      disabled: bool('Disabled'),
+    },
+    defaultProps: { total: 50 },
+    children: 'none',
+  },
+  {
+    name: 'Steps',
+    label: 'Steps',
+    category: 'navigation',
+    description: 'Progress through a sequence of steps.',
+    props: {
+      items: json('Items'),
+      current: { type: 'number', label: 'Current step (0-based)', min: 0 },
+      orientation,
+      type: {
+        type: 'enum',
+        label: 'Type',
+        options: ['default', 'navigation', 'inline', 'panel', 'dot'],
+      },
+      size: { type: 'enum', label: 'Size', options: ['small', 'medium'] },
+      status: { type: 'enum', label: 'Status', options: ['wait', 'process', 'finish', 'error'] },
+      titlePlacement: {
+        type: 'enum',
+        label: 'Title placement',
+        options: ['horizontal', 'vertical'],
+      },
+      variant: { type: 'enum', label: 'Variant', options: ['filled', 'outlined'] },
+    },
+    defaultProps: {
+      current: 1,
+      items: [
+        { title: 'Account', content: 'Create an account' },
+        { title: 'Profile', content: 'Fill in your details' },
+        { title: 'Done', content: 'Start using the app' },
+      ],
+    },
+    children: 'none',
+  },
+  {
+    name: 'Tabs',
+    label: 'Tabs',
+    category: 'navigation',
+    description: 'Switch between views.',
+    props: {
+      items: json('Items'),
+      type: { type: 'enum', label: 'Type', options: ['line', 'card'] },
+      size: { type: 'enum', label: 'Size', options: ['small', 'middle', 'large'] },
+      tabPlacement: {
+        type: 'enum',
+        label: 'Placement',
+        options: ['top', 'end', 'bottom', 'start'],
+      },
+      centered: bool('Centered'),
+    },
+    defaultProps: {
+      items: [
+        { key: '1', label: 'Overview', children: 'Overview content' },
+        { key: '2', label: 'Details', children: 'Details content' },
+        { key: '3', label: 'Settings', children: 'Settings content' },
+      ],
+    },
     children: 'none',
   },
 

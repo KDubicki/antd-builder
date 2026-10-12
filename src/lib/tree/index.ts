@@ -1,4 +1,4 @@
-import { canContain } from '@/lib/registry';
+import { canContain, hasRoomFor } from '@/lib/registry';
 import type { BuilderNode } from '@/lib/schema';
 
 /** Where a node goes: the parent's id and the index among its children. */
@@ -127,7 +127,8 @@ export function moveNode(root: BuilderNode, id: string, target: DropTarget): Bui
  * Picks where a dropped component lands, given the canvas nodes under the pointer
  * (innermost first). The innermost node that accepts the component gets it appended;
  * a node that doesn't accept it gets it inserted right after itself, if its parent does.
- * When moving an existing node, targets inside that node are skipped.
+ * Containers that are full (`maxChildren`) don't accept more. When moving an existing node,
+ * targets inside that node are skipped.
  */
 export function resolveDrop(
   root: BuilderNode,
@@ -140,11 +141,11 @@ export function resolveDrop(
   for (const id of ids) {
     const node = findNode(root, id);
     if (!node) continue;
-    if (canContain(node.component, component)) {
+    if (canContain(node.component, component) && hasRoomFor(node, movingId)) {
       return { parentId: node.id, index: node.children.length };
     }
     const parent = findParent(root, id);
-    if (parent && canContain(parent.component, component)) {
+    if (parent && canContain(parent.component, component) && hasRoomFor(parent, movingId)) {
       return { parentId: parent.id, index: parent.children.indexOf(node) + 1 };
     }
   }

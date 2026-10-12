@@ -34,7 +34,10 @@ function PaletteItem({ meta }: { meta: ComponentMeta }) {
   );
 }
 
-const categories = Object.keys(categoryLabels) as (keyof typeof categoryLabels)[];
+/** Categories in display order, skipping any without components. */
+const categories = (Object.keys(categoryLabels) as (keyof typeof categoryLabels)[]).filter(
+  (category) => components.some((meta) => meta.category === category),
+);
 
 export function Palette() {
   const { token } = theme.useToken();

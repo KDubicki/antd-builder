@@ -32,7 +32,10 @@ export function nodeToJsx(node: BuilderNode, indent = 0): string {
   const open = [node.component, ...attrs].join(' ');
 
   if (isTextLeaf) return `${pad}<${open}>${textChild(text)}</${node.component}>`;
-  if (node.children.length === 0) return `${pad}<${open} />`;
+  if (node.children.length === 0) {
+    const required = getComponentMeta(node.component)?.childrenRequired && !('children' in props);
+    return required ? `${pad}<${open}>{null}</${node.component}>` : `${pad}<${open} />`;
+  }
 
   const children = node.children.map((child) => nodeToJsx(child, indent + 1)).join('\n');
   return `${pad}<${open}>\n${children}\n${pad}</${node.component}>`;

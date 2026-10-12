@@ -166,6 +166,31 @@ describe('moveNode', () => {
   });
 });
 
+describe('resolveDrop with single-child wrappers', () => {
+  // root > [dd(Dropdown) > [btn(Button)]]
+  const wrapped = node('root', 'Flex', [node('dd', 'Dropdown', [node('btn', 'Button')])]);
+
+  it('fills an empty wrapper', () => {
+    const empty = node('root', 'Flex', [node('dd', 'Dropdown')]);
+    expect(resolveDrop(empty, ['dd', 'root'], 'Tag')).toEqual({ parentId: 'dd', index: 0 });
+  });
+
+  it('drops next to a full wrapper instead of into it', () => {
+    expect(resolveDrop(wrapped, ['dd', 'root'], 'Tag')).toEqual({ parentId: 'root', index: 1 });
+    expect(resolveDrop(wrapped, ['btn', 'dd', 'root'], 'Tag')).toEqual({
+      parentId: 'root',
+      index: 1,
+    });
+  });
+
+  it('lets the only child move within its wrapper', () => {
+    expect(resolveDrop(wrapped, ['dd', 'root'], 'Button', 'btn')).toEqual({
+      parentId: 'dd',
+      index: 1,
+    });
+  });
+});
+
 describe('resolveDrop', () => {
   it('appends to the innermost accepting container', () => {
     expect(resolveDrop(tree, ['card', 'root'], 'Tag')).toEqual({ parentId: 'card', index: 1 });

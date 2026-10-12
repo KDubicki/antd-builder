@@ -10,7 +10,7 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import { App as AntApp, ConfigProvider, Flex, Layout, Tabs, Tag, Typography, theme } from 'antd';
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Canvas } from '@/components/canvas/Canvas';
 import { nodeChainAt } from '@/components/canvas/nodeChain';
 import { Inspector } from '@/components/inspector/Inspector';
@@ -49,17 +49,27 @@ function AppHeader() {
   );
 }
 
-/** Pointer position at the end of a drag, in viewport coordinates. */
-function dropPoint({ activatorEvent, delta }: DragEndEvent): { x: number; y: number } | null {
+interface Point {
+  x: number;
+  y: number;
+}
+
+/**
+ * Pointer position at the end of a drag, in viewport coordinates: the tracked `pointer` when
+ * known. The fallback, activator position plus dnd-kit's `delta`, drifts when a scroll container
+ * of the dragged item scrolls mid-drag, because `delta` includes that scroll.
+ */
+function dropPoint({ activatorEvent, delta }: DragEndEvent, pointer?: Point | null): Point | null {
+  if (pointer) return pointer;
   if (!(activatorEvent instanceof PointerEvent || activatorEvent instanceof MouseEvent)) {
     return null;
   }
   return { x: activatorEvent.clientX + delta.x, y: activatorEvent.clientY + delta.y };
 }
 
-export function handleDragEnd(event: DragEndEvent) {
+export function handleDragEnd(event: DragEndEvent, pointer?: Point | null) {
   const data = event.active.data.current as DragData | undefined;
-  const point = dropPoint(event);
+  const point = dropPoint(event, pointer);
   if (!data || !event.over || !point) return;
 
   const { root, addNode, moveNode } = useEditorStore.getState();
@@ -67,6 +77,26 @@ export function handleDragEnd(event: DragEndEvent) {
   if (action?.type === 'add') addNode(action.component, action.target);
   if (action?.type === 'move') moveNode(action.nodeId, action.target);
 }
+
+/** Tracks the pointer's viewport position, so drops resolve where the pointer really is. */
+function usePointerPosition() {
+  const position = useRef<Point | null>(null);
+  useEffect(() => {
+    const onMove = (event: PointerEvent) => {
+      position.current = { x: event.clientX, y: event.clientY };
+    };
+    window.addEventListener('pointermove', onMove, { capture: true, passive: true });
+    return () => window.removeEventListener('pointermove', onMove, { capture: true });
+  }, []);
+  return position;
+}
+
+const PALETTE_SCROLLER_ATTR = 'data-palette-scroller';
+
+/** Auto-scroll while dragging, except the palette: scrolling the list being dragged from never helps. */
+const autoScroll = {
+  canScroll: (element: Element) => !element.hasAttribute(PALETTE_SCROLLER_ATTR),
+};
 
 function isEditableTarget(target: EventTarget | null): boolean {
   return (
@@ -135,6 +165,7 @@ export function Editor() {
   const dndId = useId();
   const [dragging, setDragging] = useState<DragData | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const pointer = usePointerPosition();
   useEditorShortcuts();
   useAutosave();
 
@@ -144,19 +175,25 @@ export function Editor() {
         <DndContext
           id={dndId}
           sensors={sensors}
+          autoScroll={autoScroll}
           onDragStart={(event: DragStartEvent) =>
             setDragging((event.active.data.current as DragData | undefined) ?? null)
           }
           onDragEnd={(event) => {
             setDragging(null);
-            handleDragEnd(event);
+            handleDragEnd(event, pointer.current);
           }}
           onDragCancel={() => setDragging(null)}
         >
           <Layout style={{ height: '100vh' }}>
             <AppHeader />
             <Layout>
-              <Sider width={260} theme="light" style={{ overflow: 'auto' }}>
+              <Sider
+                width={260}
+                theme="light"
+                style={{ overflow: 'auto' }}
+                {...{ [PALETTE_SCROLLER_ATTR]: '' }}
+              >
                 <Tabs
                   centered
                   items={[

@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { canContain, components, createNode, getComponentMeta } from '.';
+import {
+  canContain,
+  components,
+  createNode,
+  createPlaceableNode,
+  getComponentMeta,
+  hasRoomFor,
+} from '.';
 
 describe('component registry', () => {
   it('has unique component names', () => {
@@ -31,6 +38,28 @@ describe('component registry', () => {
         ...(meta.parents ?? []),
       ];
       for (const ref of refs) expect(getComponentMeta(ref), `${meta.name} -> ${ref}`).toBeDefined();
+    }
+  });
+
+  it('only starts components with children they accept', () => {
+    for (const meta of components) {
+      for (const child of meta.defaultChildren ?? []) {
+        expect(canContain(meta.name, child), `${meta.name} -> ${child}`).toBe(true);
+      }
+      if (meta.defaultChildren?.length) expect(meta.children).not.toBe('none');
+    }
+  });
+
+  it('uses unique prop labels within a component', () => {
+    for (const meta of components) {
+      const labels = Object.values(meta.props).map((def) => def.label);
+      expect(new Set(labels).size, meta.name).toBe(labels.length);
+    }
+  });
+
+  it('keeps JSON defaults serializable', () => {
+    for (const meta of components) {
+      expect(JSON.parse(JSON.stringify(meta.defaultProps)), meta.name).toEqual(meta.defaultProps);
     }
   });
 
@@ -79,11 +108,56 @@ describe('createNode', () => {
     expect(node.props).not.toBe(getComponentMeta('Button')?.defaultProps);
   });
 
+  it('deep-copies default props', () => {
+    const menu = getComponentMeta('Menu')!;
+    const node = createNode('Menu');
+    expect(node.props.items).toEqual(menu.defaultProps.items);
+    expect(node.props.items).not.toBe(menu.defaultProps.items);
+  });
+
+  it('creates default children with their own ids', () => {
+    const splitter = createNode('Splitter');
+    expect(splitter.children.map((c) => c.component)).toEqual(['Splitter.Panel', 'Splitter.Panel']);
+    expect(splitter.children[0]?.id).not.toBe(splitter.children[1]?.id);
+  });
+
   it('generates an id when none is given', () => {
     expect(createNode('Card').id).toMatch(/^[0-9a-f-]{36}$/);
   });
 
   it('throws for unknown components', () => {
     expect(() => createNode('Nope')).toThrow('Unknown component: Nope');
+  });
+});
+
+describe('createPlaceableNode', () => {
+  it('returns free-standing components as they are', () => {
+    expect(createPlaceableNode('Button', 'b')).toMatchObject({ id: 'b', component: 'Button' });
+  });
+
+  it('wraps components in the parents they require', () => {
+    const row = createPlaceableNode('Col', 'c');
+    expect(row.component).toBe('Row');
+    expect(row.children.map((c) => c.id)).toEqual(['c']);
+    expect(createPlaceableNode('Layout.Sider', 's').component).toBe('Layout');
+  });
+});
+
+describe('hasRoomFor', () => {
+  const dropdown = (children: string[]) => ({
+    ...createNode('Dropdown', 'dd'),
+    children: children.map((id) => createNode('Button', id)),
+  });
+
+  it('is unlimited without maxChildren', () => {
+    expect(
+      hasRoomFor({ ...createNode('Card'), children: [createNode('Tag'), createNode('Tag')] }),
+    ).toBe(true);
+  });
+
+  it('enforces maxChildren, not counting a child being moved', () => {
+    expect(hasRoomFor(dropdown([]))).toBe(true);
+    expect(hasRoomFor(dropdown(['a']))).toBe(false);
+    expect(hasRoomFor(dropdown(['a']), 'a')).toBe(true);
   });
 });

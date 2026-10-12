@@ -23,6 +23,12 @@ describe('Editor', () => {
     expect(screen.getByTestId('canvas')).toBeInTheDocument();
   });
 
+  it('keeps drag auto-scroll away from the palette', () => {
+    render(<Editor />);
+    const scroller = screen.getByLabelText('Component palette').closest('[data-palette-scroller]');
+    expect(scroller).toHaveClass('ant-layout-sider');
+  });
+
   it('deletes the selected node with Delete and clears selection with Escape', () => {
     useEditorStore.setState({
       root: { ...createRoot(), children: [createNode('Tag', 't1'), createNode('Tag', 't2')] },
@@ -185,6 +191,20 @@ describe('handleDragEnd', () => {
     });
     handleDragEnd(dragEnd({ type: 'node', nodeId: 'a', component: 'Tag' }));
     expect(useEditorStore.getState().root.children.map((c) => c.id)).toEqual(['b', 'a']);
+  });
+
+  it('prefers the tracked pointer position over activator + delta', () => {
+    handleDragEnd(dragEnd({ type: 'palette', component: 'Button' }), { x: 300, y: 40 });
+    expect(document.elementsFromPoint).toHaveBeenCalledWith(300, 40);
+    expect(useEditorStore.getState().root.children[0]?.component).toBe('Button');
+  });
+
+  it('does nothing without any drop position', () => {
+    handleDragEnd({
+      ...dragEnd({ type: 'palette', component: 'Button' }),
+      activatorEvent: new KeyboardEvent('keydown'),
+    });
+    expect(useEditorStore.getState().root.children).toEqual([]);
   });
 
   it('does nothing when dropped outside the canvas', () => {

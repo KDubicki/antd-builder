@@ -2,8 +2,11 @@
 export type PropDefinition =
   | { type: 'string'; label: string; multiline?: boolean }
   | { type: 'number'; label: string; min?: number; max?: number }
-  | { type: 'boolean'; label: string }
-  | { type: 'enum'; label: string; options: readonly (string | number)[] };
+  /** `default` is antd's own default, when it isn't `false`; matching values are left unset. */
+  | { type: 'boolean'; label: string; default?: boolean }
+  | { type: 'enum'; label: string; options: readonly (string | number)[] }
+  /** Structured data (items, options, columns…), edited as JSON. */
+  | { type: 'json'; label: string };
 
 /**
  * Which children a component accepts on the canvas:
@@ -13,7 +16,15 @@ export type PropDefinition =
  */
 export type ChildrenRule = 'none' | 'any' | readonly string[];
 
-export type ComponentCategory = 'layout' | 'general' | 'typography' | 'data-entry' | 'feedback';
+export type ComponentCategory =
+  | 'layout'
+  | 'general'
+  | 'typography'
+  | 'navigation'
+  | 'data-entry'
+  | 'data-display'
+  | 'feedback'
+  | 'other';
 
 export interface ComponentMeta {
   /** antd component name, as written in JSX (e.g. "Form.Item"). */
@@ -26,4 +37,10 @@ export interface ComponentMeta {
   children: ChildrenRule;
   /** If set, the component may only be placed inside one of these components. */
   parents?: readonly string[];
+  /** Upper bound on child nodes, e.g. 1 for wrappers like Tooltip that need a single child. */
+  maxChildren?: number;
+  /** antd's types require `children`, so an empty node is exported as `<X>{null}</X>`. */
+  childrenRequired?: boolean;
+  /** Components a new node starts with, e.g. two panels in a Splitter. */
+  defaultChildren?: readonly string[];
 }
