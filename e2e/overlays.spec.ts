@@ -61,3 +61,22 @@ test('a tour previews its current step inline', async ({ page }) => {
   // Past the first step, the panel offers to go back.
   await expect(canvas.getByRole('button', { name: 'Previous' })).toBeVisible();
 });
+
+test('modals, drawers and popconfirms preview inline on the canvas', async ({ page }) => {
+  await openWith(page, [
+    createNode('Modal'),
+    createNode('Drawer'),
+    wrapping(
+      'Popconfirm',
+      { ...createNode('Button'), props: { children: 'Delete' } },
+      {
+        open: true,
+      },
+    ),
+  ]);
+  const canvas = page.getByTestId('canvas');
+  await expect(canvas.getByText('Modal title')).toBeVisible();
+  await expect(canvas.getByRole('button', { name: 'OK' })).toBeVisible();
+  await expect(canvas.getByText('Drawer title')).toBeVisible();
+  await expect(page.getByText('Delete this item?')).toBeVisible();
+});

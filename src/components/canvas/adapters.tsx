@@ -1,4 +1,4 @@
-import { Splitter, Tour } from 'antd';
+import { Drawer, Modal, Splitter, Tour } from 'antd';
 import {
   Children,
   type ComponentProps,
@@ -71,5 +71,53 @@ export function TourPreview({ steps = [], current = 0, type }: ComponentProps<ty
       current={index}
       total={steps.length}
     />
+  );
+}
+
+/**
+ * Modal on the canvas: a real one covers the editor, so the canvas shows its panel inline with
+ * the body content (antd's docs preview it the same way). `open` only matters in the export.
+ */
+export function ModalPreview({
+  title,
+  okText,
+  cancelText,
+  width,
+  closable,
+  children,
+}: ComponentProps<typeof Modal>) {
+  return (
+    <Modal._InternalPanelDoNotUseOrYouWillBeFired
+      title={title}
+      closable={closable}
+      // The panel passes its props on to the footer, which reads these; its type omits them.
+      {...({ okText, cancelText } as object)}
+      // Responsive (breakpoint) widths can't be previewed; fall back to antd's default.
+      style={{ width: typeof width === 'object' ? 520 : (width ?? 520), maxWidth: '100%' }}
+    >
+      {children}
+    </Modal._InternalPanelDoNotUseOrYouWillBeFired>
+  );
+}
+
+/** Drawer on the canvas: its panel inline, for the same reason as `ModalPreview`. */
+export function DrawerPreview({
+  title,
+  size,
+  closable,
+  loading,
+  placement,
+  children,
+}: ComponentProps<typeof Drawer>) {
+  return (
+    <Drawer._InternalPanelDoNotUseOrYouWillBeFired
+      title={title}
+      size={size}
+      closable={closable}
+      loading={loading}
+      placement={placement}
+    >
+      {children}
+    </Drawer._InternalPanelDoNotUseOrYouWillBeFired>
   );
 }

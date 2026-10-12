@@ -1,3 +1,4 @@
+import * as antd from 'antd';
 import { describe, expect, it } from 'vitest';
 import {
   canContain,
@@ -178,5 +179,28 @@ describe('codePropValues', () => {
         expect(meta.defaultProps, `${meta.name}.${key}`).not.toHaveProperty(key);
       }
     }
+  });
+});
+
+/** antd exports that aren't page components, with the reason. */
+const notInPalette: Readonly<Record<string, string>> = {
+  App: 'context provider for message/modal/notification hooks',
+  ConfigProvider: 'theme provider; the project theme and export already use it',
+  Grid: 'namespace for the useBreakpoint hook; Row and Col are the grid',
+  BackTop: 'deprecated; FloatButton.BackTop replaces it',
+  List: 'deprecated since 6.6; Listy replaces it',
+};
+
+describe('antd coverage', () => {
+  // A new antd component fails this until it is added to the registry or listed above.
+  it('offers every antd component export', () => {
+    const exported = Object.keys(antd).filter((name) => /^[A-Z]/.test(name));
+    const offered = new Set(components.map((meta) => meta.name.split('.')[0]));
+    const missing = exported.filter((name) => !offered.has(name) && !(name in notInPalette));
+    expect(missing).toEqual([]);
+  });
+
+  it('only excludes names antd still exports', () => {
+    for (const name of Object.keys(notInPalette)) expect(antd, name).toHaveProperty(name);
   });
 });

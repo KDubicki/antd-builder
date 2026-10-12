@@ -1,9 +1,11 @@
 import {
+  Affix,
   Alert,
   Anchor,
   AutoComplete,
   Avatar,
   Badge,
+  BorderBeam,
   Breadcrumb,
   Button,
   Calendar,
@@ -31,15 +33,20 @@ import {
   Mentions,
   Menu,
   Pagination,
+  Popconfirm,
   Popover,
+  Progress,
   QRCode,
   Radio,
   Rate,
+  Result,
   Row,
   Segmented,
   Select,
+  Skeleton,
   Slider,
   Space,
+  Spin,
   Statistic,
   Steps,
   Switch,
@@ -54,9 +61,17 @@ import {
   TreeSelect,
   Typography,
   Upload,
+  Watermark,
 } from 'antd';
 import type { ComponentType } from 'react';
-import { SplitterAdapter, SplitterPanelBody, TourPreview, withTriggerTarget } from './adapters';
+import {
+  DrawerPreview,
+  ModalPreview,
+  SplitterAdapter,
+  SplitterPanelBody,
+  TourPreview,
+  withTriggerTarget,
+} from './adapters';
 
 type AnyProps = Record<string, unknown>;
 
@@ -145,4 +160,14 @@ export const renderers: Readonly<Record<string, ComponentType<AnyProps>>> = {
   Tree,
   Alert,
   Tag,
+  Modal: ModalPreview,
+  Drawer: DrawerPreview,
+  Popconfirm: withTriggerTarget(Popconfirm),
+  Progress,
+  Result,
+  Skeleton,
+  Spin,
+  Affix,
+  BorderBeam,
+  Watermark,
 } as unknown as Record<string, ComponentType<AnyProps>>;
