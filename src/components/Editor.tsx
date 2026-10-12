@@ -14,6 +14,7 @@ import { useEffect, useId, useState } from 'react';
 import { Canvas } from '@/components/canvas/Canvas';
 import { nodeChainAt } from '@/components/canvas/nodeChain';
 import { Inspector } from '@/components/inspector/Inspector';
+import { Layers } from '@/components/layers/Layers';
 import { HistoryActions } from '@/components/history/HistoryActions';
 import { Palette } from '@/components/palette/Palette';
 import { ProjectActions } from '@/components/project/ProjectActions';
@@ -143,7 +144,13 @@ export function Editor() {
             <AppHeader />
             <Layout>
               <Sider width={260} theme="light" style={{ overflow: 'auto' }}>
-                <Palette />
+                <Tabs
+                  centered
+                  items={[
+                    { key: 'components', label: 'Components', children: <Palette /> },
+                    { key: 'layers', label: 'Layers', children: <Layers /> },
+                  ]}
+                />
               </Sider>
               <Content style={{ overflow: 'auto' }}>
                 <Canvas />
