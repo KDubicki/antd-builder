@@ -109,6 +109,11 @@ describe('collectImports', () => {
     expect(nodeToJsx({ ...createNode('Card', 'c'), props: {} })).toBe('<Card />');
   });
 
+  it('writes code props as source', () => {
+    const upload = { ...createNode('Upload', 'u'), children: [] };
+    expect(nodeToJsx(upload)).toBe('<Upload beforeUpload={() => false} />');
+  });
+
   it('writes structured props as JSON expressions', () => {
     const crumbs = { ...createNode('Breadcrumb', 'b'), props: { items: [{ title: 'Home' }] } };
     expect(nodeToJsx(crumbs)).toBe('<Breadcrumb items={[{"title":"Home"}]} />');

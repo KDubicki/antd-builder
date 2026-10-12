@@ -9,6 +9,15 @@ export type PropDefinition =
   | { type: 'json'; label: string };
 
 /**
+ * A prop that holds code rather than data, such as a render function. It isn't editable: the
+ * canvas renders `value` and the export writes `source` as the JSX expression.
+ */
+export interface CodeProp {
+  source: string;
+  value: unknown;
+}
+
+/**
  * Which children a component accepts on the canvas:
  * - `none`: a leaf (its content comes from props, e.g. `children` text)
  * - `any`: any component that doesn't require a specific parent
@@ -43,4 +52,6 @@ export interface ComponentMeta {
   childrenRequired?: boolean;
   /** Components a new node starts with, e.g. two panels in a Splitter. */
   defaultChildren?: readonly string[];
+  /** Props that hold code; see `CodeProp`. */
+  codeProps?: Readonly<Record<string, CodeProp>>;
 }

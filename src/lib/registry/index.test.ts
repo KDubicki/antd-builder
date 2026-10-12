@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   canContain,
+  codePropValues,
   components,
   createNode,
   createPlaceableNode,
@@ -159,5 +160,23 @@ describe('hasRoomFor', () => {
     expect(hasRoomFor(dropdown([]))).toBe(true);
     expect(hasRoomFor(dropdown(['a']))).toBe(false);
     expect(hasRoomFor(dropdown(['a']), 'a')).toBe(true);
+  });
+});
+
+describe('codePropValues', () => {
+  it('maps code props to their runtime values', () => {
+    const values = codePropValues(getComponentMeta('Transfer')!);
+    expect(Object.keys(values)).toEqual(['render']);
+    expect((values.render as (item: { title: string }) => string)({ title: 'A' })).toBe('A');
+    expect(codePropValues(getComponentMeta('Button')!)).toEqual({});
+  });
+
+  it('keeps code props out of the editable props', () => {
+    for (const meta of components) {
+      for (const key of Object.keys(meta.codeProps ?? {})) {
+        expect(meta.props, `${meta.name}.${key}`).not.toHaveProperty(key);
+        expect(meta.defaultProps, `${meta.name}.${key}`).not.toHaveProperty(key);
+      }
+    }
   });
 });

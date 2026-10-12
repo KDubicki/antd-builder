@@ -5,7 +5,7 @@ import { ConfigProvider, Typography, theme } from 'antd';
 import { type MouseEvent, useMemo } from 'react';
 import type { DragData } from '@/lib/editor/drop';
 import { ROOT_ID, useEditorStore } from '@/lib/editor/store';
-import { getComponentMeta } from '@/lib/registry';
+import { codePropValues, getComponentMeta } from '@/lib/registry';
 import type { BuilderNode } from '@/lib/schema';
 import { toThemeConfig } from '@/lib/theme';
 import { NODE_ID_ATTR } from './nodeChain';
@@ -33,6 +33,15 @@ function EmptyContainer() {
   );
 }
 
+/**
+ * Remount key from `default*` props (defaultValue, defaultChecked…): antd reads them only on
+ * mount, so without a remount inspector edits wouldn't show on the canvas.
+ */
+function defaultsKey(props: Readonly<Record<string, unknown>>): string {
+  const defaults = Object.entries(props).filter(([key]) => /^default[A-Z]/.test(key));
+  return defaults.length > 0 ? JSON.stringify(defaults) : 'static';
+}
+
 function CanvasNode({ node }: { node: BuilderNode }) {
   const select = useEditorStore((state) => state.select);
   const { setNodeRef, listeners } = useDraggable({
@@ -43,6 +52,10 @@ function CanvasNode({ node }: { node: BuilderNode }) {
 
   const Component = renderers[node.component];
   const meta = getComponentMeta(node.component);
+  const props = useMemo(
+    () => (meta ? { ...codePropValues(meta), ...node.props } : node.props),
+    [meta, node.props],
+  );
   if (!Component || !meta) {
     return <Typography.Text type="danger">Unknown component: {node.component}</Typography.Text>;
   }
@@ -63,9 +76,9 @@ function CanvasNode({ node }: { node: BuilderNode }) {
       {...listeners}
     >
       {meta.children === 'none' ? (
-        <Component {...node.props} />
+        <Component key={defaultsKey(node.props)} {...props} />
       ) : (
-        <Component {...node.props}>
+        <Component key={defaultsKey(node.props)} {...props}>
           {node.children.length === 0 ? (
             <EmptyContainer />
           ) : node.children.length === 1 ? (

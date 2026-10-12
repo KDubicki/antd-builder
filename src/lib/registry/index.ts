@@ -44,6 +44,13 @@ export function hasRoomFor(node: BuilderNode, movingId?: string): boolean {
   return node.children.filter((child) => child.id !== movingId).length < max;
 }
 
+/** Runtime values of a component's code props, to spread onto the rendered component. */
+export function codePropValues(meta: ComponentMeta): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(meta.codeProps ?? {}).map(([key, prop]) => [key, prop.value]),
+  );
+}
+
 /**
  * A node for `name` wrapped in the parents it requires (e.g. a Col inside a Row), so it can
  * stand on the page. Returns the outermost node; the requested node has id `id`.

@@ -1,5 +1,7 @@
 import { DndContext } from '@dnd-kit/core';
 import { render, screen } from '@testing-library/react';
+// antd and rc-component print each warning once per session; reset so every suite sees its own.
+import { resetWarned } from 'antd/es/_util/warning';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Inspector } from '@/components/inspector/Inspector';
 import { nodeToJsx } from '@/lib/codegen';
@@ -69,6 +71,7 @@ const renderCanvas = () =>
 let warnings: string[] = [];
 beforeEach(() => {
   warnings = [];
+  resetWarned();
   const record = (...args: unknown[]) => warnings.push(args.map(String).join(' '));
   vi.spyOn(console, 'error').mockImplementation(record);
   vi.spyOn(console, 'warn').mockImplementation(record);

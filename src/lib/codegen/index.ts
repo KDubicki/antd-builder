@@ -18,7 +18,8 @@ function textChild(text: string): string {
 
 /**
  * Renders a node tree to JSX. A string `children` prop on a leaf becomes the element's text;
- * other props become attributes (`undefined` props are omitted).
+ * other props become attributes (`undefined` props are omitted), followed by the component's
+ * code props written as source.
  */
 export function nodeToJsx(node: BuilderNode, indent = 0): string {
   const pad = INDENT.repeat(indent);
@@ -26,9 +27,13 @@ export function nodeToJsx(node: BuilderNode, indent = 0): string {
   const isTextLeaf = node.children.length === 0 && typeof text === 'string';
   // Child nodes win over a `children` prop; a text leaf renders its text as content.
   const props = node.children.length > 0 || isTextLeaf ? rest : node.props;
-  const attrs = Object.entries(props)
-    .filter(([, value]) => value !== undefined)
-    .map(([key, value]) => attribute(key, value));
+  const codeProps = Object.entries(getComponentMeta(node.component)?.codeProps ?? {});
+  const attrs = [
+    ...Object.entries(props)
+      .filter(([, value]) => value !== undefined)
+      .map(([key, value]) => attribute(key, value)),
+    ...codeProps.map(([key, prop]) => `${key}={${prop.source}}`),
+  ];
   const open = [node.component, ...attrs].join(' ');
 
   if (isTextLeaf) return `${pad}<${open}>${textChild(text)}</${node.component}>`;

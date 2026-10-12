@@ -1,5 +1,5 @@
 import { DndContext } from '@dnd-kit/core';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ROOT_ID, createRoot, useEditorStore } from '@/lib/editor/store';
 import { components, createNode, createPlaceableNode } from '@/lib/registry';
@@ -39,6 +39,21 @@ describe('Canvas', () => {
       ).not.toBeNull();
     }
     expect(screen.queryByText(/Unknown component/)).not.toBeInTheDocument();
+  });
+
+  it('renders code props such as render functions', () => {
+    setRoot([createNode('Transfer', 'tr')]);
+    renderCanvas();
+    expect(screen.getByText('Item A')).toBeInTheDocument();
+    expect(screen.getByText('Item C')).toBeInTheDocument();
+  });
+
+  it('remounts components when a default* prop changes', () => {
+    setRoot([{ ...createNode('Input', 'in'), props: { defaultValue: 'one' } }]);
+    renderCanvas();
+    expect(screen.getByDisplayValue('one')).toBeInTheDocument();
+    act(() => useEditorStore.getState().updateProps('in', { defaultValue: 'two' }));
+    expect(screen.getByDisplayValue('two')).toBeInTheDocument();
   });
 
   it('shows a drop hint in empty containers', () => {
