@@ -21,7 +21,8 @@ interface FieldProps {
   id: string;
   def: PropDefinition;
   value: unknown;
-  onChange: (value: unknown) => void;
+  /** `coalesce` marks keystroke-level edits, which undo as one step. */
+  onChange: (value: unknown, coalesce?: boolean) => void;
 }
 
 /** Editor control for one prop. Clearing a value (empty text, cleared select) removes the prop. */
@@ -29,7 +30,7 @@ function PropField({ id, def, value, onChange }: FieldProps) {
   switch (def.type) {
     case 'string': {
       const text = typeof value === 'string' ? value : '';
-      const change = (next: string) => onChange(next === '' ? undefined : next);
+      const change = (next: string) => onChange(next === '' ? undefined : next, true);
       return def.multiline ? (
         <Input.TextArea
           id={id}
@@ -49,7 +50,7 @@ function PropField({ id, def, value, onChange }: FieldProps) {
           min={def.min}
           max={def.max}
           style={{ width: '100%' }}
-          onChange={(next) => onChange(next ?? undefined)}
+          onChange={(next) => onChange(next ?? undefined, true)}
         />
       );
     case 'boolean':
@@ -133,7 +134,7 @@ export function Inspector() {
                 id={id}
                 def={def}
                 value={node.props[key]}
-                onChange={(value) => updateProps(node.id, { [key]: value })}
+                onChange={(value, coalesce) => updateProps(node.id, { [key]: value }, { coalesce })}
               />
             </Form.Item>
           );

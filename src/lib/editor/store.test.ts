@@ -1,12 +1,19 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createTheme } from '@/lib/theme';
 import { findNode } from '@/lib/tree';
-import { ROOT_ID, createRoot, useEditorStore } from './store';
+import { COALESCE_MS, HISTORY_LIMIT, ROOT_ID, createRoot, useEditorStore } from './store';
 
 const state = () => useEditorStore.getState();
 
 beforeEach(() =>
-  useEditorStore.setState({ root: createRoot(), theme: createTheme(), selectedId: null }),
+  useEditorStore.setState({
+    root: createRoot(),
+    theme: createTheme(),
+    selectedId: null,
+    past: [],
+    future: [],
+    lastEdit: null,
+  }),
 );
 
 describe('editor store', () => {
@@ -108,5 +115,111 @@ describe('editor store', () => {
     state().select('t');
     state().loadProject({ name: 'Loaded', root, theme });
     expect(state()).toMatchObject({ name: 'Loaded', root, theme, selectedId: null });
+  });
+});
+
+describe('undo/redo', () => {
+  afterEach(() => vi.useRealTimers());
+
+  it('undoes and redoes tree edits', () => {
+    const empty = state().root;
+    const id = state().addNode('Tag', { parentId: ROOT_ID, index: 0 });
+    const withTag = state().root;
+
+    state().undo();
+    expect(state().root).toBe(empty);
+    expect(state().selectedId).toBeNull(); // the selected node no longer exists
+    expect(state().future).toHaveLength(1);
+
+    state().redo();
+    expect(state().root).toBe(withTag);
+    expect(findNode(state().root, id)).toBeDefined();
+    expect(state().past).toHaveLength(1);
+    expect(state().future).toEqual([]);
+  });
+
+  it('keeps the selection when the node survives the undo', () => {
+    const id = state().addNode('Button', { parentId: ROOT_ID, index: 0 });
+    state().updateProps(id, { danger: true });
+    state().undo();
+    expect(state().selectedId).toBe(id);
+    expect(findNode(state().root, id)?.props.danger).toBeUndefined();
+  });
+
+  it('undoes theme edits', () => {
+    state().setThemeMode('dark');
+    state().setCompact(true);
+    state().resetTheme();
+    state().undo();
+    expect(state().theme).toMatchObject({ mode: 'dark', compact: true });
+    state().undo();
+    state().undo();
+    expect(state().theme).toEqual(createTheme());
+  });
+
+  it('does nothing with empty stacks', () => {
+    const before = state();
+    state().undo();
+    state().redo();
+    expect(state()).toBe(before);
+  });
+
+  it('a new edit clears the redo stack', () => {
+    state().addNode('Tag', { parentId: ROOT_ID, index: 0 });
+    state().undo();
+    state().addNode('Button', { parentId: ROOT_ID, index: 0 });
+    expect(state().future).toEqual([]);
+  });
+
+  it('does not record no-op edits', () => {
+    state().setThemeMode('light');
+    state().setCompact(false);
+    state().resetTheme();
+    state().setThemeToken('borderRadius', undefined);
+    state().moveNode('missing', { parentId: ROOT_ID, index: 0 });
+    state().updateProps('missing', { a: 1 });
+    state().duplicateNode(ROOT_ID);
+    expect(state().past).toEqual([]);
+  });
+
+  it('coalesces quick edits of the same field into one step', () => {
+    vi.useFakeTimers();
+    const id = state().addNode('Button', { parentId: ROOT_ID, index: 0 });
+    state().updateProps(id, { children: 'S' }, { coalesce: true });
+    state().updateProps(id, { children: 'Sa' }, { coalesce: true });
+    state().updateProps(id, { children: 'Save' }, { coalesce: true });
+    expect(state().past).toHaveLength(2);
+
+    vi.advanceTimersByTime(COALESCE_MS);
+    state().updateProps(id, { children: 'Saved' }, { coalesce: true });
+    expect(state().past).toHaveLength(3);
+
+    state().undo();
+    expect(findNode(state().root, id)?.props.children).toBe('Save');
+    state().undo();
+    expect(findNode(state().root, id)?.props.children).toBe('Button');
+  });
+
+  it('does not coalesce different fields or uncoalesced edits', () => {
+    const id = state().addNode('Button', { parentId: ROOT_ID, index: 0 });
+    state().updateProps(id, { children: 'A' }, { coalesce: true });
+    state().updateProps(id, { href: 'x' }, { coalesce: true });
+    state().updateProps(id, { danger: true });
+    state().updateProps(id, { danger: undefined });
+    state().setThemeToken('borderRadius', 2);
+    state().setThemeToken('borderRadius', 4);
+    expect(state().past).toHaveLength(6);
+  });
+
+  it('caps the history', () => {
+    for (let i = 0; i <= HISTORY_LIMIT; i++) state().setThemeMode(i % 2 ? 'light' : 'dark');
+    expect(state().past).toHaveLength(HISTORY_LIMIT);
+  });
+
+  it('loading a project clears the history', () => {
+    state().addNode('Tag', { parentId: ROOT_ID, index: 0 });
+    state().undo();
+    state().loadProject({ name: 'X', root: createRoot(), theme: createTheme() });
+    expect(state()).toMatchObject({ past: [], future: [], lastEdit: null });
   });
 });

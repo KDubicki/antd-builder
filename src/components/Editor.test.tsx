@@ -1,11 +1,13 @@
 import type { DragEndEvent } from '@dnd-kit/core';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ROOT_ID, createRoot, useEditorStore } from '@/lib/editor/store';
 import { createNode } from '@/lib/registry';
 import { Editor, handleDragEnd } from './Editor';
 
-beforeEach(() => useEditorStore.setState({ root: createRoot(), selectedId: null }));
+beforeEach(() =>
+  useEditorStore.setState({ root: createRoot(), selectedId: null, past: [], future: [] }),
+);
 
 describe('Editor', () => {
   it('renders the app shell with palette and canvas', () => {
@@ -69,6 +71,38 @@ describe('Editor', () => {
     expect(useEditorStore.getState().root.children).toHaveLength(0);
   });
 
+  it('undoes and redoes with keyboard shortcuts and header buttons', () => {
+    render(<Editor />);
+    const undo = screen.getByRole('button', { name: 'Undo' });
+    const redo = screen.getByRole('button', { name: 'Redo' });
+    expect(undo).toBeDisabled();
+    expect(redo).toBeDisabled();
+
+    act(() => {
+      useEditorStore.getState().addNode('Tag', { parentId: ROOT_ID, index: 0 });
+    });
+    const children = () => useEditorStore.getState().root.children;
+    expect(undo).toBeEnabled();
+
+    const event = new KeyboardEvent('keydown', { key: 'z', metaKey: true, cancelable: true });
+    act(() => {
+      window.dispatchEvent(event);
+    });
+    expect(event.defaultPrevented).toBe(true);
+    expect(children()).toHaveLength(0);
+    expect(redo).toBeEnabled();
+
+    fireEvent.keyDown(window, { key: 'Z', ctrlKey: true, shiftKey: true });
+    expect(children()).toHaveLength(1);
+    fireEvent.click(undo);
+    expect(children()).toHaveLength(0);
+    fireEvent.keyDown(window, { key: 'y', ctrlKey: true });
+    expect(children()).toHaveLength(1);
+    fireEvent.click(undo);
+    fireEvent.click(redo);
+    expect(children()).toHaveLength(1);
+  });
+
   it('ignores shortcuts while typing in a field', () => {
     useEditorStore.setState({
       root: { ...createRoot(), children: [createNode('Input', 'in')] },
@@ -77,6 +111,10 @@ describe('Editor', () => {
     render(<Editor />);
     fireEvent.keyDown(screen.getByPlaceholderText('Enter text'), { key: 'Backspace' });
     expect(useEditorStore.getState().root.children).toHaveLength(1);
+
+    act(() => useEditorStore.getState().updateProps('in', { placeholder: 'x' }));
+    fireEvent.keyDown(screen.getByPlaceholderText('x'), { key: 'z', ctrlKey: true });
+    expect(useEditorStore.getState().past).toHaveLength(1);
   });
 });
 

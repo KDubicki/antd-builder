@@ -9,11 +9,12 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import { App as AntApp, ConfigProvider, Layout, Tabs, Tag, Typography, theme } from 'antd';
+import { App as AntApp, ConfigProvider, Flex, Layout, Tabs, Tag, Typography, theme } from 'antd';
 import { useEffect, useId, useState } from 'react';
 import { Canvas } from '@/components/canvas/Canvas';
 import { nodeChainAt } from '@/components/canvas/nodeChain';
 import { Inspector } from '@/components/inspector/Inspector';
+import { HistoryActions } from '@/components/history/HistoryActions';
 import { Palette } from '@/components/palette/Palette';
 import { ProjectActions } from '@/components/project/ProjectActions';
 import { useAutosave } from '@/components/project/autosave';
@@ -36,9 +37,12 @@ function AppHeader() {
         paddingInline: token.paddingLG,
       }}
     >
-      <Typography.Text style={{ color: token.colorTextLightSolid }} strong>
-        antd-builder
-      </Typography.Text>
+      <Flex align="center" gap={token.margin}>
+        <Typography.Text style={{ color: token.colorTextLightSolid }} strong>
+          antd-builder
+        </Typography.Text>
+        <HistoryActions />
+      </Flex>
       <ProjectActions />
     </Header>
   );
@@ -78,17 +82,27 @@ function isSidePanelTarget(target: EventTarget | null): boolean {
 }
 
 /**
- * Delete/Backspace removes the selected node, Ctrl/Cmd+D duplicates it,
- * Escape clears the selection.
+ * Delete/Backspace removes the selected node, Ctrl/Cmd+D duplicates it, Escape clears the
+ * selection, Ctrl/Cmd+Z undoes and Ctrl/Cmd+Shift+Z or Ctrl+Y redoes. Text fields keep their
+ * own native shortcuts.
  */
 function useEditorShortcuts() {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (isEditableTarget(event.target)) return;
-      const { selectedId, removeNode, duplicateNode, select } = useEditorStore.getState();
+      const { selectedId, removeNode, duplicateNode, select, undo, redo } =
+        useEditorStore.getState();
       if (event.key === 'Escape') select(null);
       const isMod = event.metaKey || event.ctrlKey;
-      if (isMod && event.key.toLowerCase() === 'd' && selectedId) {
+      const key = event.key.toLowerCase();
+      if (isMod && (key === 'y' || (key === 'z' && event.shiftKey))) {
+        event.preventDefault();
+        redo();
+      } else if (isMod && key === 'z') {
+        event.preventDefault();
+        undo();
+      }
+      if (isMod && key === 'd' && selectedId) {
         event.preventDefault(); // browsers bookmark the page on Ctrl/Cmd+D
         duplicateNode(selectedId);
       }

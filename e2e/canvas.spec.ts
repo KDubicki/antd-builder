@@ -128,3 +128,34 @@ test('previews theme changes live on the canvas only', async ({ page }) => {
   await themeEditor.getByRole('button', { name: 'Reset theme' }).click();
   await expect(canvas).toHaveCSS('background-color', 'rgb(255, 255, 255)');
 });
+
+test('undoes and redoes edits', async ({ page }) => {
+  await page.goto('/');
+  const canvas = page.getByTestId('canvas');
+  const undo = page.getByRole('button', { name: 'Undo' });
+  const redo = page.getByRole('button', { name: 'Redo' });
+  await expect(undo).toBeDisabled();
+
+  await dragTo(
+    page,
+    page.getByLabel('Component palette').getByText('Button', { exact: true }),
+    canvas,
+  );
+  // Typing a label is a single undo step.
+  await page.getByLabel('Inspector').getByLabel('Label').pressSequentially('Save');
+  await expect(canvas.getByRole('button', { name: 'Save' })).toBeVisible();
+
+  await undo.click();
+  await expect(canvas.getByRole('button', { name: 'Button' })).toBeVisible();
+  await undo.click();
+  await expect(canvas.getByRole('button')).toHaveCount(0);
+  await expect(undo).toBeDisabled();
+
+  await redo.click();
+  await expect(canvas.getByRole('button', { name: 'Button' })).toBeVisible();
+  await canvas.click({ position: { x: 5, y: 5 } }); // move focus out of the header
+  await page.keyboard.press('ControlOrMeta+Shift+z');
+  await expect(canvas.getByRole('button', { name: 'Save' })).toBeVisible();
+  await page.keyboard.press('ControlOrMeta+z');
+  await expect(canvas.getByRole('button', { name: 'Button' })).toBeVisible();
+});

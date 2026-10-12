@@ -11,7 +11,15 @@ const select = (node: BuilderNode) =>
 
 const propsOf = (id: string) => findNode(useEditorStore.getState().root, id)?.props;
 
-beforeEach(() => useEditorStore.setState({ root: createRoot(), selectedId: null }));
+beforeEach(() =>
+  useEditorStore.setState({
+    root: createRoot(),
+    selectedId: null,
+    past: [],
+    future: [],
+    lastEdit: null,
+  }),
+);
 
 describe('Inspector', () => {
   it('asks for a selection when nothing is selected', () => {
@@ -36,6 +44,19 @@ describe('Inspector', () => {
     expect(propsOf('btn')?.children).toBe('Save');
     fireEvent.change(screen.getByLabelText('Label'), { target: { value: '' } });
     expect(propsOf('btn')).not.toHaveProperty('children');
+  });
+
+  it('undoes a burst of typing as one step', () => {
+    select(createNode('Button', 'btn'));
+    render(<Inspector />);
+    const label = screen.getByLabelText('Label');
+    fireEvent.change(label, { target: { value: 'S' } });
+    fireEvent.change(label, { target: { value: 'Save' } });
+    fireEvent.click(screen.getByLabelText('Danger'));
+    expect(useEditorStore.getState().past).toHaveLength(2);
+    useEditorStore.getState().undo();
+    useEditorStore.getState().undo();
+    expect(propsOf('btn')?.children).toBe('Button');
   });
 
   it('edits multiline text', () => {
