@@ -28,6 +28,28 @@ test('builds a nested page by dragging from the palette', async ({ page }) => {
   await expect(canvas.locator('.ant-card')).toHaveCount(0);
 });
 
+test('duplicates the selected component with its children', async ({ page }) => {
+  await page.goto('/');
+  const palette = page.getByLabel('Component palette');
+  const canvas = page.getByTestId('canvas');
+
+  await dragTo(page, palette.getByText('Card', { exact: true }), canvas);
+  await dragTo(
+    page,
+    palette.getByText('Button', { exact: true }),
+    canvas.locator('.ant-card').getByText('Drop components here'),
+  );
+
+  await canvas.getByText('Card title').click();
+  await page.getByLabel('Inspector').getByRole('button', { name: 'Duplicate component' }).click();
+  await expect(canvas.locator('.ant-card')).toHaveCount(2);
+  await expect(canvas.locator('.ant-card').nth(1).getByRole('button')).toHaveText('Button');
+
+  // The copy is selected, so the shortcut copies it again.
+  await page.keyboard.press('ControlOrMeta+d');
+  await expect(canvas.locator('.ant-card')).toHaveCount(3);
+});
+
 test('enforces nesting rules on drop', async ({ page }) => {
   await page.goto('/');
   const palette = page.getByLabel('Component palette');

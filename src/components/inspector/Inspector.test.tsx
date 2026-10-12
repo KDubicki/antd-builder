@@ -83,11 +83,22 @@ describe('Inspector', () => {
     expect(screen.getByText(/Select a component on the canvas/)).toBeInTheDocument();
   });
 
+  it('duplicates the selected component and selects the copy', () => {
+    select({ ...createNode('Tag', 'tag'), props: { children: 'New' } });
+    render(<Inspector />);
+    fireEvent.click(screen.getByRole('button', { name: 'Duplicate component' }));
+    const [original, copy] = useEditorStore.getState().root.children;
+    expect(original?.id).toBe('tag');
+    expect(copy).toMatchObject({ component: 'Tag', props: { children: 'New' } });
+    expect(useEditorStore.getState().selectedId).toBe(copy?.id);
+  });
+
   it('edits the page root but does not offer to delete it', () => {
     useEditorStore.setState({ selectedId: ROOT_ID });
     render(<Inspector />);
     expect(screen.getByRole('heading', { name: 'Page' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Delete component' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Duplicate component' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByLabelText('Wrap'));
     expect(propsOf(ROOT_ID)?.wrap).toBe(true);
   });

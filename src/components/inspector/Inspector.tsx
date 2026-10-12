@@ -1,6 +1,6 @@
 'use client';
 
-import { DeleteOutlined } from '@ant-design/icons';
+import { CopyOutlined, DeleteOutlined } from '@ant-design/icons';
 import {
   Button,
   Empty,
@@ -77,6 +77,7 @@ export function Inspector() {
   );
   const updateProps = useEditorStore((state) => state.updateProps);
   const removeNode = useEditorStore((state) => state.removeNode);
+  const duplicateNode = useEditorStore((state) => state.duplicateNode);
   const meta = node && getComponentMeta(node.component);
 
   if (!node || !meta) {
@@ -101,12 +102,20 @@ export function Inspector() {
           <Typography.Text type="secondary">{meta.description}</Typography.Text>
         </div>
         {!isRoot && (
-          <Button
-            danger
-            icon={<DeleteOutlined />}
-            aria-label="Delete component"
-            onClick={() => removeNode(node.id)}
-          />
+          <Flex gap="small">
+            <Button
+              icon={<CopyOutlined />}
+              aria-label="Duplicate component"
+              title="Duplicate (Ctrl/⌘+D)"
+              onClick={() => duplicateNode(node.id)}
+            />
+            <Button
+              danger
+              icon={<DeleteOutlined />}
+              aria-label="Delete component"
+              onClick={() => removeNode(node.id)}
+            />
+          </Flex>
         )}
       </Flex>
       {/* Keyed by node so uncontrolled internals (e.g. number drafts) reset on selection change. */}

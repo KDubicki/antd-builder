@@ -4,6 +4,7 @@ import type { BuilderNode, ProjectTheme } from '@/lib/schema';
 import { createTheme } from '@/lib/theme';
 import {
   type DropTarget,
+  duplicateNode,
   insertNode,
   isWithin,
   moveNode,
@@ -33,6 +34,8 @@ export interface EditorState {
   addNode: (component: string, target: DropTarget) => string;
   moveNode: (id: string, target: DropTarget) => void;
   removeNode: (id: string) => void;
+  /** Copies a node (and its subtree) right after itself and selects the copy. */
+  duplicateNode: (id: string) => void;
   /** Merges `patch` into a node's props; `undefined` values remove the prop. */
   updateProps: (id: string, patch: Readonly<Record<string, unknown>>) => void;
   setThemeMode: (mode: ProjectTheme['mode']) => void;
@@ -70,6 +73,11 @@ export const useEditorStore = create<EditorState>()((set) => ({
         state.selectedId && isWithin(state.root, id, state.selectedId) ? null : state.selectedId,
     }));
   },
+  duplicateNode: (id) =>
+    set((state) => {
+      const result = duplicateNode(state.root, id);
+      return result ? { root: result.root, selectedId: result.id } : {};
+    }),
   updateProps: (id, patch) => set((state) => ({ root: updateNodeProps(state.root, id, patch) })),
   setThemeMode: (mode) => set((state) => ({ theme: { ...state.theme, mode } })),
   setCompact: (compact) => set((state) => ({ theme: { ...state.theme, compact } })),

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { BuilderNode } from '@/lib/schema';
 import {
+  cloneNode,
+  duplicateNode,
   findNode,
   findParent,
   insertNode,
@@ -85,6 +87,51 @@ describe('updateNodeProps', () => {
 
   it('ignores unknown ids', () => {
     expect(updateNodeProps(tree, 'nope', { a: 1 })).toBe(tree);
+  });
+});
+
+describe('cloneNode', () => {
+  it('deep-copies a subtree with fresh ids', () => {
+    let n = 0;
+    const source: BuilderNode = {
+      ...node('card', 'Card', [node('btn', 'Button')]),
+      props: { title: 'Hi', style: { padding: 8 } },
+    };
+    const copy = cloneNode(source, () => `new-${++n}`);
+    expect(copy).toEqual({
+      id: 'new-1',
+      component: 'Card',
+      props: { title: 'Hi', style: { padding: 8 } },
+      children: [{ id: 'new-2', component: 'Button', props: {}, children: [] }],
+    });
+    expect(copy.props.style).not.toBe(source.props.style);
+  });
+
+  it('uses random UUIDs by default', () => {
+    const copy = cloneNode(node('tag', 'Tag'));
+    expect(copy.id).not.toBe('tag');
+    expect(copy.id).toMatch(/^[0-9a-f-]{36}$/);
+  });
+});
+
+describe('duplicateNode', () => {
+  it('inserts the copy right after the original', () => {
+    let n = 0;
+    const result = duplicateNode(tree, 'card', () => `copy-${++n}`);
+    expect(result?.id).toBe('copy-1');
+    expect(ids(result!.root)).toEqual(['card', 'copy-1', 'row', 'tag']);
+    expect(ids(findNode(result!.root, 'copy-1')!)).toEqual(['copy-2']);
+    expect(tree.children).toHaveLength(3);
+  });
+
+  it('duplicates nested nodes inside their parent', () => {
+    const result = duplicateNode(tree, 'col', () => 'col-2');
+    expect(ids(findNode(result!.root, 'row')!)).toEqual(['col', 'col-2']);
+  });
+
+  it('returns null for the root or a missing node', () => {
+    expect(duplicateNode(tree, 'root')).toBeNull();
+    expect(duplicateNode(tree, 'nope')).toBeNull();
   });
 });
 

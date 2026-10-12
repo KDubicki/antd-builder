@@ -43,6 +43,32 @@ describe('Editor', () => {
     expect(useEditorStore.getState().root.children).toHaveLength(0);
   });
 
+  it('duplicates the selected node with Ctrl/Cmd+D', () => {
+    useEditorStore.setState({
+      root: { ...createRoot(), children: [createNode('Tag', 't1')] },
+      selectedId: 't1',
+    });
+    render(<Editor />);
+
+    const event = new KeyboardEvent('keydown', { key: 'd', ctrlKey: true, cancelable: true });
+    window.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+    fireEvent.keyDown(window, { key: 'D', metaKey: true });
+
+    const ids = useEditorStore.getState().root.children.map((c) => c.id);
+    expect(ids).toHaveLength(3);
+    expect(ids[0]).toBe('t1');
+    expect(useEditorStore.getState().selectedId).toBe(ids[2]);
+  });
+
+  it('leaves Ctrl/Cmd+D alone without a selection', () => {
+    render(<Editor />);
+    const event = new KeyboardEvent('keydown', { key: 'd', ctrlKey: true, cancelable: true });
+    window.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(false);
+    expect(useEditorStore.getState().root.children).toHaveLength(0);
+  });
+
   it('ignores shortcuts while typing in a field', () => {
     useEditorStore.setState({
       root: { ...createRoot(), children: [createNode('Input', 'in')] },

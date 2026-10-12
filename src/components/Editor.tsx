@@ -77,13 +77,21 @@ function isSidePanelTarget(target: EventTarget | null): boolean {
   return target instanceof HTMLElement && !!target.closest(`[${SIDE_PANEL_ATTR}]`);
 }
 
-/** Delete/Backspace removes the selected node, Escape clears the selection. */
+/**
+ * Delete/Backspace removes the selected node, Ctrl/Cmd+D duplicates it,
+ * Escape clears the selection.
+ */
 function useEditorShortcuts() {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (isEditableTarget(event.target)) return;
-      const { selectedId, removeNode, select } = useEditorStore.getState();
+      const { selectedId, removeNode, duplicateNode, select } = useEditorStore.getState();
       if (event.key === 'Escape') select(null);
+      const isMod = event.metaKey || event.ctrlKey;
+      if (isMod && event.key.toLowerCase() === 'd' && selectedId) {
+        event.preventDefault(); // browsers bookmark the page on Ctrl/Cmd+D
+        duplicateNode(selectedId);
+      }
       const isDelete = event.key === 'Delete' || event.key === 'Backspace';
       if (isDelete && selectedId && !isSidePanelTarget(event.target)) {
         event.preventDefault();

@@ -79,6 +79,36 @@ export function updateNodeProps(
   });
 }
 
+/** Deep copy of a subtree in which every node gets a fresh id from `newId`. */
+export function cloneNode(
+  node: BuilderNode,
+  newId: () => string = () => crypto.randomUUID(),
+): BuilderNode {
+  return {
+    id: newId(),
+    component: node.component,
+    props: structuredClone(node.props),
+    children: node.children.map((child) => cloneNode(child, newId)),
+  };
+}
+
+/**
+ * Inserts a copy of node `id` (with fresh ids) right after it. Returns the new tree and the
+ * copy's id, or `null` when the node doesn't exist or is the root (which has no parent).
+ */
+export function duplicateNode(
+  root: BuilderNode,
+  id: string,
+  newId?: () => string,
+): { root: BuilderNode; id: string } | null {
+  const node = findNode(root, id);
+  const parent = findParent(root, id);
+  if (!node || !parent) return null;
+  const copy = cloneNode(node, newId);
+  const index = parent.children.indexOf(node) + 1;
+  return { root: insertNode(root, copy, { parentId: parent.id, index }), id: copy.id };
+}
+
 /** Moves a node to `target`. `target.index` refers to the parent's children before the move. */
 export function moveNode(root: BuilderNode, id: string, target: DropTarget): BuilderNode {
   const node = findNode(root, id);

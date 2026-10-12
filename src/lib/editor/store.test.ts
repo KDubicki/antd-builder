@@ -48,6 +48,26 @@ describe('editor store', () => {
     expect(state().root).toBe(before);
   });
 
+  it('duplicates a node after itself and selects the copy', () => {
+    const card = state().addNode('Card', { parentId: ROOT_ID, index: 0 });
+    state().addNode('Tag', { parentId: card, index: 0 });
+    state().duplicateNode(card);
+    const [original, copy] = state().root.children;
+    expect(original?.id).toBe(card);
+    expect(copy?.id).not.toBe(card);
+    expect(copy?.component).toBe('Card');
+    expect(copy?.children[0]?.component).toBe('Tag');
+    expect(state().selectedId).toBe(copy?.id);
+  });
+
+  it('does not duplicate the root', () => {
+    const before = state().root;
+    state().select(ROOT_ID);
+    state().duplicateNode(ROOT_ID);
+    expect(state().root).toBe(before);
+    expect(state().selectedId).toBe(ROOT_ID);
+  });
+
   it('updates props', () => {
     const id = state().addNode('Button', { parentId: ROOT_ID, index: 0 });
     state().updateProps(id, { children: 'Save', type: undefined });
