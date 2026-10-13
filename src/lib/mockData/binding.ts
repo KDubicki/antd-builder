@@ -127,3 +127,47 @@ export function resolveProps(
   }
   return resolved;
 }
+
+/** How many items of a list `listPaths` suggests paths into. */
+const LIST_ITEMS_SUGGESTED = 3;
+
+/**
+ * Dot paths into `data` to suggest for binding, depth-first: every key of objects, plus
+ * `length` and the first few items of lists. The whole response is the empty path, not listed.
+ */
+export function listPaths(data: unknown, maxDepth = 4, limit = 200): string[] {
+  const paths: string[] = [];
+  const visit = (value: unknown, prefix: string, depth: number) => {
+    if (depth >= maxDepth || typeof value !== 'object' || value === null) return;
+    const entries: [string, unknown][] = Array.isArray(value)
+      ? [
+          ...value
+            .slice(0, LIST_ITEMS_SUGGESTED)
+            .map((item, i): [string, unknown] => [`${i}`, item]),
+          ['length', value.length],
+        ]
+      : Object.entries(value);
+    for (const [key, child] of entries) {
+      if (paths.length >= limit) return;
+      const path = prefix ? `${prefix}.${key}` : key;
+      paths.push(path);
+      visit(child, path, depth + 1);
+    }
+  };
+  visit(data, '', 0);
+  return paths;
+}
+
+/**
+ * Paths of `source` whose value fits a prop (`''` first when the whole response fits), for
+ * picking a binding's path.
+ */
+export function compatiblePaths(
+  source: DataSource,
+  def: PropDefinition | undefined,
+  sources: readonly DataSource[],
+): string[] {
+  return ['', ...listPaths(source.data)].filter(
+    (path) => resolveBinding({ $data: source.id, path }, def, sources).ok,
+  );
+}

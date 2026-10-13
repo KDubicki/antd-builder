@@ -20,6 +20,7 @@ import {
   theme,
 } from 'antd';
 import { JsonEditor } from '@/components/JsonEditor';
+import { BindableField } from './DataBinding';
 import { ROOT_ID, useEditorStore } from '@/lib/editor/store';
 import { type PropDefinition, getComponentMeta } from '@/lib/registry';
 import { findNode, siblingPosition } from '@/lib/tree';
@@ -160,6 +161,8 @@ export function Inspector() {
       <Form key={node.id} layout="vertical" component="div">
         {Object.entries(meta.props).map(([key, def]) => {
           const id = `prop-${key}`;
+          const onChange = (value: unknown, coalesce?: boolean) =>
+            updateProps(node.id, { [key]: value }, { coalesce });
           return (
             <Form.Item
               key={key}
@@ -167,12 +170,9 @@ export function Inspector() {
               htmlFor={id}
               style={{ marginBottom: token.marginSM }}
             >
-              <PropField
-                id={id}
-                def={def}
-                value={node.props[key]}
-                onChange={(value, coalesce) => updateProps(node.id, { [key]: value }, { coalesce })}
-              />
+              <BindableField id={id} def={def} value={node.props[key]} onChange={onChange}>
+                <PropField id={id} def={def} value={node.props[key]} onChange={onChange} />
+              </BindableField>
             </Form.Item>
           );
         })}

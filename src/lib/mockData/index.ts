@@ -37,11 +37,14 @@ export function uniqueSourceName(base: string, names: readonly string[]): string
   return `${base}${n}`;
 }
 
-/** Sample response for a new data source: a small list, the most common API shape. */
+/**
+ * Sample response for a new data source: a small list, the most common API shape. `key` comes
+ * last so text props bind to a name first; antd tables use it as the row key.
+ */
 export const SAMPLE_DATA = [
-  { key: '1', name: 'Alice Johnson', email: 'alice@example.com', role: 'Admin' },
-  { key: '2', name: 'Bob Smith', email: 'bob@example.com', role: 'Editor' },
-  { key: '3', name: 'Carol White', email: 'carol@example.com', role: 'Viewer' },
+  { name: 'Alice Johnson', email: 'alice@example.com', role: 'Admin', key: '1' },
+  { name: 'Bob Smith', email: 'bob@example.com', role: 'Editor', key: '2' },
+  { name: 'Carol White', email: 'carol@example.com', role: 'Viewer', key: '3' },
 ];
 
 export function createDataSource(

@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import type { PropDefinition } from '@/lib/registry';
 import type { DataSource } from '@/lib/schema';
-import { isBinding, kindOf, pathSegments, readPath, resolveBinding, resolveProps } from '.';
+import {
+  compatiblePaths,
+  isBinding,
+  kindOf,
+  listPaths,
+  pathSegments,
+  readPath,
+  resolveBinding,
+  resolveProps,
+} from '.';
 
 const sources: DataSource[] = [
   {
@@ -105,5 +114,32 @@ describe('resolveProps', () => {
       size: 'small',
     };
     expect(resolveProps(props, defs, sources)).toEqual({ title: '42', size: 'small' });
+  });
+});
+
+describe('path suggestions', () => {
+  it('lists object keys, list lengths and the first few items, depth-first', () => {
+    expect(listPaths({ a: { b: 1 }, list: [10, 20, 30, 40] })).toEqual([
+      'a',
+      'a.b',
+      'list',
+      'list.0',
+      'list.1',
+      'list.2',
+      'list.length',
+    ]);
+    expect(listPaths('text')).toEqual([]);
+  });
+
+  it('respects the depth and count limits', () => {
+    expect(listPaths({ a: { b: { c: 1 } } }, 2)).toEqual(['a', 'a.b']);
+    expect(listPaths({ a: 1, b: 2, c: 3 }, 4, 2)).toEqual(['a', 'b']);
+  });
+
+  it('keeps only paths whose value fits the prop, whole response first', () => {
+    const users = sources[0]!;
+    expect(compatiblePaths(users, num, sources)).toEqual(['0.age', '0.tags.length', 'length']);
+    expect(compatiblePaths(users, json, sources)[0]).toBe('');
+    expect(compatiblePaths(users, kind, sources)).toEqual(['0.role']);
   });
 });
