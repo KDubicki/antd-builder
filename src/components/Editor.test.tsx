@@ -23,6 +23,13 @@ describe('Editor', () => {
     expect(screen.getByTestId('canvas')).toBeInTheDocument();
   });
 
+  it('puts the header controls on a light background, like their default styling', () => {
+    render(<Editor />);
+    const header = screen.getByText('antd-builder').closest('header')!;
+    expect(header).toHaveStyle({ background: '#ffffff' });
+    expect(header).toContainElement(screen.getByLabelText('Project name'));
+  });
+
   it('keeps drag auto-scroll away from the palette', () => {
     render(<Editor />);
     const scroller = screen.getByLabelText('Component palette').closest('[data-palette-scroller]');

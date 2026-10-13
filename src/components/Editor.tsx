@@ -41,12 +41,13 @@ function AppHeader() {
         justifyContent: 'space-between',
         gap: token.margin,
         paddingInline: token.paddingLG,
+        // Light like the side panels, so the default (light) header controls stay readable.
+        background: token.colorBgContainer,
+        borderBottom: `1px solid ${token.colorBorderSecondary}`,
       }}
     >
       <Flex align="center" gap={token.margin}>
-        <Typography.Text style={{ color: token.colorTextLightSolid }} strong>
-          antd-builder
-        </Typography.Text>
+        <Typography.Text strong>antd-builder</Typography.Text>
         <HistoryActions />
         <ShortcutHelp />
       </Flex>
