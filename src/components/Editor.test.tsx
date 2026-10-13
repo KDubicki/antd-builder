@@ -74,6 +74,32 @@ describe('Editor', () => {
     expect(useEditorStore.getState().selectedId).toBe(ids[2]);
   });
 
+  it('moves the selected node with Alt+Arrow keys', () => {
+    useEditorStore.setState({
+      root: { ...createRoot(), children: [createNode('Tag', 't1'), createNode('Tag', 't2')] },
+      selectedId: 't1',
+    });
+    render(<Editor />);
+    const order = () => useEditorStore.getState().root.children.map((c) => c.id);
+
+    const event = new KeyboardEvent('keydown', {
+      key: 'ArrowDown',
+      altKey: true,
+      cancelable: true,
+    });
+    window.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+    expect(order()).toEqual(['t2', 't1']);
+
+    fireEvent.keyDown(window, { key: 'ArrowUp', altKey: true });
+    expect(order()).toEqual(['t1', 't2']);
+
+    act(() => useEditorStore.setState({ selectedId: null }));
+    const idle = new KeyboardEvent('keydown', { key: 'ArrowUp', altKey: true, cancelable: true });
+    window.dispatchEvent(idle);
+    expect(idle.defaultPrevented).toBe(false);
+  });
+
   it('leaves Ctrl/Cmd+D alone without a selection', () => {
     render(<Editor />);
     const event = new KeyboardEvent('keydown', { key: 'd', ctrlKey: true, cancelable: true });

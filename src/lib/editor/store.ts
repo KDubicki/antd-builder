@@ -10,6 +10,7 @@ import {
   insertNode,
   isWithin,
   moveNode,
+  nudgeNode,
   removeNode,
   resolveDrop,
   updateNodeProps,
@@ -55,6 +56,8 @@ export interface EditorState {
   addNode: (component: string, target: DropTarget) => string;
   moveNode: (id: string, target: DropTarget) => void;
   removeNode: (id: string) => void;
+  /** Moves a node one place up (`-1`) or down (`1`) among its siblings. */
+  nudgeNode: (id: string, delta: -1 | 1) => void;
   /** Copies a node (and its subtree) right after itself and selects the copy. */
   duplicateNode: (id: string) => void;
   /** Copied subtree, a snapshot taken at copy time. Not part of the project or the history. */
@@ -186,6 +189,8 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     if (id === ROOT_ID) return;
     set((state) => commit(state, { root: moveNode(state.root, id, target) }));
   },
+  nudgeNode: (id, delta) =>
+    set((state) => commit(state, { root: nudgeNode(state.root, id, delta) })),
   removeNode: (id) => {
     if (id === ROOT_ID) return;
     set((state) =>

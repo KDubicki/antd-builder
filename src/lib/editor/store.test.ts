@@ -34,6 +34,21 @@ describe('editor store', () => {
     expect(findNode(state().root, card)?.children.map((c) => c.id)).toEqual([tag]);
   });
 
+  it('nudges nodes among their siblings as undoable steps', () => {
+    const a = state().addNode('Tag', { parentId: ROOT_ID, index: 0 });
+    const b = state().addNode('Tag', { parentId: ROOT_ID, index: 1 });
+    const order = () => state().root.children.map((c) => c.id);
+    const steps = state().past.length;
+
+    state().nudgeNode(b, -1);
+    expect(order()).toEqual([b, a]);
+    state().nudgeNode(b, -1); // already first: no-op, not recorded
+    expect(state().past).toHaveLength(steps + 1);
+
+    state().undo();
+    expect(order()).toEqual([a, b]);
+  });
+
   it('removes a node and clears a selection inside it', () => {
     const card = state().addNode('Card', { parentId: ROOT_ID, index: 0 });
     state().addNode('Tag', { parentId: card, index: 0 });

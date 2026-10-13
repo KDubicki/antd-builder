@@ -1,6 +1,11 @@
 'use client';
 
-import { CopyOutlined, DeleteOutlined } from '@ant-design/icons';
+import {
+  ArrowDownOutlined,
+  ArrowUpOutlined,
+  CopyOutlined,
+  DeleteOutlined,
+} from '@ant-design/icons';
 import {
   Button,
   Empty,
@@ -9,6 +14,7 @@ import {
   Input,
   InputNumber,
   Select,
+  Space,
   Switch,
   Typography,
   theme,
@@ -16,7 +22,7 @@ import {
 import { useState } from 'react';
 import { ROOT_ID, useEditorStore } from '@/lib/editor/store';
 import { type PropDefinition, getComponentMeta } from '@/lib/registry';
-import { findNode } from '@/lib/tree';
+import { findNode, siblingPosition } from '@/lib/tree';
 
 interface FieldProps {
   id: string;
@@ -127,6 +133,14 @@ export function Inspector() {
   const updateProps = useEditorStore((state) => state.updateProps);
   const removeNode = useEditorStore((state) => state.removeNode);
   const duplicateNode = useEditorStore((state) => state.duplicateNode);
+  const nudgeNode = useEditorStore((state) => state.nudgeNode);
+  // Primitives, so the selectors stay stable between renders.
+  const index = useEditorStore((state) =>
+    state.selectedId ? (siblingPosition(state.root, state.selectedId)?.index ?? -1) : -1,
+  );
+  const siblings = useEditorStore((state) =>
+    state.selectedId ? (siblingPosition(state.root, state.selectedId)?.count ?? 0) : 0,
+  );
   const meta = node && getComponentMeta(node.component);
 
   if (!node || !meta) {
@@ -152,6 +166,22 @@ export function Inspector() {
         </div>
         {!isRoot && (
           <Flex gap="small">
+            <Space.Compact>
+              <Button
+                icon={<ArrowUpOutlined />}
+                aria-label="Move up"
+                title="Move up (Alt+↑)"
+                disabled={index <= 0}
+                onClick={() => nudgeNode(node.id, -1)}
+              />
+              <Button
+                icon={<ArrowDownOutlined />}
+                aria-label="Move down"
+                title="Move down (Alt+↓)"
+                disabled={index < 0 || index >= siblings - 1}
+                onClick={() => nudgeNode(node.id, 1)}
+              />
+            </Space.Compact>
             <Button
               icon={<CopyOutlined />}
               aria-label="Duplicate component"

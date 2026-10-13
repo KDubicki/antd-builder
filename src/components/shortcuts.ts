@@ -104,6 +104,26 @@ export const shortcuts: readonly Shortcut[] = [
     },
   },
   {
+    keys: ['Alt', '↑'],
+    description: 'Move the selected component up',
+    matches: (event) => event.altKey && event.key === 'ArrowUp',
+    run: ({ selectedId, nudgeNode }) => {
+      if (!selectedId) return false;
+      nudgeNode(selectedId, -1);
+      return true;
+    },
+  },
+  {
+    keys: ['Alt', '↓'],
+    description: 'Move the selected component down',
+    matches: (event) => event.altKey && event.key === 'ArrowDown',
+    run: ({ selectedId, nudgeNode }) => {
+      if (!selectedId) return false;
+      nudgeNode(selectedId, 1);
+      return true;
+    },
+  },
+  {
     keys: ['Delete'],
     description: 'Delete the selected component (also Backspace)',
     matches: (event) => event.key === 'Delete' || event.key === 'Backspace',

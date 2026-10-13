@@ -8,8 +8,10 @@ import {
   insertNode,
   isWithin,
   moveNode,
+  nudgeNode,
   removeNode,
   resolveDrop,
+  siblingPosition,
   updateNodeProps,
 } from '.';
 
@@ -163,6 +165,32 @@ describe('moveNode', () => {
   it('ignores the root and unknown ids', () => {
     expect(moveNode(tree, 'root', { parentId: 'card', index: 0 })).toBe(tree);
     expect(moveNode(tree, 'nope', { parentId: 'card', index: 0 })).toBe(tree);
+  });
+});
+
+describe('nudgeNode', () => {
+  it('reports sibling positions', () => {
+    expect(siblingPosition(tree, 'card')).toEqual({ index: 0, count: 3 });
+    expect(siblingPosition(tree, 'tag')).toEqual({ index: 2, count: 3 });
+    expect(siblingPosition(tree, 'btn')).toEqual({ index: 0, count: 1 });
+    expect(siblingPosition(tree, 'root')).toBeNull();
+    expect(siblingPosition(tree, 'nope')).toBeNull();
+  });
+
+  it('moves a node one place up or down', () => {
+    expect(ids(nudgeNode(tree, 'row', -1))).toEqual(['row', 'card', 'tag']);
+    expect(ids(nudgeNode(tree, 'row', 1))).toEqual(['card', 'tag', 'row']);
+    expect(ids(nudgeNode(tree, 'card', 1))).toEqual(['row', 'card', 'tag']);
+    // Subtrees move along.
+    expect(findNode(nudgeNode(tree, 'card', 1), 'btn')).toBeDefined();
+  });
+
+  it('leaves the tree alone at the edges, for the root and for missing nodes', () => {
+    expect(nudgeNode(tree, 'card', -1)).toBe(tree);
+    expect(nudgeNode(tree, 'tag', 1)).toBe(tree);
+    expect(nudgeNode(tree, 'btn', 1)).toBe(tree);
+    expect(nudgeNode(tree, 'root', 1)).toBe(tree);
+    expect(nudgeNode(tree, 'nope', -1)).toBe(tree);
   });
 });
 

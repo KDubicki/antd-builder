@@ -123,6 +123,33 @@ export function moveNode(root: BuilderNode, id: string, target: DropTarget): Bui
   return insertNode(removeNode(root, id), node, { parentId: target.parentId, index });
 }
 
+/** A node's index among its parent's children, or `null` for the root or a missing node. */
+export function siblingPosition(
+  root: BuilderNode,
+  id: string,
+): { index: number; count: number } | null {
+  const parent = findParent(root, id);
+  if (!parent) return null;
+  return {
+    index: parent.children.findIndex((child) => child.id === id),
+    count: parent.children.length,
+  };
+}
+
+/**
+ * Moves a node one place up (`-1`) or down (`1`) among its siblings. Returns `root` unchanged
+ * when the node is already first or last, or has no parent.
+ */
+export function nudgeNode(root: BuilderNode, id: string, delta: -1 | 1): BuilderNode {
+  const parent = findParent(root, id);
+  const position = siblingPosition(root, id);
+  if (!parent || !position) return root;
+  const to = position.index + delta;
+  if (to < 0 || to >= position.count) return root;
+  // moveNode's index counts the node itself, so moving down skips one more slot.
+  return moveNode(root, id, { parentId: parent.id, index: delta < 0 ? to : to + 1 });
+}
+
 /**
  * Picks where a dropped component lands, given the canvas nodes under the pointer
  * (innermost first). The innermost node that accepts the component gets it appended;

@@ -186,3 +186,26 @@ test('copies, cuts and pastes components', async ({ page }) => {
   await page.keyboard.press('ControlOrMeta+v');
   await expect(cardButtons).toHaveCount(1);
 });
+
+test('reorders the selected component with Alt+Arrow keys and the inspector', async ({ page }) => {
+  await page.goto('/');
+  const palette = page.getByLabel('Component palette');
+  const canvas = page.getByTestId('canvas');
+  const button = canvas.locator('.ant-btn');
+  const tag = canvas.locator('.ant-tag');
+  const tagIsFirst = async () => (await tag.boundingBox())!.y < (await button.boundingBox())!.y;
+
+  await dragTo(page, palette.getByRole('button', { name: 'Button', exact: true }), canvas);
+  await dragTo(page, palette.getByRole('button', { name: 'Tag', exact: true }), canvas);
+  await expect(tag).toBeVisible();
+  expect(await tagIsFirst()).toBe(false);
+
+  // The dropped Tag is selected; Alt+↑ moves it above the button.
+  await page.keyboard.press('Alt+ArrowUp');
+  await expect.poll(tagIsFirst).toBe(true);
+
+  const inspector = page.getByLabel('Inspector');
+  await expect(inspector.getByRole('button', { name: 'Move up' })).toBeDisabled();
+  await inspector.getByRole('button', { name: 'Move down' }).click();
+  await expect.poll(tagIsFirst).toBe(false);
+});

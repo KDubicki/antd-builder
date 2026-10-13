@@ -161,12 +161,34 @@ describe('Inspector', () => {
     expect(propsOf('a')?.affix).toBe(false);
   });
 
+  it('moves the selected component among its siblings', () => {
+    useEditorStore.setState({
+      root: { ...createRoot(), children: [createNode('Tag', 'a'), createNode('Tag', 'b')] },
+      selectedId: 'a',
+    });
+    render(<Inspector />);
+    const up = screen.getByRole('button', { name: 'Move up' });
+    const down = screen.getByRole('button', { name: 'Move down' });
+    const order = () => useEditorStore.getState().root.children.map((c) => c.id);
+    expect(up).toBeDisabled();
+    expect(down).toBeEnabled();
+
+    fireEvent.click(down);
+    expect(order()).toEqual(['b', 'a']);
+    expect(up).toBeEnabled();
+    expect(down).toBeDisabled();
+
+    fireEvent.click(up);
+    expect(order()).toEqual(['a', 'b']);
+  });
+
   it('edits the page root but does not offer to delete it', () => {
     useEditorStore.setState({ selectedId: ROOT_ID });
     render(<Inspector />);
     expect(screen.getByRole('heading', { name: 'Page' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Delete component' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Duplicate component' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Move up' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByLabelText('Wrap'));
     expect(propsOf(ROOT_ID)?.wrap).toBe(true);
   });
