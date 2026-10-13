@@ -22,7 +22,10 @@ const setRoot = (children: BuilderNode[]) =>
     selectedId: null,
   });
 
-beforeEach(() => setRoot([]));
+beforeEach(() => {
+  setRoot([]);
+  useEditorStore.setState({ mockData: [] });
+});
 
 describe('Canvas', () => {
   it('has a renderer for every registry component', () => {
@@ -91,5 +94,42 @@ describe('Canvas', () => {
     renderCanvas();
     // Dark algorithm: colorBgContainer is #141414.
     expect(screen.getByTestId('canvas')).toHaveStyle({ background: 'rgb(20, 20, 20)' });
+  });
+});
+
+describe('Canvas mock data', () => {
+  const bound = (component: string, id: string, props: Record<string, unknown>) => ({
+    ...createNode(component, id),
+    props,
+  });
+
+  it('renders bound props from mock data and follows data edits', () => {
+    useEditorStore.setState({
+      mockData: [{ id: 'u', name: 'users', data: [{ key: '1', name: 'Ann', age: 31 }] }],
+    });
+    setRoot([
+      bound('Typography.Text', 'text', { children: { $data: 'u', path: '0.name' } }),
+      bound('Table', 'table', {
+        columns: [{ title: 'Age', dataIndex: 'age', key: 'age' }],
+        dataSource: { $data: 'u' },
+      }),
+    ]);
+    renderCanvas();
+    expect(screen.getByText('Ann')).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: '31' })).toBeInTheDocument();
+
+    act(() =>
+      useEditorStore
+        .getState()
+        .updateDataSource('u', { data: [{ key: '1', name: 'Eve', age: 7 }] }),
+    );
+    expect(screen.getByText('Eve')).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: '7' })).toBeInTheDocument();
+  });
+
+  it('falls back to the default when a binding does not resolve', () => {
+    setRoot([bound('Button', 'b', { children: { $data: 'gone' } })]);
+    const { container } = renderCanvas();
+    expect(container.querySelector('[data-node-id="b"] > button')).toBeInTheDocument();
   });
 });

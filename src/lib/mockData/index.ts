@@ -50,3 +50,5 @@ export function createDataSource(
 ): DataSource {
   return { id: crypto.randomUUID(), name, data };
 }
+
+export * from './binding';

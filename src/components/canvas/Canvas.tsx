@@ -5,6 +5,7 @@ import { ConfigProvider, Typography, theme } from 'antd';
 import { type MouseEvent, useMemo } from 'react';
 import type { DragData } from '@/lib/editor/drop';
 import { ROOT_ID, useEditorStore } from '@/lib/editor/store';
+import { resolveProps } from '@/lib/mockData';
 import { codePropValues, getComponentMeta } from '@/lib/registry';
 import type { BuilderNode } from '@/lib/schema';
 import { toThemeConfig } from '@/lib/theme';
@@ -50,12 +51,14 @@ function CanvasNode({ node }: { node: BuilderNode }) {
     disabled: node.id === ROOT_ID,
   });
 
+  const mockData = useEditorStore((state) => state.mockData);
   const Component = renderers[node.component];
   const meta = getComponentMeta(node.component);
-  const props = useMemo(
-    () => (meta ? { ...codePropValues(meta), ...node.props } : node.props),
-    [meta, node.props],
-  );
+  // Bound props show their mock data; code props fill in what the page can't store.
+  const props = useMemo(() => {
+    if (!meta) return node.props;
+    return { ...codePropValues(meta), ...resolveProps(node.props, meta.props, mockData) };
+  }, [meta, node.props, mockData]);
   if (!Component || !meta) {
     return <Typography.Text type="danger">Unknown component: {node.component}</Typography.Text>;
   }
@@ -76,9 +79,9 @@ function CanvasNode({ node }: { node: BuilderNode }) {
       {...listeners}
     >
       {meta.children === 'none' ? (
-        <Component key={defaultsKey(node.props)} {...props} />
+        <Component key={defaultsKey(props)} {...props} />
       ) : (
-        <Component key={defaultsKey(node.props)} {...props}>
+        <Component key={defaultsKey(props)} {...props}>
           {node.children.length === 0 ? (
             <EmptyContainer />
           ) : node.children.length === 1 ? (

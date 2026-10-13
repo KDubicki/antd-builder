@@ -3,9 +3,9 @@ import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 import { createRoot } from '@/lib/editor/store';
 import { components, createNode, createPlaceableNode } from '@/lib/registry';
-import type { BuilderNode } from '@/lib/schema';
+import type { BuilderNode, DataSource } from '@/lib/schema';
 import { createTheme } from '@/lib/theme';
-import { collectImports, generatePage, nodeToJsx, pageComponentName } from '.';
+import { boundSourceIds, collectImports, generatePage, nodeToJsx, pageComponentName } from '.';
 
 const tree: BuilderNode = {
   id: 'root',
@@ -219,5 +219,75 @@ describe('generatePage', () => {
     expect(
       typeErrors("import { Button } from 'antd';\nexport const x = <Button nope />;\n"),
     ).not.toEqual([]);
+  }, 30_000);
+});
+
+describe('mock data bindings', () => {
+  const mockData: DataSource[] = [
+    {
+      id: 'u',
+      name: 'users',
+      data: [
+        { key: '1', name: 'Ann', age: 31 },
+        { key: '2', name: 'Bob', age: 45 },
+      ],
+    },
+    { id: 's', name: 'stats', data: { 'active users': 1200, label: 'Active' } },
+    { id: 'o', name: 'fruits', data: [{ label: 'Apple', value: 'apple' }] },
+    { id: 'x', name: 'unused', data: [] },
+  ];
+  const node = (component: string, props: Record<string, unknown>, id = component) => ({
+    ...createNode(component, id),
+    props,
+  });
+  const page: BuilderNode = {
+    ...createRoot(),
+    children: [
+      node('Typography.Text', { children: { $data: 'u', path: '0.name' }, strong: true }),
+      node('Typography.Title', { children: { $data: 'u', path: 'length' } }, 'count'),
+      node('Statistic', {
+        title: { $data: 's', path: 'label' },
+        value: { $data: 's', path: 'active users' },
+      }),
+      node('Table', {
+        columns: [{ title: 'Name', dataIndex: 'name', key: 'name' }],
+        dataSource: { $data: 'u' },
+      }),
+      node('Select', { options: { $data: 'o' }, placeholder: { $data: 'gone' } }),
+    ],
+  };
+
+  it('writes bound props as expressions into the mock data', () => {
+    const jsx = nodeToJsx(page, 0, mockData);
+    expect(jsx).toContain('<Typography.Text strong>{users[0]?.name}</Typography.Text>');
+    expect(jsx).toContain('<Typography.Title>{String(users.length)}</Typography.Title>');
+    expect(jsx).toContain('<Statistic title={stats.label} value={stats["active users"]} />');
+    expect(jsx).toContain('dataSource={users} />');
+    // Bindings that don't resolve are left out, as on the canvas.
+    expect(jsx).toContain('<Select options={fruits} />');
+  });
+
+  it('declares only the data sources the page uses', () => {
+    expect([...boundSourceIds(page)].sort()).toEqual(['gone', 'o', 's', 'u']);
+    const source = generatePage({ name: 'Users', root: page, theme: createTheme(), mockData });
+    expect(source).toContain('// Mock API responses: replace with real data fetching.');
+    expect(source).toContain('const users = [\n  {\n    "key": "1",');
+    expect(source).toContain('const stats = {');
+    expect(source).toContain('const fruits = [');
+    expect(source).not.toContain('const unused');
+    expect(source.indexOf('const users')).toBeLessThan(source.indexOf('export default'));
+    expect(
+      generatePage({ name: 'Plain', root: createRoot(), theme: createTheme(), mockData }),
+    ).not.toContain('Mock API');
+  });
+
+  it('produces code that type-checks against antd', () => {
+    const source = generatePage({
+      name: 'Users',
+      root: page,
+      theme: { mode: 'dark', compact: false, token: {} },
+      mockData,
+    });
+    expect(typeErrors(source)).toEqual([]);
   }, 30_000);
 });

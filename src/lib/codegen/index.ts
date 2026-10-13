@@ -1,5 +1,6 @@
-import { getComponentMeta } from '@/lib/registry';
-import type { BuilderNode, ProjectTheme } from '@/lib/schema';
+import { type DataBinding, isBinding, pathSegments, resolveBinding } from '@/lib/mockData';
+import { type PropDefinition, getComponentMeta } from '@/lib/registry';
+import type { BuilderNode, DataSource, ProjectTheme } from '@/lib/schema';
 import { algorithmNames } from '@/lib/theme';
 
 const INDENT = '  ';
@@ -16,33 +17,87 @@ function textChild(text: string): string {
   return /^[^{}<>&\r\n]*$/.test(text) && text.trim() === text ? text : `{${JSON.stringify(text)}}`;
 }
 
+const IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
+
+/** `.name`, `[0]` or `["odd key"]`, as optional chaining (`?.`) when `optional`. */
+function accessor(segment: string, optional: boolean): string {
+  if (IDENTIFIER.test(segment)) return `${optional ? '?.' : '.'}${segment}`;
+  const key = /^\d+$/.test(segment) ? segment : JSON.stringify(segment);
+  return `${optional ? '?.' : ''}[${key}]`;
+}
+
+/**
+ * Source for a bound prop, e.g. `users[0]?.name`, or `null` when the binding doesn't resolve
+ * (the prop is then left out, as on the canvas). Every access after the first is optional, so
+ * the code stays valid under `noUncheckedIndexedAccess` and with data of another shape later.
+ */
+function bindingExpression(
+  binding: DataBinding,
+  def: PropDefinition | undefined,
+  sources: readonly DataSource[],
+): string | null {
+  const resolution = resolveBinding(binding, def, sources);
+  const source = sources.find((candidate) => candidate.id === binding.$data);
+  if (!resolution.ok || !source) return null;
+  const expression =
+    source.name +
+    pathSegments(binding.path)
+      .map((segment, i) => accessor(segment, i > 0))
+      .join('');
+  return resolution.converted ? `String(${expression})` : expression;
+}
+
 /**
  * Renders a node tree to JSX. A string `children` prop on a leaf becomes the element's text;
  * other props become attributes (`undefined` props are omitted), followed by the component's
  * code props written as source.
  */
-export function nodeToJsx(node: BuilderNode, indent = 0): string {
+export function nodeToJsx(
+  node: BuilderNode,
+  indent = 0,
+  sources: readonly DataSource[] = [],
+): string {
   const pad = INDENT.repeat(indent);
-  const { children: text, ...rest } = node.props;
-  const isTextLeaf = node.children.length === 0 && typeof text === 'string';
+  const meta = getComponentMeta(node.component);
+  // Bound props become expressions; unresolved ones are dropped, as on the canvas.
+  const expressions = new Map<string, string>();
+  const literals: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(node.props)) {
+    if (!isBinding(value)) literals[key] = value;
+    else {
+      const expression = bindingExpression(value, meta?.props[key], sources);
+      if (expression) expressions.set(key, expression);
+    }
+  }
+
+  const { children: text, ...rest } = literals;
+  const boundText = expressions.get('children');
+  const isTextLeaf =
+    node.children.length === 0 && (typeof text === 'string' || boundText !== undefined);
   // Child nodes win over a `children` prop; a text leaf renders its text as content.
-  const props = node.children.length > 0 || isTextLeaf ? rest : node.props;
-  const codeProps = Object.entries(getComponentMeta(node.component)?.codeProps ?? {});
+  const props = node.children.length > 0 || isTextLeaf ? rest : literals;
+  if (node.children.length > 0 || isTextLeaf) expressions.delete('children');
+  const codeProps = Object.entries(meta?.codeProps ?? {});
   const attrs = [
     ...Object.entries(props)
       .filter(([, value]) => value !== undefined)
       .map(([key, value]) => attribute(key, value)),
+    ...[...expressions].map(([key, expression]) => `${key}={${expression}}`),
     ...codeProps.map(([key, prop]) => `${key}={${prop.source}}`),
   ];
   const open = [node.component, ...attrs].join(' ');
 
-  if (isTextLeaf) return `${pad}<${open}>${textChild(text)}</${node.component}>`;
+  if (isTextLeaf) {
+    const content = boundText !== undefined ? `{${boundText}}` : textChild(text as string);
+    return `${pad}<${open}>${content}</${node.component}>`;
+  }
   if (node.children.length === 0) {
-    const required = getComponentMeta(node.component)?.childrenRequired && !('children' in props);
+    const required =
+      meta?.childrenRequired && !('children' in props) && !expressions.has('children');
     return required ? `${pad}<${open}>{null}</${node.component}>` : `${pad}<${open} />`;
   }
 
-  const children = node.children.map((child) => nodeToJsx(child, indent + 1)).join('\n');
+  const children = node.children.map((child) => nodeToJsx(child, indent + 1, sources)).join('\n');
   return `${pad}<${open}>\n${children}\n${pad}</${node.component}>`;
 }
 
@@ -95,11 +150,30 @@ export interface PageSource {
   name: string;
   root: BuilderNode;
   theme: ProjectTheme;
+  mockData?: readonly DataSource[];
+}
+
+/** Ids of the data sources that props in the tree are bound to. */
+export function boundSourceIds(node: BuilderNode, into = new Set<string>()): Set<string> {
+  for (const value of Object.values(node.props)) if (isBinding(value)) into.add(value.$data);
+  for (const child of node.children) boundSourceIds(child, into);
+  return into;
+}
+
+/** `const` declarations for the mock data the page uses, in Data panel order. */
+function mockDataSource(root: BuilderNode, sources: readonly DataSource[]): string | null {
+  const used = boundSourceIds(root);
+  const declarations = sources
+    .filter((source) => used.has(source.id))
+    .map((source) => `const ${source.name} = ${JSON.stringify(source.data, null, 2)};`);
+  if (declarations.length === 0) return null;
+  return ['// Mock API responses: replace with real data fetching.', ...declarations].join('\n');
 }
 
 /** Generates a self-contained React + TypeScript page component for a project page. */
-export function generatePage({ name, root, theme }: PageSource): string {
+export function generatePage({ name, root, theme, mockData = [] }: PageSource): string {
   const themeConfig = themeConfigSource(theme);
+  const data = mockDataSource(root, mockData);
   const imports = collectImports(root);
   if (themeConfig) imports.add('ConfigProvider');
   if (themeConfig && algorithmNames(theme).length > 0) imports.add('theme');
@@ -116,15 +190,16 @@ export function generatePage({ name, root, theme }: PageSource): string {
     ...(themeConfig ? ["import type { ThemeConfig } from 'antd';"] : []),
     '',
     ...(themeConfig ? [themeConfig, ''] : []),
+    ...(data ? [data, ''] : []),
   ];
 
   const body = themeConfig
     ? [
         `${INDENT.repeat(2)}<ConfigProvider theme={themeConfig}>`,
-        nodeToJsx(root, 3),
+        nodeToJsx(root, 3, mockData),
         `${INDENT.repeat(2)}</ConfigProvider>`,
       ]
-    : [nodeToJsx(root, 2)];
+    : [nodeToJsx(root, 2, mockData)];
 
   return [
     ...header,
