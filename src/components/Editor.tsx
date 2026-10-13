@@ -23,6 +23,7 @@ import { Layers } from '@/components/layers/Layers';
 import { Palette } from '@/components/palette/Palette';
 import { ProjectActions } from '@/components/project/ProjectActions';
 import { useAutosave } from '@/components/project/autosave';
+import { ShortcutHelp } from '@/components/ShortcutHelp';
 import { SIDE_PANEL_ATTR, useEditorShortcuts } from '@/components/shortcuts';
 import { ThemeEditor } from '@/components/theme/ThemeEditor';
 import type { DragData } from '@/lib/editor/drop';
@@ -47,6 +48,7 @@ function AppHeader() {
           antd-builder
         </Typography.Text>
         <HistoryActions />
+        <ShortcutHelp />
       </Flex>
       <ProjectActions />
     </Header>

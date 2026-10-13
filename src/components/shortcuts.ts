@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { NODE_ID_ATTR } from '@/components/canvas/nodeChain';
 import { type EditorState, useEditorStore } from '@/lib/editor/store';
 
 export interface Shortcut {
@@ -44,6 +45,18 @@ function isEditableTarget(target: EventTarget | null): boolean {
   return (
     target instanceof HTMLElement &&
     (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
+  );
+}
+
+/**
+ * Whether focus is in one of the editor's own dialogs (export, shortcut help), whose keys must
+ * not edit the page behind them. Modal and Drawer previews on the canvas don't count.
+ */
+function isEditorDialogTarget(target: EventTarget | null): boolean {
+  return (
+    target instanceof HTMLElement &&
+    !!target.closest('[aria-modal="true"]') &&
+    !target.closest(`[${NODE_ID_ATTR}]`)
   );
 }
 
@@ -142,11 +155,23 @@ export const shortcuts: readonly Shortcut[] = [
       return false; // let open popups close too
     },
   },
+  {
+    keys: ['?'],
+    description: 'Show keyboard shortcuts',
+    matches: (event) => event.key === '?' && !isMod(event),
+    run: ({ setShortcutHelpOpen }) => {
+      setShortcutHelpOpen(true);
+      return true;
+    },
+  },
 ];
 
-/** Runs the first shortcut matching `event`. Text fields keep their own native shortcuts. */
+/**
+ * Runs the first shortcut matching `event`. Text fields keep their own native shortcuts, and
+ * editor dialogs their own keys.
+ */
 export function handleShortcut(event: KeyboardEvent) {
-  if (isEditableTarget(event.target)) return;
+  if (isEditableTarget(event.target) || isEditorDialogTarget(event.target)) return;
   const shortcut = shortcuts.find((candidate) => candidate.matches(event));
   if (shortcut?.run(useEditorStore.getState(), event)) event.preventDefault();
 }

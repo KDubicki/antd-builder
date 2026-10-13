@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ROOT_ID, createRoot, useEditorStore } from '@/lib/editor/store';
 import { createNode } from '@/lib/registry';
@@ -11,6 +11,7 @@ beforeEach(() =>
     past: [],
     future: [],
     clipboard: null,
+    shortcutHelpOpen: false,
   }),
 );
 
@@ -174,6 +175,34 @@ describe('Editor', () => {
     fireEvent.keyDown(window, { key: 'c', metaKey: true });
     expect(useEditorStore.getState().clipboard).toBeNull();
     window.getSelection()!.removeAllRanges();
+  });
+
+  it('opens the shortcut reference with ? and the header button', () => {
+    render(<Editor />);
+    fireEvent.keyDown(window, { key: '?', shiftKey: true });
+    const dialog = screen.getByRole('dialog', { name: 'Keyboard shortcuts' });
+    expect(within(dialog).getByText('Duplicate the selected component')).toBeInTheDocument();
+
+    act(() => useEditorStore.getState().setShortcutHelpOpen(false));
+    fireEvent.click(screen.getByRole('button', { name: 'Keyboard shortcuts' }));
+    expect(useEditorStore.getState().shortcutHelpOpen).toBe(true);
+  });
+
+  it('keeps editor shortcuts out of its own dialogs but not canvas previews', () => {
+    useEditorStore.setState({
+      root: { ...createRoot(), children: [createNode('Modal', 'm')] },
+      selectedId: 'm',
+      shortcutHelpOpen: true,
+    });
+    render(<Editor />);
+    const dialog = screen.getByRole('dialog', { name: 'Keyboard shortcuts' });
+    fireEvent.keyDown(dialog, { key: 'Delete' });
+    expect(useEditorStore.getState().root.children).toHaveLength(1);
+
+    // The Modal preview on the canvas is a dialog panel too, but a canvas node.
+    const preview = screen.getByTestId('canvas').querySelector('[aria-modal="true"]')!;
+    fireEvent.keyDown(preview, { key: 'Delete' });
+    expect(useEditorStore.getState().root.children).toHaveLength(0);
   });
 
   it('ignores shortcuts while typing in a field', () => {

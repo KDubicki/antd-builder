@@ -87,6 +87,9 @@ export interface EditorState {
   setThemeToken: (key: string, value: string | number | undefined) => void;
   resetTheme: () => void;
   setName: (name: string) => void;
+  /** Whether the keyboard shortcut reference is open. */
+  shortcutHelpOpen: boolean;
+  setShortcutHelpOpen: (open: boolean) => void;
   /** Replaces the whole project (e.g. after opening a file); clears the selection and history. */
   loadProject: (content: { name: string; root: BuilderNode; theme: ProjectTheme }) => void;
 }
@@ -244,6 +247,8 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     }),
   resetTheme: () => set((state) => commitTheme(state, createTheme())),
   setName: (name) => set({ name }),
+  shortcutHelpOpen: false,
+  setShortcutHelpOpen: (open) => set({ shortcutHelpOpen: open }),
   loadProject: ({ name, root, theme }) =>
     set({ name, root, theme, selectedId: null, past: [], future: [], lastEdit: null }),
 }));

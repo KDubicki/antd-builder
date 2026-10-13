@@ -21,6 +21,7 @@ const examples: Record<string, KeyboardEvent[]> = {
     key({ key: 'Backspace' }),
   ],
   'Clear the selection': [key({ key: 'Escape' })],
+  'Show keyboard shortcuts': [key({ key: '?', shiftKey: true })],
 };
 
 describe('shortcuts', () => {
