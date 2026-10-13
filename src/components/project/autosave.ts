@@ -23,9 +23,12 @@ export function useAutosave() {
 
     let timer: ReturnType<typeof setTimeout> | undefined;
     const unsubscribe = useEditorStore.subscribe((state, prev) => {
-      if (state.name === prev.name && state.root === prev.root && state.theme === prev.theme) {
-        return;
-      }
+      const unchanged =
+        state.name === prev.name &&
+        state.root === prev.root &&
+        state.theme === prev.theme &&
+        state.mockData === prev.mockData;
+      if (unchanged) return;
       clearTimeout(timer);
       timer = setTimeout(() => {
         try {

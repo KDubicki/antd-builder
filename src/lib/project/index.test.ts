@@ -12,6 +12,7 @@ const content = {
     children: [{ ...createNode('Card', 'card'), children: [createNode('Button', 'btn')] }],
   },
   theme: { ...createTheme(), mode: 'dark' as const, token: { colorPrimary: '#722ed1' } },
+  mockData: [{ id: 'd1', name: 'users', data: [{ name: 'Alice' }] }],
 };
 
 const withRoot = (root: BuilderNode) =>
@@ -69,6 +70,36 @@ describe('project files', () => {
       'Invalid page tree: Unknown component "Marquee"; "Col" can\'t be placed inside "Flex"; ' +
         `Duplicate node id "col"; Duplicate node id "${ROOT_ID}"`,
     );
+  });
+});
+
+describe('project mock data', () => {
+  const withMockData = (mockData: unknown) => JSON.stringify({ ...toProject(content), mockData });
+
+  it('opens files saved before mock data existed', () => {
+    const legacy: Partial<ReturnType<typeof toProject>> = toProject(content);
+    delete legacy.mockData;
+    const result = parseProject(JSON.stringify(legacy));
+    expect(result.ok && result.content.mockData).toEqual([]);
+  });
+
+  it('rejects invalid or duplicate names and duplicate ids', () => {
+    const bad = parseProject(
+      withMockData([
+        { id: 'a', name: 'Users', data: 1 },
+        { id: 'b', name: 'ok', data: 1 },
+        { id: 'b', name: 'ok', data: 2 },
+      ]),
+    );
+    expect(bad.ok).toBe(false);
+    expect(!bad.ok && bad.error).toMatch(/^Invalid mock data: /);
+    expect(!bad.ok && bad.error).toContain('"Users"');
+    expect(!bad.ok && bad.error).toContain('"ok" is already used');
+    expect(!bad.ok && bad.error).toContain('Duplicate data source id "b"');
+  });
+
+  it('rejects data that is not JSON', () => {
+    expect(parseProject(withMockData([{ id: 'a', name: 'a' }])).ok).toBe(false);
   });
 });
 

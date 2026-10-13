@@ -14,6 +14,7 @@ beforeEach(() =>
     future: [],
     lastEdit: null,
     clipboard: null,
+    mockData: [],
   }),
 );
 
@@ -315,5 +316,62 @@ describe('copy/cut/paste', () => {
     state().cutNode(ROOT_ID);
     expect(state().clipboard).toBeNull();
     expect(state().past).toEqual([]);
+  });
+});
+
+describe('mock data', () => {
+  const sources = () => state().mockData;
+
+  it('adds data sources with free names and sample data', () => {
+    const a = state().addDataSource();
+    const b = state().addDataSource();
+    const c = state().addDataSource('users');
+    expect(sources().map((s) => s.name)).toEqual(['data', 'data2', 'users']);
+    expect(sources().map((s) => s.id)).toEqual([a, b, c]);
+    expect(Array.isArray(sources()[0]?.data)).toBe(true);
+  });
+
+  it('renames only to valid, free names', () => {
+    const a = state().addDataSource('users');
+    state().addDataSource('orders');
+    state().updateDataSource(a, { name: 'customers' });
+    expect(sources()[0]?.name).toBe('customers');
+    state().updateDataSource(a, { name: 'orders' });
+    state().updateDataSource(a, { name: 'Bad Name' });
+    state().updateDataSource('missing', { name: 'x' });
+    expect(sources().map((s) => s.name)).toEqual(['customers', 'orders']);
+  });
+
+  it('edits, removes and undoes data changes', () => {
+    const a = state().addDataSource();
+    state().updateDataSource(a, { data: { total: 1 } });
+    expect(sources()[0]?.data).toEqual({ total: 1 });
+    const steps = state().past.length;
+    state().updateDataSource(a, { data: { total: 1 } }); // unchanged: not recorded
+    expect(state().past).toHaveLength(steps);
+
+    state().removeDataSource(a);
+    state().removeDataSource(a);
+    expect(sources()).toEqual([]);
+    state().undo();
+    expect(sources()[0]?.data).toEqual({ total: 1 });
+    state().undo();
+    expect(Array.isArray(sources()[0]?.data)).toBe(true);
+  });
+
+  it('coalesces typing in the data editor', () => {
+    const a = state().addDataSource();
+    const steps = state().past.length;
+    state().updateDataSource(a, { data: [1] }, { coalesce: true });
+    state().updateDataSource(a, { data: [1, 2] }, { coalesce: true });
+    expect(state().past).toHaveLength(steps + 1);
+  });
+
+  it('loads mock data with a project and defaults to none', () => {
+    const mockData = [{ id: 'd', name: 'users', data: [] }];
+    state().loadProject({ name: 'P', root: createRoot(), theme: createTheme(), mockData });
+    expect(sources()).toEqual(mockData);
+    state().loadProject({ name: 'P', root: createRoot(), theme: createTheme() });
+    expect(sources()).toEqual([]);
   });
 });

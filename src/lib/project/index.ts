@@ -1,6 +1,13 @@
 import { ROOT_ID } from '@/lib/editor/store';
 import { canContain, getComponentMeta } from '@/lib/registry';
-import { type BuilderNode, type Project, type ProjectTheme, projectSchema } from '@/lib/schema';
+import { sourceNameError } from '@/lib/mockData';
+import {
+  type BuilderNode,
+  type DataSource,
+  type Project,
+  type ProjectTheme,
+  projectSchema,
+} from '@/lib/schema';
 
 export const PAGE_ID = 'home';
 
@@ -8,16 +15,23 @@ export interface ProjectContent {
   name: string;
   root: BuilderNode;
   theme: ProjectTheme;
+  mockData: DataSource[];
 }
 
 /** Builds the project document. The editor edits a single page for now. */
-export function toProject({ name, root, theme }: ProjectContent): Project {
+export function toProject({
+  name,
+  root,
+  theme,
+  mockData = [],
+}: Omit<ProjectContent, 'mockData'> & { mockData?: DataSource[] }): Project {
   return {
     version: 1,
     name,
     theme,
     pages: [{ id: PAGE_ID, name: 'Home', root }],
     customComponents: [],
+    mockData,
   };
 }
 
@@ -45,6 +59,23 @@ function treeErrors(root: BuilderNode): string[] {
   return errors;
 }
 
+/** Invalid or duplicate data source names and ids. */
+function mockDataErrors(sources: readonly DataSource[]): string[] {
+  const errors: string[] = [];
+  sources.forEach((source, i) => {
+    const before = sources.slice(0, i);
+    const nameError = sourceNameError(
+      source.name,
+      before.map((other) => other.name),
+    );
+    if (nameError) errors.push(`Data source "${source.name}": ${nameError}`);
+    if (before.some((other) => other.id === source.id)) {
+      errors.push(`Duplicate data source id "${source.id}"`);
+    }
+  });
+  return errors;
+}
+
 /** Parses and validates a project file. */
 export function parseProject(json: string): ParseResult {
   let data: unknown;
@@ -68,8 +99,13 @@ export function parseProject(json: string): ParseResult {
   const root = { ...page.root, id: ROOT_ID };
   const errors = treeErrors(root);
   if (errors.length > 0) return { ok: false, error: `Invalid page tree: ${errors.join('; ')}` };
+  const dataErrors = mockDataErrors(parsed.data.mockData);
+  if (dataErrors.length > 0) {
+    return { ok: false, error: `Invalid mock data: ${dataErrors.join('; ')}` };
+  }
 
-  return { ok: true, content: { name: parsed.data.name, root, theme: parsed.data.theme } };
+  const { name, theme, mockData } = parsed.data;
+  return { ok: true, content: { name, root, theme, mockData } };
 }
 
 /** File name for a downloaded project, e.g. "My shop" -> "my-shop.json". */

@@ -51,11 +51,24 @@ export const projectThemeSchema = z.object({
 });
 export type ProjectTheme = z.infer<typeof projectThemeSchema>;
 
+/**
+ * Sample data standing in for an API response while mocking up a page. Component props can be
+ * bound to it, and exported code declares it as a `const` named `name`.
+ */
+export const dataSourceSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  data: z.json(),
+});
+export type DataSource = z.infer<typeof dataSourceSchema>;
+
 export const projectSchema = z.object({
   version: z.literal(1),
   name: z.string(),
   theme: projectThemeSchema,
   pages: z.array(pageSchema),
   customComponents: z.array(customComponentSchema),
+  /** Optional so project files saved before mock data existed still open. */
+  mockData: z.array(dataSourceSchema).default([]),
 });
 export type Project = z.infer<typeof projectSchema>;

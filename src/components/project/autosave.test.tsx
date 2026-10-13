@@ -14,6 +14,7 @@ beforeEach(() => {
     name: DEFAULT_PROJECT_NAME,
     root: createRoot(),
     theme: createTheme(),
+    mockData: [],
     selectedId: null,
   });
 });
@@ -62,6 +63,15 @@ describe('useAutosave', () => {
       vi.runAllTimers();
     });
     expect(savedProject()).toBeNull();
+  });
+
+  it('saves mock data changes', () => {
+    renderHook(() => useAutosave());
+    act(() => {
+      useEditorStore.getState().addDataSource('users');
+    });
+    act(() => vi.runAllTimers());
+    expect(savedProject().mockData).toMatchObject([{ name: 'users' }]);
   });
 
   it('keeps working when storage is unavailable', () => {

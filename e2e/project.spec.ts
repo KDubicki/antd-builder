@@ -45,6 +45,7 @@ const project = {
     },
   ],
   customComponents: [],
+  mockData: [{ id: 'users-id', name: 'users', data: [{ key: '1', name: 'Ann' }] }],
 };
 
 test('opens a project file and saves it back', async ({ page }) => {

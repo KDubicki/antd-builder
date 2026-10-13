@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { createNode } from '@/lib/registry';
-import type { BuilderNode, ProjectTheme } from '@/lib/schema';
+import { createDataSource, sourceNameError, uniqueSourceName } from '@/lib/mockData';
+import type { BuilderNode, DataSource, ProjectTheme } from '@/lib/schema';
 import { createTheme } from '@/lib/theme';
 import {
   type DropTarget,
@@ -31,7 +32,14 @@ export function createRoot(): BuilderNode {
 export interface HistoryEntry {
   root: BuilderNode;
   theme: ProjectTheme;
+  mockData: DataSource[];
 }
+
+const snapshot = ({ root, theme, mockData }: HistoryEntry): HistoryEntry => ({
+  root,
+  theme,
+  mockData,
+});
 
 export const HISTORY_LIMIT = 100;
 /** Edits with the same coalesce key closer together than this become one undo step. */
@@ -42,6 +50,8 @@ export interface EditorState {
   /** Root of the page being edited. It is fixed: it can't be moved or removed. */
   root: BuilderNode;
   theme: ProjectTheme;
+  /** Sample API responses that props can be bound to. */
+  mockData: DataSource[];
   selectedId: string | null;
   /** Undo stack, oldest first. */
   past: HistoryEntry[];
@@ -91,7 +101,24 @@ export interface EditorState {
   shortcutHelpOpen: boolean;
   setShortcutHelpOpen: (open: boolean) => void;
   /** Replaces the whole project (e.g. after opening a file); clears the selection and history. */
-  loadProject: (content: { name: string; root: BuilderNode; theme: ProjectTheme }) => void;
+  /** Adds a data source with sample data and a free name based on `name`. Returns its id. */
+  addDataSource: (name?: string) => string;
+  /**
+   * Renames a data source or replaces its data. Invalid or taken names are ignored. With
+   * `coalesce`, quick successive data edits become one undo step (typing).
+   */
+  updateDataSource: (
+    id: string,
+    patch: Partial<Pick<DataSource, 'name' | 'data'>>,
+    options?: { coalesce?: boolean },
+  ) => void;
+  removeDataSource: (id: string) => void;
+  loadProject: (content: {
+    name: string;
+    root: BuilderNode;
+    theme: ProjectTheme;
+    mockData?: DataSource[];
+  }) => void;
 }
 
 export const DEFAULT_PROJECT_NAME = 'Untitled project';
@@ -108,7 +135,8 @@ function commit(
 ): Partial<EditorState> {
   const root = next.root ?? state.root;
   const theme = next.theme ?? state.theme;
-  if (root === state.root && theme === state.theme) return state;
+  const mockData = next.mockData ?? state.mockData;
+  if (root === state.root && theme === state.theme && mockData === state.mockData) return state;
 
   const now = Date.now();
   const { lastEdit } = state;
@@ -119,9 +147,7 @@ function commit(
     state.past.length > 0;
   return {
     ...next,
-    past: coalesce
-      ? state.past
-      : [...state.past, { root: state.root, theme: state.theme }].slice(-HISTORY_LIMIT),
+    past: coalesce ? state.past : [...state.past, snapshot(state)].slice(-HISTORY_LIMIT),
     future: [],
     lastEdit: coalesceKey === undefined ? null : { key: coalesceKey, at: now },
   };
@@ -131,8 +157,7 @@ function commit(
 function restore(state: EditorState, entry: HistoryEntry): Partial<EditorState> {
   const keepSelection = state.selectedId && findNode(entry.root, state.selectedId);
   return {
-    root: entry.root,
-    theme: entry.theme,
+    ...snapshot(entry),
     selectedId: keepSelection ? state.selectedId : null,
     lastEdit: null,
   };
@@ -158,6 +183,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   name: DEFAULT_PROJECT_NAME,
   root: createRoot(),
   theme: createTheme(),
+  mockData: [],
   selectedId: null,
   past: [],
   future: [],
@@ -169,7 +195,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       return {
         ...restore(state, entry),
         past: state.past.slice(0, -1),
-        future: [...state.future, { root: state.root, theme: state.theme }],
+        future: [...state.future, snapshot(state)],
       };
     }),
   redo: () =>
@@ -178,7 +204,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       if (!entry) return state;
       return {
         ...restore(state, entry),
-        past: [...state.past, { root: state.root, theme: state.theme }],
+        past: [...state.past, snapshot(state)],
         future: state.future.slice(0, -1),
       };
     }),
@@ -249,6 +275,33 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   setName: (name) => set({ name }),
   shortcutHelpOpen: false,
   setShortcutHelpOpen: (open) => set({ shortcutHelpOpen: open }),
-  loadProject: ({ name, root, theme }) =>
-    set({ name, root, theme, selectedId: null, past: [], future: [], lastEdit: null }),
+  addDataSource: (name = 'data') => {
+    const names = get().mockData.map((source) => source.name);
+    const source = createDataSource(uniqueSourceName(name, names));
+    set((state) => commit(state, { mockData: [...state.mockData, source] }));
+    return source.id;
+  },
+  updateDataSource: (id, patch, options) =>
+    set((state) => {
+      const source = state.mockData.find((candidate) => candidate.id === id);
+      if (!source) return state;
+      if (patch.name !== undefined && patch.name !== source.name) {
+        const others = state.mockData.filter((other) => other.id !== id).map((o) => o.name);
+        if (sourceNameError(patch.name, others)) return state;
+      }
+      const next = { ...source, ...patch };
+      if (JSON.stringify(next) === JSON.stringify(source)) return state;
+      const mockData = state.mockData.map((candidate) => (candidate.id === id ? next : candidate));
+      const key = options?.coalesce
+        ? `data:${id}:${Object.keys(patch).sort().join(',')}`
+        : undefined;
+      return commit(state, { mockData }, key);
+    }),
+  removeDataSource: (id) =>
+    set((state) => {
+      const mockData = state.mockData.filter((source) => source.id !== id);
+      return mockData.length === state.mockData.length ? state : commit(state, { mockData });
+    }),
+  loadProject: ({ name, root, theme, mockData = [] }) =>
+    set({ name, root, theme, mockData, selectedId: null, past: [], future: [], lastEdit: null }),
 }));
