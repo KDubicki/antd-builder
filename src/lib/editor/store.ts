@@ -132,6 +132,22 @@ function restore(state: EditorState, entry: HistoryEntry): Partial<EditorState> 
   };
 }
 
+/** Inserts `node` at `target` and selects it, as one undo step. */
+function insertAndSelect(state: EditorState, node: BuilderNode, target: DropTarget) {
+  return commit(state, { root: insertNode(state.root, node, target), selectedId: node.id });
+}
+
+/** Applies a theme change, skipping it when no value actually changes. */
+function commitTheme(
+  state: EditorState,
+  patch: Partial<ProjectTheme>,
+  coalesceKey?: string,
+): Partial<EditorState> {
+  const theme = { ...state.theme, ...patch };
+  const unchanged = JSON.stringify(theme) === JSON.stringify(state.theme);
+  return unchanged ? state : commit(state, { theme }, coalesceKey);
+}
+
 export const useEditorStore = create<EditorState>()((set, get) => ({
   name: DEFAULT_PROJECT_NAME,
   root: createRoot(),
@@ -163,9 +179,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   select: (id) => set({ selectedId: id }),
   addNode: (component, target) => {
     const node = createNode(component);
-    set((state) =>
-      commit(state, { root: insertNode(state.root, node, target), selectedId: node.id }),
-    );
+    set((state) => insertAndSelect(state, node, target));
     return node.id;
   },
   moveNode: (id, target) => {
@@ -203,9 +217,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     const target = resolveDrop(root, [anchor], clipboard.component);
     if (!target) return null;
     const node = cloneNode(clipboard);
-    set((state) =>
-      commit(state, { root: insertNode(state.root, node, target), selectedId: node.id }),
-    );
+    set((state) => insertAndSelect(state, node, target));
     return node.id;
   },
   updateProps: (id, patch, options) =>
@@ -216,30 +228,16 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         options?.coalesce ? `props:${id}:${Object.keys(patch).sort().join(',')}` : undefined,
       ),
     ),
-  setThemeMode: (mode) =>
-    set((state) =>
-      state.theme.mode === mode ? state : commit(state, { theme: { ...state.theme, mode } }),
-    ),
-  setCompact: (compact) =>
-    set((state) =>
-      state.theme.compact === compact
-        ? state
-        : commit(state, { theme: { ...state.theme, compact } }),
-    ),
+  setThemeMode: (mode) => set((state) => commitTheme(state, { mode })),
+  setCompact: (compact) => set((state) => commitTheme(state, { compact })),
   setThemeToken: (key, value) =>
     set((state) => {
-      if (state.theme.token[key] === value) return state;
       const token = { ...state.theme.token };
       if (value === undefined) delete token[key];
       else token[key] = value;
-      return commit(state, { theme: { ...state.theme, token } }, `token:${key}`);
+      return commitTheme(state, { token }, `token:${key}`);
     }),
-  resetTheme: () =>
-    set((state) => {
-      const theme = createTheme();
-      const unchanged = JSON.stringify(theme) === JSON.stringify(state.theme);
-      return unchanged ? state : commit(state, { theme });
-    }),
+  resetTheme: () => set((state) => commitTheme(state, createTheme())),
   setName: (name) => set({ name }),
   loadProject: ({ name, root, theme }) =>
     set({ name, root, theme, selectedId: null, past: [], future: [], lastEdit: null }),

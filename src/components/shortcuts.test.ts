@@ -1,0 +1,41 @@
+import { describe, expect, it } from 'vitest';
+import { shortcuts } from './shortcuts';
+
+const key = (init: KeyboardEventInit) => new KeyboardEvent('keydown', init);
+
+/** One representative event per shortcut, in table order. */
+const examples: Record<string, KeyboardEvent[]> = {
+  Undo: [key({ key: 'z', ctrlKey: true }), key({ key: 'Z', metaKey: true })],
+  'Redo (also Ctrl+Y)': [
+    key({ key: 'Z', metaKey: true, shiftKey: true }),
+    key({ key: 'y', ctrlKey: true }),
+  ],
+  'Copy the selected component': [key({ key: 'c', metaKey: true })],
+  'Cut the selected component': [key({ key: 'x', ctrlKey: true })],
+  'Paste into or after the selected component': [key({ key: 'v', ctrlKey: true })],
+  'Duplicate the selected component': [key({ key: 'D', metaKey: true })],
+  'Delete the selected component (also Backspace)': [
+    key({ key: 'Delete' }),
+    key({ key: 'Backspace' }),
+  ],
+  'Clear the selection': [key({ key: 'Escape' })],
+};
+
+describe('shortcuts', () => {
+  it('has an example for every shortcut', () => {
+    expect(shortcuts.map((s) => s.description)).toEqual(Object.keys(examples));
+  });
+
+  it.each(Object.entries(examples))('matches only "%s" for its keys', (description, events) => {
+    for (const event of events) {
+      const matching = shortcuts.filter((s) => s.matches(event)).map((s) => s.description);
+      expect(matching, event.key).toEqual([description]);
+    }
+  });
+
+  it('ignores plain letters without Ctrl/Cmd', () => {
+    for (const letter of ['z', 'y', 'c', 'x', 'v', 'd']) {
+      expect(shortcuts.some((s) => s.matches(key({ key: letter })))).toBe(false);
+    }
+  });
+});
