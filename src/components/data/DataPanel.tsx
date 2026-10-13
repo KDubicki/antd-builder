@@ -1,0 +1,135 @@
+'use client';
+
+import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { Button, Card, Empty, Flex, Form, Input, Popconfirm, Typography, theme } from 'antd';
+import { useState } from 'react';
+import { JsonEditor } from '@/components/JsonEditor';
+import { useEditorStore } from '@/lib/editor/store';
+import { sourceNameError } from '@/lib/mockData';
+import type { DataSource } from '@/lib/schema';
+
+/** Short description of a JSON value's shape, e.g. "List of 3 items". */
+export function describeData(data: unknown): string {
+  if (Array.isArray(data)) return `List of ${data.length} item${data.length === 1 ? '' : 's'}`;
+  if (data !== null && typeof data === 'object') {
+    const keys = Object.keys(data).length;
+    return `Object with ${keys} key${keys === 1 ? '' : 's'}`;
+  }
+  return data === null ? 'Empty (null)' : `Single ${typeof data}`;
+}
+
+/** Name field: applied as soon as it is valid; an invalid draft shows why and reverts on blur. */
+function NameField({ source, otherNames }: { source: DataSource; otherNames: string[] }) {
+  const updateDataSource = useEditorStore((state) => state.updateDataSource);
+  const [draft, setDraft] = useState<string | null>(null);
+  const name = draft ?? source.name;
+  const error = draft === null ? null : sourceNameError(draft, otherNames);
+
+  return (
+    <Form.Item
+      label="Name"
+      htmlFor={`data-name-${source.id}`}
+      validateStatus={error ? 'error' : undefined}
+      help={error ?? undefined}
+      style={{ marginBottom: 0 }}
+    >
+      <Input
+        id={`data-name-${source.id}`}
+        value={name}
+        spellCheck={false}
+        onChange={(event) => {
+          const next = event.target.value;
+          setDraft(next);
+          if (!sourceNameError(next, otherNames)) updateDataSource(source.id, { name: next });
+        }}
+        onBlur={() => setDraft(null)}
+      />
+    </Form.Item>
+  );
+}
+
+function DataSourceCard({ source, otherNames }: { source: DataSource; otherNames: string[] }) {
+  const updateDataSource = useEditorStore((state) => state.updateDataSource);
+  const removeDataSource = useEditorStore((state) => state.removeDataSource);
+
+  return (
+    <Card
+      size="small"
+      title={<Typography.Text code>{source.name}</Typography.Text>}
+      extra={
+        <Popconfirm
+          title="Delete this data source?"
+          description="Props bound to it will be left empty."
+          okText="Delete"
+          okButtonProps={{ danger: true }}
+          onConfirm={() => removeDataSource(source.id)}
+        >
+          <Button
+            size="small"
+            type="text"
+            danger
+            icon={<DeleteOutlined />}
+            aria-label={`Delete ${source.name}`}
+          />
+        </Popconfirm>
+      }
+    >
+      <Form layout="vertical" component="div">
+        <Flex vertical gap="small">
+          <NameField source={source} otherNames={otherNames} />
+          <Form.Item
+            label="Response (JSON)"
+            htmlFor={`data-json-${source.id}`}
+            extra={describeData(source.data)}
+            style={{ marginBottom: 0 }}
+          >
+            <JsonEditor
+              id={`data-json-${source.id}`}
+              value={source.data}
+              maxRows={16}
+              // Clearing the text leaves an empty (null) response rather than no data source.
+              onChange={(value, coalesce) =>
+                updateDataSource(
+                  source.id,
+                  { data: (value ?? null) as DataSource['data'] },
+                  { coalesce },
+                )
+              }
+            />
+          </Form.Item>
+        </Flex>
+      </Form>
+    </Card>
+  );
+}
+
+/**
+ * The single place for mock data: sample API responses that component props can be bound to,
+ * so a mockup shows realistic content and exports with that data.
+ */
+export function DataPanel() {
+  const { token } = theme.useToken();
+  const mockData = useEditorStore((state) => state.mockData);
+  const addDataSource = useEditorStore((state) => state.addDataSource);
+
+  return (
+    <Flex vertical gap="middle" style={{ padding: token.padding }} aria-label="Mock data">
+      <Typography.Text type="secondary">
+        Sample API responses for your mockup. Bind component props to them in the Properties tab.
+      </Typography.Text>
+      {mockData.length === 0 && (
+        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No data sources yet" />
+      )}
+      {mockData.map((source) => (
+        <DataSourceCard
+          key={source.id}
+          source={source}
+          otherNames={mockData.filter((other) => other.id !== source.id).map((o) => o.name)}
+        />
+      ))}
+      <Button icon={<PlusOutlined />} onClick={() => addDataSource()}>
+        Add data source
+      </Button>
+    </Flex>
+  );
+}

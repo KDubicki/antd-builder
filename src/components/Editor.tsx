@@ -11,6 +11,7 @@ import {
 import { App as AntApp, ConfigProvider, Flex, Layout, Tabs, Tag, Typography, theme } from 'antd';
 import { useId, useState } from 'react';
 import { Canvas } from '@/components/canvas/Canvas';
+import { DataPanel } from '@/components/data/DataPanel';
 import {
   PALETTE_SCROLLER_ATTR,
   autoScroll,
@@ -107,6 +108,7 @@ export function Editor() {
                     items={[
                       { key: 'props', label: 'Properties', children: <Inspector /> },
                       { key: 'theme', label: 'Theme', children: <ThemeEditor /> },
+                      { key: 'data', label: 'Data', children: <DataPanel /> },
                     ]}
                   />
                 </div>
