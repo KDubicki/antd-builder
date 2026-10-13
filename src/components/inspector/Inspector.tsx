@@ -19,7 +19,7 @@ import {
   Typography,
   theme,
 } from 'antd';
-import { useState } from 'react';
+import { JsonEditor } from '@/components/JsonEditor';
 import { ROOT_ID, useEditorStore } from '@/lib/editor/store';
 import { type PropDefinition, getComponentMeta } from '@/lib/registry';
 import { findNode, siblingPosition } from '@/lib/tree';
@@ -30,47 +30,6 @@ interface FieldProps {
   value: unknown;
   /** `coalesce` marks keystroke-level edits, which undo as one step. */
   onChange: (value: unknown, coalesce?: boolean) => void;
-}
-
-/**
- * JSON editor for structured props. Valid JSON is applied while typing; invalid JSON is flagged
- * and kept as a draft without touching the node. Blurring a valid draft reformats it.
- */
-function JsonField({ id, value, onChange }: Omit<FieldProps, 'def'>) {
-  const { token } = theme.useToken();
-  const [draft, setDraft] = useState<string | null>(null);
-  const [invalid, setInvalid] = useState(false);
-  const text = draft ?? (value === undefined ? '' : JSON.stringify(value, null, 2));
-
-  const change = (next: string) => {
-    setDraft(next);
-    if (next.trim() === '') {
-      setInvalid(false);
-      onChange(undefined, true);
-      return;
-    }
-    try {
-      onChange(JSON.parse(next), true);
-      setInvalid(false);
-    } catch {
-      setInvalid(true);
-    }
-  };
-
-  return (
-    <Input.TextArea
-      id={id}
-      value={text}
-      status={invalid ? 'error' : undefined}
-      aria-invalid={invalid}
-      placeholder="JSON"
-      autoSize={{ minRows: 3, maxRows: 12 }}
-      spellCheck={false}
-      style={{ fontFamily: token.fontFamilyCode, fontSize: token.fontSizeSM }}
-      onChange={(e) => change(e.target.value)}
-      onBlur={() => !invalid && setDraft(null)}
-    />
-  );
 }
 
 /** Editor control for one prop. Clearing a value (empty text, cleared select) removes the prop. */
@@ -121,7 +80,7 @@ function PropField({ id, def, value, onChange }: FieldProps) {
         />
       );
     case 'json':
-      return <JsonField id={id} value={value} onChange={onChange} />;
+      return <JsonEditor id={id} value={value} onChange={onChange} />;
   }
 }
 
