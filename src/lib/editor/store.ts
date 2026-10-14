@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { getBlock } from '@/lib/blocks';
 import { createNode } from '@/lib/registry';
 import { createDataSource, sourceNameError, uniqueSourceName } from '@/lib/mockData';
 import type { BuilderNode, DataSource, ProjectTheme } from '@/lib/schema';
@@ -67,6 +68,11 @@ export interface EditorState {
   /** Adds a new registry component at `target` and selects it. Returns the new node's id. */
   addNode: (component: string, target: DropTarget) => string;
   moveNode: (id: string, target: DropTarget) => void;
+  /**
+   * Inserts a ready-made block at `target` and selects it, adding its data source unless one
+   * with the same name exists, as one undo step. Returns the block's root id.
+   */
+  insertBlock: (blockId: string, target: DropTarget) => string | null;
   removeNode: (id: string) => void;
   /** Moves a node one place up (`-1`) or down (`1`) among its siblings. */
   nudgeNode: (id: string, delta: -1 | 1) => void;
@@ -221,6 +227,25 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   addNode: (component, target) => {
     const node = createNode(component);
     set((state) => insertAndSelect(state, node, target));
+    return node.id;
+  },
+  insertBlock: (blockId, target) => {
+    const block = getBlock(blockId);
+    if (!block) return null;
+    const { mockData } = get();
+    const existing = block.data && mockData.find((source) => source.name === block.data!.name);
+    const added =
+      block.data && !existing
+        ? createDataSource(block.data.name, structuredClone(block.data.data))
+        : undefined;
+    const node = block.build((existing ?? added)?.id ?? '');
+    set((state) =>
+      commit(state, {
+        root: insertNode(state.root, node, target),
+        selectedId: node.id,
+        ...(added && { mockData: [...state.mockData, added] }),
+      }),
+    );
     return node.id;
   },
   moveNode: (id, target) => {

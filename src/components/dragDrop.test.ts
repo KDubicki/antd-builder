@@ -5,7 +5,13 @@ import { createNode } from '@/lib/registry';
 import { handleDragEnd } from './dragDrop';
 
 beforeEach(() =>
-  useEditorStore.setState({ root: createRoot(), selectedId: null, past: [], future: [] }),
+  useEditorStore.setState({
+    root: createRoot(),
+    selectedId: null,
+    past: [],
+    future: [],
+    mockData: [],
+  }),
 );
 
 describe('handleDragEnd', () => {
@@ -25,6 +31,12 @@ describe('handleDragEnd', () => {
     handleDragEnd(dragEnd({ type: 'palette', component: 'Button' }));
     expect(document.elementsFromPoint).toHaveBeenCalledWith(15, 15);
     expect(useEditorStore.getState().root.children[0]?.component).toBe('Button');
+  });
+
+  it('inserts a dropped block with its data', () => {
+    handleDragEnd(dragEnd({ type: 'block', block: 'user-table', component: 'Card' }));
+    expect(useEditorStore.getState().root.children[0]?.component).toBe('Card');
+    expect(useEditorStore.getState().mockData.map((s) => s.name)).toEqual(['users']);
   });
 
   it('moves an existing node', () => {

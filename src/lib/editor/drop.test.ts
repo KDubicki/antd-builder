@@ -32,6 +32,13 @@ describe('planDrop', () => {
     ).toEqual({ type: 'move', nodeId: 'card', target: { parentId: 'root', index: 1 } });
   });
 
+  it('places blocks by their root component', () => {
+    expect(
+      planDrop(root, { type: 'block', block: 'stats', component: 'Row' }, ['card', 'root']),
+    ).toEqual({ type: 'block', block: 'stats', target: { parentId: 'card', index: 0 } });
+    expect(planDrop(root, { type: 'block', block: 'x', component: 'Col' }, [])).toBeNull();
+  });
+
   it('returns null when nothing accepts the component', () => {
     expect(planDrop(root, { type: 'palette', component: 'Col' }, [])).toBeNull();
     expect(planDrop(root, { type: 'node', nodeId: 'x', component: 'Col' }, [])).toBeNull();

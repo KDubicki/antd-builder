@@ -30,9 +30,10 @@ export function handleDragEnd(event: DragEndEvent, pointer?: Point | null) {
   const point = dropPoint(event, pointer);
   if (!data || !event.over || !point) return;
 
-  const { root, addNode, moveNode } = useEditorStore.getState();
+  const { root, addNode, insertBlock, moveNode } = useEditorStore.getState();
   const action = planDrop(root, data, nodeChainAt(point.x, point.y));
   if (action?.type === 'add') addNode(action.component, action.target);
+  if (action?.type === 'block') insertBlock(action.block, action.target);
   if (action?.type === 'move') moveNode(action.nodeId, action.target);
 }
 

@@ -2,6 +2,7 @@ import { DndContext } from '@dnd-kit/core';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { categoryLabels, components, getComponentMeta } from '@/lib/registry';
+import { blocks } from '@/lib/blocks';
 import { Palette, matchesQuery } from './Palette';
 
 const renderPalette = () =>
@@ -42,11 +43,15 @@ describe('Palette', () => {
     );
     const used = new Set(components.map((meta) => meta.category));
     const headings = [...container.querySelectorAll('strong')].map((el) => el.textContent);
-    expect(headings).toEqual(
-      Object.entries(categoryLabels)
+    expect(headings).toEqual([
+      'Blocks',
+      ...Object.entries(categoryLabels)
         .filter(([category]) => used.has(category as keyof typeof categoryLabels))
         .map(([, label]) => label),
-    );
+    ]);
+    for (const block of blocks) {
+      expect(screen.getByTitle(block.description)).toHaveTextContent(block.label);
+    }
     for (const meta of components) {
       expect(screen.getByTitle(meta.description)).toHaveTextContent(meta.label);
     }
@@ -82,5 +87,16 @@ describe('Palette search', () => {
     fireEvent.keyDown(search, { key: 'Escape' });
     expect(search).toHaveValue('');
     expect(listed()).toHaveLength(components.length);
+  });
+});
+
+describe('Palette blocks search', () => {
+  it('finds blocks by label or description', () => {
+    renderPalette();
+    fireEvent.change(screen.getByLabelText('Search components'), {
+      target: { value: 'password' },
+    });
+    expect(screen.getByText('Sign-in form')).toBeInTheDocument();
+    expect(screen.queryByText('User table')).not.toBeInTheDocument();
   });
 });

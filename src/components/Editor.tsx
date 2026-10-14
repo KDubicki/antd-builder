@@ -28,6 +28,7 @@ import { useAutosave } from '@/components/project/autosave';
 import { ShortcutHelp } from '@/components/ShortcutHelp';
 import { SIDE_PANEL_ATTR, useEditorShortcuts } from '@/components/shortcuts';
 import { ThemeEditor } from '@/components/theme/ThemeEditor';
+import { getBlock } from '@/lib/blocks';
 import type { DragData } from '@/lib/editor/drop';
 import { useEditorStore } from '@/lib/editor/store';
 import { getComponentMeta } from '@/lib/registry';
@@ -128,7 +129,9 @@ export function Editor() {
           <DragOverlay dropAnimation={null}>
             {dragging && (
               <Tag color="blue" style={{ cursor: 'grabbing' }}>
-                {getComponentMeta(dragging.component)?.label ?? dragging.component}
+                {dragging.type === 'block'
+                  ? (getBlock(dragging.block)?.label ?? dragging.block)
+                  : (getComponentMeta(dragging.component)?.label ?? dragging.component)}
               </Tag>
             )}
           </DragOverlay>

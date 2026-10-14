@@ -1,7 +1,8 @@
 import path from 'node:path';
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
-import { createRoot } from '@/lib/editor/store';
+import { blocks } from '@/lib/blocks';
+import { ROOT_ID, createRoot, useEditorStore } from '@/lib/editor/store';
 import { components, createNode, createPlaceableNode } from '@/lib/registry';
 import type { BuilderNode, DataSource } from '@/lib/schema';
 import { createTheme } from '@/lib/theme';
@@ -288,6 +289,19 @@ describe('mock data bindings', () => {
       theme: { mode: 'dark', compact: false, token: {} },
       mockData,
     });
+    expect(typeErrors(source)).toEqual([]);
+  }, 30_000);
+});
+
+describe('blocks', () => {
+  it('export code that type-checks against antd', () => {
+    useEditorStore.setState({ root: createRoot(), mockData: [], past: [], future: [] });
+    for (const block of blocks) {
+      useEditorStore.getState().insertBlock(block.id, { parentId: ROOT_ID, index: 0 });
+    }
+    const source = generatePage({ ...useEditorStore.getState(), name: 'Blocks' });
+    expect(source).toContain('const stats = {');
+    expect(source).toContain('const users = [');
     expect(typeErrors(source)).toEqual([]);
   }, 30_000);
 });
