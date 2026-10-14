@@ -104,6 +104,10 @@ export interface EditorState {
   /** Canvas width preset. Editor UI state: not part of the project or the history. */
   viewport: Viewport;
   setViewport: (viewport: Viewport) => void;
+  /** Shows the page as users see it: no panels, selection or drag and drop. */
+  previewMode: boolean;
+  /** Entering preview clears the selection. */
+  setPreviewMode: (on: boolean) => void;
   setShortcutHelpOpen: (open: boolean) => void;
   /** Replaces the whole project (e.g. after opening a file); clears the selection and history. */
   /** Adds a data source with sample data and a free name based on `name`. Returns its id. */
@@ -281,6 +285,9 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   shortcutHelpOpen: false,
   viewport: 'desktop',
   setViewport: (viewport) => set({ viewport }),
+  previewMode: false,
+  setPreviewMode: (on) =>
+    set(on ? { previewMode: true, selectedId: null } : { previewMode: false }),
   setShortcutHelpOpen: (open) => set({ shortcutHelpOpen: open }),
   addDataSource: (name = 'data') => {
     const names = get().mockData.map((source) => source.name);

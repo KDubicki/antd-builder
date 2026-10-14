@@ -375,3 +375,18 @@ describe('mock data', () => {
     expect(sources()).toEqual([]);
   });
 });
+
+describe('editor UI state', () => {
+  it('clears the selection when entering preview, without touching history', () => {
+    const id = state().addNode('Tag', { parentId: ROOT_ID, index: 0 });
+    const steps = state().past.length;
+    state().setPreviewMode(true);
+    expect(state()).toMatchObject({ previewMode: true, selectedId: null });
+    state().setPreviewMode(false);
+    expect(state().previewMode).toBe(false);
+    state().setViewport('mobile');
+    expect(state().viewport).toBe('mobile');
+    expect(state().past).toHaveLength(steps);
+    expect(findNode(state().root, id)).toBeDefined();
+  });
+});

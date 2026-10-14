@@ -148,10 +148,11 @@ export const shortcuts: readonly Shortcut[] = [
   },
   {
     keys: ['Esc'],
-    description: 'Clear the selection',
+    description: 'Clear the selection, or leave preview',
     matches: (event) => event.key === 'Escape',
-    run: ({ select }) => {
-      select(null);
+    run: ({ select, previewMode, setPreviewMode }) => {
+      if (previewMode) setPreviewMode(false);
+      else select(null);
       return false; // let open popups close too
     },
   },

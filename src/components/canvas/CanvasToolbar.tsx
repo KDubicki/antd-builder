@@ -1,7 +1,13 @@
 'use client';
 
-import { DesktopOutlined, MobileOutlined, TabletOutlined } from '@ant-design/icons';
-import { Flex, Segmented, theme } from 'antd';
+import {
+  DesktopOutlined,
+  EditOutlined,
+  EyeOutlined,
+  MobileOutlined,
+  TabletOutlined,
+} from '@ant-design/icons';
+import { Button, Flex, Segmented, theme } from 'antd';
 import type { ReactNode } from 'react';
 import { type Viewport, useEditorStore } from '@/lib/editor/store';
 
@@ -14,11 +20,13 @@ export const viewports: Readonly<
   mobile: { label: 'Mobile', width: 375, icon: <MobileOutlined /> },
 };
 
-/** Controls above the canvas: the width preset. */
+/** Controls above the canvas: the width preset and preview mode. */
 export function CanvasToolbar() {
   const { token } = theme.useToken();
   const viewport = useEditorStore((state) => state.viewport);
   const setViewport = useEditorStore((state) => state.setViewport);
+  const preview = useEditorStore((state) => state.previewMode);
+  const setPreviewMode = useEditorStore((state) => state.setPreviewMode);
 
   return (
     <Flex
@@ -45,6 +53,15 @@ export function CanvasToolbar() {
           };
         })}
       />
+      <Button
+        type={preview ? 'primary' : 'default'}
+        icon={preview ? <EditOutlined /> : <EyeOutlined />}
+        aria-pressed={preview}
+        title={preview ? 'Back to editing (Esc)' : 'See the page as users will'}
+        onClick={() => setPreviewMode(!preview)}
+      >
+        {preview ? 'Exit preview' : 'Preview'}
+      </Button>
     </Flex>
   );
 }

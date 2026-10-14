@@ -228,3 +228,22 @@ test('previews the page at tablet and mobile widths', async ({ page }) => {
   await page.getByText('Desktop', { exact: true }).click();
   await expect.poll(width).toBe(desktop);
 });
+
+test('previews the page as users see it', async ({ page }) => {
+  await page.goto('/');
+  const canvas = page.getByTestId('canvas');
+  await dragTo(page, page.getByRole('button', { name: 'Card', exact: true }), canvas);
+  await expect(canvas.getByText('Drop components here')).toBeVisible();
+
+  await page.getByRole('button', { name: /Preview/ }).click();
+  await expect(page.getByLabel('Component palette')).toBeHidden();
+  await expect(page.getByLabel('Inspector')).toBeHidden();
+  await expect(canvas.getByText('Drop components here')).toBeHidden();
+  await expect(canvas.getByText('Card title')).toBeVisible();
+
+  // Clicking the page doesn't select anything; Escape returns to editing.
+  await canvas.getByText('Card title').click();
+  await page.keyboard.press('Escape');
+  await expect(page.getByLabel('Component palette')).toBeVisible();
+  await expect(page.getByText('Select a component on the canvas to edit its props')).toBeVisible();
+});

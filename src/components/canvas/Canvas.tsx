@@ -44,12 +44,16 @@ function defaultsKey(props: Readonly<Record<string, unknown>>): string {
   return defaults.length > 0 ? JSON.stringify(defaults) : 'static';
 }
 
+/** Stands in for an empty container's children in preview: invisible, but still an element. */
+const NoChildren = () => <span />;
+
 function CanvasNode({ node }: { node: BuilderNode }) {
   const select = useEditorStore((state) => state.select);
+  const preview = useEditorStore((state) => state.previewMode);
   const { setNodeRef, listeners } = useDraggable({
     id: `node:${node.id}`,
     data: { type: 'node', nodeId: node.id, component: node.component } satisfies DragData,
-    disabled: node.id === ROOT_ID,
+    disabled: node.id === ROOT_ID || preview,
   });
 
   const mockData = useEditorStore((state) => state.mockData);
@@ -76,15 +80,19 @@ function CanvasNode({ node }: { node: BuilderNode }) {
       {...{ [NODE_ID_ATTR]: node.id }}
       style={{ display: 'contents' }}
       ref={(el) => setNodeRef((el?.firstElementChild as HTMLElement | null) ?? el)}
-      onClick={onClick}
-      {...listeners}
+      onClick={preview ? undefined : onClick}
+      {...(preview ? {} : listeners)}
     >
       {meta.children === 'none' ? (
         <Component key={defaultsKey(props)} {...props} />
       ) : (
         <Component key={defaultsKey(props)} {...props}>
           {node.children.length === 0 ? (
-            <EmptyContainer />
+            preview ? (
+              <NoChildren />
+            ) : (
+              <EmptyContainer />
+            )
           ) : node.children.length === 1 ? (
             // A lone child goes in as an element, not an array: single-child wrappers like
             // Dropdown or Tooltip use React.Children.only.
@@ -104,7 +112,8 @@ function CanvasSurface() {
   const selectedId = useEditorStore((state) => state.selectedId);
   const select = useEditorStore((state) => state.select);
   const viewport = useEditorStore((state) => state.viewport);
-  const { setNodeRef, isOver } = useDroppable({ id: CANVAS_DROPPABLE_ID });
+  const preview = useEditorStore((state) => state.previewMode);
+  const { setNodeRef, isOver } = useDroppable({ id: CANVAS_DROPPABLE_ID, disabled: preview });
   const width = viewports[viewport].width;
 
   return (
@@ -112,7 +121,8 @@ function CanvasSurface() {
       ref={setNodeRef}
       data-testid="canvas"
       data-viewport={viewport}
-      onClick={() => select(null)}
+      data-preview={preview || undefined}
+      onClick={preview ? undefined : () => select(null)}
       style={{
         // Fills the editor's scroll area (a flex column) and grows with the page.
         flex: '1 0 auto',

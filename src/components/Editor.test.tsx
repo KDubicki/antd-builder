@@ -12,6 +12,7 @@ beforeEach(() =>
     future: [],
     clipboard: null,
     shortcutHelpOpen: false,
+    previewMode: false,
   }),
 );
 
@@ -210,6 +211,21 @@ describe('Editor', () => {
     const preview = screen.getByTestId('canvas').querySelector('[aria-modal="true"]')!;
     fireEvent.keyDown(preview, { key: 'Delete' });
     expect(useEditorStore.getState().root.children).toHaveLength(0);
+  });
+
+  it('hides the side panels in preview and leaves it with Escape', () => {
+    useEditorStore.setState({
+      root: { ...createRoot(), children: [createNode('Tag', 't1')] },
+      selectedId: 't1',
+    });
+    render(<Editor />);
+    const palette = screen.getByLabelText('Component palette').closest('.ant-layout-sider');
+    fireEvent.click(screen.getByRole('button', { name: /Preview/ }));
+    expect(palette).toHaveStyle({ display: 'none' });
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(useEditorStore.getState().previewMode).toBe(false);
+    expect(palette).not.toHaveStyle({ display: 'none' });
   });
 
   it('ignores shortcuts while typing in a field', () => {

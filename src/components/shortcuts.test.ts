@@ -20,7 +20,7 @@ const examples: Record<string, KeyboardEvent[]> = {
     key({ key: 'Delete' }),
     key({ key: 'Backspace' }),
   ],
-  'Clear the selection': [key({ key: 'Escape' })],
+  'Clear the selection, or leave preview': [key({ key: 'Escape' })],
   'Show keyboard shortcuts': [key({ key: '?', shiftKey: true })],
 };
 

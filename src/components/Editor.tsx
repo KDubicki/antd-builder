@@ -29,6 +29,7 @@ import { ShortcutHelp } from '@/components/ShortcutHelp';
 import { SIDE_PANEL_ATTR, useEditorShortcuts } from '@/components/shortcuts';
 import { ThemeEditor } from '@/components/theme/ThemeEditor';
 import type { DragData } from '@/lib/editor/drop';
+import { useEditorStore } from '@/lib/editor/store';
 import { getComponentMeta } from '@/lib/registry';
 
 const { Header, Sider, Content } = Layout;
@@ -63,6 +64,9 @@ export function Editor() {
   const [dragging, setDragging] = useState<DragData | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const pointer = usePointerPosition();
+  // Hidden rather than unmounted in preview, so open tabs and layer state survive it.
+  const preview = useEditorStore((state) => state.previewMode);
+  const panelVisibility = preview ? { display: 'none' } : {};
   useEditorShortcuts();
   useAutosave();
 
@@ -88,7 +92,7 @@ export function Editor() {
               <Sider
                 width={260}
                 theme="light"
-                style={{ overflow: 'auto' }}
+                style={{ overflow: 'auto', ...panelVisibility }}
                 {...{ [PALETTE_SCROLLER_ATTR]: '' }}
               >
                 <Tabs
@@ -107,7 +111,7 @@ export function Editor() {
                   <Canvas />
                 </div>
               </Content>
-              <Sider width={320} theme="light" style={{ overflow: 'auto' }}>
+              <Sider width={320} theme="light" style={{ overflow: 'auto', ...panelVisibility }}>
                 <div {...{ [SIDE_PANEL_ATTR]: '' }}>
                   <Tabs
                     centered
