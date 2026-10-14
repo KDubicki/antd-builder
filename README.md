@@ -33,10 +33,17 @@ theme tokens, and then copy everything into code by hand. antd-builder aims to:
 
 ## Editing
 
-- Drag components from the palette, or search it by name or description.
+- Drag components from the palette, or search it by name or description. The **Blocks** group
+  at the top adds ready-made fragments: a page header, a sign-in form, a stats row and a user
+  table. The data blocks bring their own mock data, already bound.
 - Select components on the canvas or in the **Layers** outline, then edit them in the inspector.
 - Duplicate, copy/cut/paste, reorder (Alt+↑/↓) and delete the selection. Undo/redo covers page
   and theme edits.
+- The toolbar above the canvas sets its width: Desktop (full width), Tablet (768px) or Mobile
+  (375px). The width only applies to the canvas, so antd's breakpoint-based features
+  (`Grid.useBreakpoint`, responsive props) still follow the browser window.
+- **Preview** shows the page as users see it, without panels, selection or drop placeholders.
+  Press <kbd>Esc</kbd> to return to editing.
 - Press <kbd>?</kbd> (or the header's help button) for the full list of keyboard shortcuts. It is
   generated from `src/components/shortcuts.ts`, so the list stays current.
 
@@ -251,8 +258,10 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). To report security issues, see [SECURITY
 
 - [x] Undo/redo
 - [ ] Version history
-- [ ] Responsive breakpoints in the canvas
-- [ ] Reusable templates and blocks (CRUD tables, auth forms, dashboards)
+- [x] Canvas width presets (desktop, tablet, mobile) and preview mode
+- [ ] Responsive props (breakpoint spans, scrolling tables) that follow the canvas width
+- [x] Ready-made blocks (page header, sign-in form, stats, user table)
+- [ ] More blocks and user-defined, reusable templates
 - [ ] Export a full project scaffold (routing, data-fetching stubs)
 
 ## License
