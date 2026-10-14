@@ -19,6 +19,8 @@ import {
 
 export const ROOT_ID = 'root';
 
+export type Viewport = 'desktop' | 'tablet' | 'mobile';
+
 export function createRoot(): BuilderNode {
   return {
     id: ROOT_ID,
@@ -99,6 +101,9 @@ export interface EditorState {
   setName: (name: string) => void;
   /** Whether the keyboard shortcut reference is open. */
   shortcutHelpOpen: boolean;
+  /** Canvas width preset. Editor UI state: not part of the project or the history. */
+  viewport: Viewport;
+  setViewport: (viewport: Viewport) => void;
   setShortcutHelpOpen: (open: boolean) => void;
   /** Replaces the whole project (e.g. after opening a file); clears the selection and history. */
   /** Adds a data source with sample data and a free name based on `name`. Returns its id. */
@@ -274,6 +279,8 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   resetTheme: () => set((state) => commitTheme(state, createTheme())),
   setName: (name) => set({ name }),
   shortcutHelpOpen: false,
+  viewport: 'desktop',
+  setViewport: (viewport) => set({ viewport }),
   setShortcutHelpOpen: (open) => set({ shortcutHelpOpen: open }),
   addDataSource: (name = 'data') => {
     const names = get().mockData.map((source) => source.name);

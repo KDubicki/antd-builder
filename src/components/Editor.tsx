@@ -11,6 +11,7 @@ import {
 import { App as AntApp, ConfigProvider, Flex, Layout, Tabs, Tag, Typography, theme } from 'antd';
 import { useId, useState } from 'react';
 import { Canvas } from '@/components/canvas/Canvas';
+import { CanvasToolbar } from '@/components/canvas/CanvasToolbar';
 import { DataPanel } from '@/components/data/DataPanel';
 import {
   PALETTE_SCROLLER_ATTR,
@@ -98,8 +99,13 @@ export function Editor() {
                   ]}
                 />
               </Sider>
-              <Content style={{ overflow: 'auto' }}>
-                <Canvas />
+              <Content style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                <CanvasToolbar />
+                <div
+                  style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}
+                >
+                  <Canvas />
+                </div>
               </Content>
               <Sider width={320} theme="light" style={{ overflow: 'auto' }}>
                 <div {...{ [SIDE_PANEL_ATTR]: '' }}>

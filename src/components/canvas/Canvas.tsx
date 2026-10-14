@@ -9,6 +9,7 @@ import { resolveProps } from '@/lib/mockData';
 import { codePropValues, getComponentMeta } from '@/lib/registry';
 import type { BuilderNode } from '@/lib/schema';
 import { toThemeConfig } from '@/lib/theme';
+import { viewports } from './CanvasToolbar';
 import { NODE_ID_ATTR } from './nodeChain';
 import { renderers } from './renderers';
 
@@ -102,15 +103,23 @@ function CanvasSurface() {
   const root = useEditorStore((state) => state.root);
   const selectedId = useEditorStore((state) => state.selectedId);
   const select = useEditorStore((state) => state.select);
+  const viewport = useEditorStore((state) => state.viewport);
   const { setNodeRef, isOver } = useDroppable({ id: CANVAS_DROPPABLE_ID });
+  const width = viewports[viewport].width;
 
   return (
     <div
       ref={setNodeRef}
       data-testid="canvas"
+      data-viewport={viewport}
       onClick={() => select(null)}
       style={{
-        minHeight: '100%',
+        // Fills the editor's scroll area (a flex column) and grows with the page.
+        flex: '1 0 auto',
+        // Device presets get a fixed-width page centred on the editor background.
+        width: width ?? undefined,
+        marginInline: width ? 'auto' : undefined,
+        boxShadow: width ? token.boxShadowTertiary : undefined,
         padding: token.paddingLG,
         // Fixed-position components (FloatButton…) are placed relative to the canvas, not the editor.
         contain: 'layout',

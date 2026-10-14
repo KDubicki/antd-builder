@@ -209,3 +209,22 @@ test('reorders the selected component with Alt+Arrow keys and the inspector', as
   await inspector.getByRole('button', { name: 'Move down' }).click();
   await expect.poll(tagIsFirst).toBe(false);
 });
+
+test('previews the page at tablet and mobile widths', async ({ page }) => {
+  await page.goto('/');
+  const canvas = page.getByTestId('canvas');
+  const width = async () => (await canvas.boundingBox())!.width;
+  const desktop = await width();
+
+  await page.getByText('Tablet', { exact: true }).click();
+  await expect.poll(width).toBe(768);
+  await page.getByText('Mobile', { exact: true }).click();
+  await expect.poll(width).toBe(375);
+
+  // Dropping still works on the narrow canvas.
+  await dragTo(page, page.getByRole('button', { name: 'Button', exact: true }), canvas);
+  await expect(canvas.getByRole('button', { name: 'Button' })).toBeVisible();
+
+  await page.getByText('Desktop', { exact: true }).click();
+  await expect.poll(width).toBe(desktop);
+});
