@@ -125,6 +125,12 @@ export const components: readonly ComponentMeta[] = [
     props: {
       span: { type: 'number', label: 'Span', min: 1, max: 24 },
       offset: { type: 'number', label: 'Offset', min: 0, max: 23 },
+      // Responsive spans: each applies from its breakpoint up; 0 hides the column.
+      xs: { type: 'number', label: 'Span on phones (xs)', min: 0, max: 24 },
+      sm: { type: 'number', label: 'Span from 576px (sm)', min: 0, max: 24 },
+      md: { type: 'number', label: 'Span from 768px (md)', min: 0, max: 24 },
+      lg: { type: 'number', label: 'Span from 992px (lg)', min: 0, max: 24 },
+      xl: { type: 'number', label: 'Span from 1200px (xl)', min: 0, max: 24 },
     },
     defaultProps: { span: 12 },
     children: 'any',

@@ -247,3 +247,42 @@ test('previews the page as users see it', async ({ page }) => {
   await expect(page.getByLabel('Component palette')).toBeVisible();
   await expect(page.getByText('Select a component on the canvas to edit its props')).toBeVisible();
 });
+
+test('stacks responsive grid columns in the mobile view', async ({ page }) => {
+  const col = (id: string) => ({
+    id,
+    component: 'Col',
+    props: { span: 12, xs: 24, md: 12 },
+    children: [{ id: `${id}-tag`, component: 'Tag', props: { children: id }, children: [] }],
+  });
+  const root = {
+    id: 'root',
+    component: 'Flex',
+    props: { vertical: true },
+    children: [{ id: 'row', component: 'Row', props: {}, children: [col('left'), col('right')] }],
+  };
+  const project = {
+    version: 1,
+    name: 'Grid',
+    theme: { mode: 'light', compact: false, token: {} },
+    pages: [{ id: 'home', name: 'Home', root }],
+    customComponents: [],
+  };
+  await page.addInitScript(
+    (p) => localStorage.setItem('antd-builder:project', p),
+    JSON.stringify(project),
+  );
+  await page.goto('/');
+  const canvas = page.getByTestId('canvas');
+  const top = async (name: string) =>
+    (await canvas.getByText(name, { exact: true }).boundingBox())!.y;
+
+  await expect(canvas.getByText('right', { exact: true })).toBeVisible();
+  expect(await top('right')).toBe(await top('left')); // side by side
+
+  await page.getByText('Mobile', { exact: true }).click();
+  await expect.poll(async () => (await top('right')) > (await top('left'))).toBe(true);
+
+  await page.getByText('Tablet', { exact: true }).click();
+  await expect.poll(async () => (await top('right')) === (await top('left'))).toBe(true);
+});

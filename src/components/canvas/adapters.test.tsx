@@ -1,9 +1,17 @@
 import { render, screen } from '@testing-library/react';
-import { Tooltip } from 'antd';
+import { Row, Tooltip } from 'antd';
 import { describe, expect, it } from 'vitest';
+import { useEditorStore } from '@/lib/editor/store';
 import { createNode } from '@/lib/registry';
 import type { BuilderNode } from '@/lib/schema';
-import { DrawerPreview, ModalPreview, TourPreview, childNode, withTriggerTarget } from './adapters';
+import {
+  ColAdapter,
+  DrawerPreview,
+  ModalPreview,
+  TourPreview,
+  childNode,
+  withTriggerTarget,
+} from './adapters';
 
 /** Stands in for `CanvasNode`, which carries its node as a prop. */
 const Holder: (props: { node: BuilderNode }) => null = () => null;
@@ -84,5 +92,30 @@ describe('DrawerPreview', () => {
     );
     expect(screen.getByText('Filters')).toBeInTheDocument();
     expect(screen.getByText('Body')).toBeInTheDocument();
+  });
+});
+
+describe('ColAdapter', () => {
+  const renderCol = (viewport: 'desktop' | 'mobile' | 'tablet') => {
+    useEditorStore.setState({ viewport });
+    const { container } = render(
+      <Row>
+        <ColAdapter span={8} xs={24} md={12}>
+          col
+        </ColAdapter>
+      </Row>,
+    );
+    return container.querySelector('.ant-col')!;
+  };
+
+  it('passes responsive spans through on desktop, where the window decides', () => {
+    const col = renderCol('desktop');
+    expect(col).toHaveClass('ant-col-8', 'ant-col-xs-24', 'ant-col-md-12');
+  });
+
+  it('resolves the span for the device width in tablet and mobile views', () => {
+    expect(renderCol('mobile').className).toMatch(/\bant-col-24\b/);
+    expect(renderCol('mobile').className).not.toMatch(/ant-col-(xs|md)-/);
+    expect(renderCol('tablet').className).toMatch(/\bant-col-12\b/);
   });
 });

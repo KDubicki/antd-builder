@@ -1,4 +1,4 @@
-import { Drawer, Modal, Splitter, Tour } from 'antd';
+import { Col, Drawer, Modal, Splitter, Tour } from 'antd';
 import {
   Children,
   type ComponentProps,
@@ -6,7 +6,10 @@ import {
   type ReactNode,
   isValidElement,
 } from 'react';
+import { colPropsAt } from '@/lib/breakpoints';
+import { useEditorStore } from '@/lib/editor/store';
 import type { BuilderNode } from '@/lib/schema';
+import { viewports } from './CanvasToolbar';
 
 /**
  * Canvas adapters for antd components that read their children's props (rather than just
@@ -30,6 +33,15 @@ export function SplitterAdapter({ children, ...props }: ComponentProps<typeof Sp
       ))}
     </Splitter>
   );
+}
+
+/**
+ * Grid column that follows the canvas width: in the Tablet and Mobile views it gets the span
+ * antd would use at that width, since antd's own breakpoints follow the browser window.
+ */
+export function ColAdapter(props: ComponentProps<typeof Col>) {
+  const width = useEditorStore((state) => viewports[state.viewport].width);
+  return <Col {...(width === null ? props : colPropsAt({ ...props }, width))} />;
 }
 
 /** A splitter panel's own canvas node: the panel itself comes from `SplitterAdapter`. */
