@@ -62,6 +62,14 @@ export const dataSourceSchema = z.object({
 });
 export type DataSource = z.infer<typeof dataSourceSchema>;
 
+/** A fragment of page the user saved to reuse, listed under "My blocks" in the palette. */
+export const customBlockSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1),
+  root: builderNodeSchema,
+});
+export type CustomBlock = z.infer<typeof customBlockSchema>;
+
 export const projectSchema = z.object({
   version: z.literal(1),
   name: z.string(),
@@ -70,5 +78,6 @@ export const projectSchema = z.object({
   customComponents: z.array(customComponentSchema),
   /** Optional so project files saved before mock data existed still open. */
   mockData: z.array(dataSourceSchema).default([]),
+  customBlocks: z.array(customBlockSchema).default([]),
 });
 export type Project = z.infer<typeof projectSchema>;

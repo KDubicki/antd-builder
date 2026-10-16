@@ -3,6 +3,7 @@ import { canContain, getComponentMeta } from '@/lib/registry';
 import { sourceNameError } from '@/lib/mockData';
 import {
   type BuilderNode,
+  type CustomBlock,
   type DataSource,
   type Project,
   type ProjectTheme,
@@ -16,6 +17,7 @@ export interface ProjectContent {
   root: BuilderNode;
   theme: ProjectTheme;
   mockData: DataSource[];
+  customBlocks: CustomBlock[];
 }
 
 /** Builds the project document. The editor edits a single page for now. */
@@ -24,7 +26,9 @@ export function toProject({
   root,
   theme,
   mockData = [],
-}: Omit<ProjectContent, 'mockData'> & { mockData?: DataSource[] }): Project {
+  customBlocks = [],
+}: Omit<ProjectContent, 'mockData' | 'customBlocks'> &
+  Partial<Pick<ProjectContent, 'mockData' | 'customBlocks'>>): Project {
   return {
     version: 1,
     name,
@@ -32,6 +36,7 @@ export function toProject({
     pages: [{ id: PAGE_ID, name: 'Home', root }],
     customComponents: [],
     mockData,
+    customBlocks,
   };
 }
 
@@ -104,8 +109,15 @@ export function parseProject(json: string): ParseResult {
     return { ok: false, error: `Invalid mock data: ${dataErrors.join('; ')}` };
   }
 
-  const { name, theme, mockData } = parsed.data;
-  return { ok: true, content: { name, root, theme, mockData } };
+  for (const block of parsed.data.customBlocks) {
+    const blockErrors = treeErrors(block.root);
+    if (blockErrors.length > 0) {
+      return { ok: false, error: `Invalid block "${block.name}": ${blockErrors.join('; ')}` };
+    }
+  }
+
+  const { name, theme, mockData, customBlocks } = parsed.data;
+  return { ok: true, content: { name, root, theme, mockData, customBlocks } };
 }
 
 /** File name for a downloaded project, e.g. "My shop" -> "my-shop.json". */

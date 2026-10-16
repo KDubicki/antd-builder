@@ -21,6 +21,7 @@ import {
 } from 'antd';
 import { JsonEditor } from '@/components/JsonEditor';
 import { BindableField } from './DataBinding';
+import { SaveBlockButton } from './SaveBlockButton';
 import { ROOT_ID, useEditorStore } from '@/lib/editor/store';
 import { type PropDefinition, getComponentMeta } from '@/lib/registry';
 import { findNode, siblingPosition } from '@/lib/tree';
@@ -117,46 +118,48 @@ export function Inspector() {
 
   return (
     <Flex vertical gap="middle" style={{ padding: token.padding }} aria-label="Inspector">
-      <Flex justify="space-between" align="start" gap="small">
-        <div>
+      {/* The description sits below the actions so it can use the panel's full width. */}
+      <div>
+        <Flex justify="space-between" align="center" gap="small">
           <Typography.Title level={5} style={{ margin: 0 }}>
             {isRoot ? 'Page' : meta.label}
           </Typography.Title>
-          <Typography.Text type="secondary">{meta.description}</Typography.Text>
-        </div>
-        {!isRoot && (
-          <Flex gap="small">
-            <Space.Compact>
+          {!isRoot && (
+            <Flex gap="small">
+              <Space.Compact>
+                <Button
+                  icon={<ArrowUpOutlined />}
+                  aria-label="Move up"
+                  title="Move up (Alt+↑)"
+                  disabled={index <= 0}
+                  onClick={() => nudgeNode(node.id, -1)}
+                />
+                <Button
+                  icon={<ArrowDownOutlined />}
+                  aria-label="Move down"
+                  title="Move down (Alt+↓)"
+                  disabled={index < 0 || index >= siblings - 1}
+                  onClick={() => nudgeNode(node.id, 1)}
+                />
+              </Space.Compact>
+              <SaveBlockButton nodeId={node.id} defaultName={meta.label} />
               <Button
-                icon={<ArrowUpOutlined />}
-                aria-label="Move up"
-                title="Move up (Alt+↑)"
-                disabled={index <= 0}
-                onClick={() => nudgeNode(node.id, -1)}
+                icon={<CopyOutlined />}
+                aria-label="Duplicate component"
+                title="Duplicate (Ctrl/⌘+D)"
+                onClick={() => duplicateNode(node.id)}
               />
               <Button
-                icon={<ArrowDownOutlined />}
-                aria-label="Move down"
-                title="Move down (Alt+↓)"
-                disabled={index < 0 || index >= siblings - 1}
-                onClick={() => nudgeNode(node.id, 1)}
+                danger
+                icon={<DeleteOutlined />}
+                aria-label="Delete component"
+                onClick={() => removeNode(node.id)}
               />
-            </Space.Compact>
-            <Button
-              icon={<CopyOutlined />}
-              aria-label="Duplicate component"
-              title="Duplicate (Ctrl/⌘+D)"
-              onClick={() => duplicateNode(node.id)}
-            />
-            <Button
-              danger
-              icon={<DeleteOutlined />}
-              aria-label="Delete component"
-              onClick={() => removeNode(node.id)}
-            />
-          </Flex>
-        )}
-      </Flex>
+            </Flex>
+          )}
+        </Flex>
+        <Typography.Text type="secondary">{meta.description}</Typography.Text>
+      </div>
       {/* Keyed by node so uncontrolled internals (e.g. number drafts) reset on selection change. */}
       <Form key={node.id} layout="vertical" component="div">
         {Object.entries(meta.props).map(([key, def]) => {

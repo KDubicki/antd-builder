@@ -13,6 +13,7 @@ const content = {
   },
   theme: { ...createTheme(), mode: 'dark' as const, token: { colorPrimary: '#722ed1' } },
   mockData: [{ id: 'd1', name: 'users', data: [{ name: 'Alice' }] }],
+  customBlocks: [{ id: 'b1', name: 'Promo', root: createNode('Button', 'promo') }],
 };
 
 const withRoot = (root: BuilderNode) =>
@@ -100,6 +101,26 @@ describe('project mock data', () => {
 
   it('rejects data that is not JSON', () => {
     expect(parseProject(withMockData([{ id: 'a', name: 'a' }])).ok).toBe(false);
+  });
+});
+
+describe('project custom blocks', () => {
+  it('opens files saved before custom blocks existed', () => {
+    const legacy: Partial<ReturnType<typeof toProject>> = toProject(content);
+    delete legacy.customBlocks;
+    const result = parseProject(JSON.stringify(legacy));
+    expect(result.ok && result.content.customBlocks).toEqual([]);
+  });
+
+  it('rejects blocks with unknown components or broken nesting', () => {
+    const block = (root: BuilderNode) =>
+      parseProject(
+        JSON.stringify({ ...toProject(content), customBlocks: [{ id: 'b', name: 'Bad', root }] }),
+      );
+    const unknown = block({ id: 'x', component: 'Marquee', props: {}, children: [] });
+    expect(!unknown.ok && unknown.error).toBe('Invalid block "Bad": Unknown component "Marquee"');
+    const nested = block({ ...createNode('Row', 'r'), children: [createNode('Tag', 't')] });
+    expect(!nested.ok && nested.error).toContain(`"Tag" can't be placed inside "Row"`);
   });
 });
 

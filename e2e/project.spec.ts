@@ -46,6 +46,13 @@ const project = {
   ],
   customComponents: [],
   mockData: [{ id: 'users-id', name: 'users', data: [{ key: '1', name: 'Ann' }] }],
+  customBlocks: [
+    {
+      id: 'block-id',
+      name: 'Promo',
+      root: { id: 'promo', component: 'Button', props: { children: 'Buy' }, children: [] },
+    },
+  ],
 };
 
 test('opens a project file and saves it back', async ({ page }) => {

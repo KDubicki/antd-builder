@@ -1,17 +1,20 @@
 'use client';
 
 import { useDraggable } from '@dnd-kit/core';
-import { SearchOutlined } from '@ant-design/icons';
-import { Empty, Flex, Input, Typography, theme } from 'antd';
+import { DeleteOutlined, SearchOutlined } from '@ant-design/icons';
+import { Button, Empty, Flex, Input, Popconfirm, Typography, theme } from 'antd';
 import { useState } from 'react';
 import { blocks } from '@/lib/blocks';
 import type { DragData } from '@/lib/editor/drop';
+import { useEditorStore } from '@/lib/editor/store';
 import {
   type ComponentCategory,
   type ComponentMeta,
   categoryLabels,
   components,
 } from '@/lib/registry';
+
+const CUSTOM_BLOCK_DESCRIPTION = 'Your saved block';
 
 interface PaletteItemProps {
   id: string;
@@ -31,6 +34,8 @@ function PaletteItem({ id, label, description, data }: PaletteItemProps) {
       {...attributes}
       title={description}
       style={{
+        flex: 1,
+        minWidth: 0,
         padding: `${token.paddingXXS}px ${token.paddingSM}px`,
         border: `1px solid ${token.colorBorderSecondary}`,
         borderRadius: token.borderRadius,
@@ -78,6 +83,11 @@ export function Palette() {
   const [query, setQuery] = useState('');
   const groups = groupByCategory(components.filter((meta) => matchesQuery(meta, query)));
   const matchingBlocks = blocks.filter((block) => matchesQuery(block, query));
+  const customBlocks = useEditorStore((state) => state.customBlocks);
+  const removeCustomBlock = useEditorStore((state) => state.removeCustomBlock);
+  const matchingCustom = customBlocks.filter((block) =>
+    matchesQuery({ label: block.name, description: CUSTOM_BLOCK_DESCRIPTION }, query),
+  );
 
   return (
     <Flex vertical gap="middle" style={{ padding: token.padding }} aria-label="Component palette">
@@ -90,8 +100,39 @@ export function Palette() {
         onChange={(event) => setQuery(event.target.value)}
         onKeyDown={(event) => event.key === 'Escape' && setQuery('')}
       />
-      {groups.length === 0 && matchingBlocks.length === 0 && (
+      {groups.length === 0 && matchingBlocks.length === 0 && matchingCustom.length === 0 && (
         <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No components match" />
+      )}
+      {matchingCustom.length > 0 && (
+        <Flex vertical gap="small">
+          <Typography.Text type="secondary" strong>
+            My blocks
+          </Typography.Text>
+          {matchingCustom.map((block) => (
+            <Flex key={block.id} gap={4} align="center">
+              <PaletteItem
+                id={`block:${block.id}`}
+                label={block.name}
+                description={CUSTOM_BLOCK_DESCRIPTION}
+                data={{ type: 'block', block: block.id, component: block.root.component }}
+              />
+              <Popconfirm
+                title={`Delete "${block.name}"?`}
+                description="Copies already on the page stay."
+                okText="Delete"
+                okButtonProps={{ danger: true }}
+                onConfirm={() => removeCustomBlock(block.id)}
+              >
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<DeleteOutlined />}
+                  aria-label={`Delete block ${block.name}`}
+                />
+              </Popconfirm>
+            </Flex>
+          ))}
+        </Flex>
       )}
       {matchingBlocks.length > 0 && (
         <Flex vertical gap="small">

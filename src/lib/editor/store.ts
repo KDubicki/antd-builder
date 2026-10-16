@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { getBlock } from '@/lib/blocks';
-import { createNode } from '@/lib/registry';
+import { createNode, getComponentMeta } from '@/lib/registry';
 import { createDataSource, sourceNameError, uniqueSourceName } from '@/lib/mockData';
-import type { BuilderNode, DataSource, ProjectTheme } from '@/lib/schema';
+import type { BuilderNode, CustomBlock, DataSource, ProjectTheme } from '@/lib/schema';
 import { createTheme } from '@/lib/theme';
 import {
   type DropTarget,
@@ -36,12 +36,14 @@ export interface HistoryEntry {
   root: BuilderNode;
   theme: ProjectTheme;
   mockData: DataSource[];
+  customBlocks: CustomBlock[];
 }
 
-const snapshot = ({ root, theme, mockData }: HistoryEntry): HistoryEntry => ({
+const snapshot = ({ root, theme, mockData, customBlocks }: HistoryEntry): HistoryEntry => ({
   root,
   theme,
   mockData,
+  customBlocks,
 });
 
 export const HISTORY_LIMIT = 100;
@@ -55,6 +57,14 @@ export interface EditorState {
   theme: ProjectTheme;
   /** Sample API responses that props can be bound to. */
   mockData: DataSource[];
+  /** Fragments saved by the user to reuse, listed under "My blocks". */
+  customBlocks: CustomBlock[];
+  /**
+   * Saves a copy of node `id` (with its subtree) as a custom block named `name` (made unique;
+   * defaults to the component's label). The root can't be saved. Returns the block's id.
+   */
+  saveAsBlock: (id: string, name?: string) => string | null;
+  removeCustomBlock: (id: string) => void;
   selectedId: string | null;
   /** Undo stack, oldest first. */
   past: HistoryEntry[];
@@ -133,6 +143,7 @@ export interface EditorState {
     root: BuilderNode;
     theme: ProjectTheme;
     mockData?: DataSource[];
+    customBlocks?: CustomBlock[];
   }) => void;
 }
 
@@ -151,7 +162,13 @@ function commit(
   const root = next.root ?? state.root;
   const theme = next.theme ?? state.theme;
   const mockData = next.mockData ?? state.mockData;
-  if (root === state.root && theme === state.theme && mockData === state.mockData) return state;
+  const customBlocks = next.customBlocks ?? state.customBlocks;
+  const unchanged =
+    root === state.root &&
+    theme === state.theme &&
+    mockData === state.mockData &&
+    customBlocks === state.customBlocks;
+  if (unchanged) return state;
 
   const now = Date.now();
   const { lastEdit } = state;
@@ -178,6 +195,14 @@ function restore(state: EditorState, entry: HistoryEntry): Partial<EditorState> 
   };
 }
 
+/** `name`, or `name 2`, `name 3`… whichever no other block uses. */
+function uniqueBlockName(name: string, names: readonly string[]): string {
+  if (!names.includes(name)) return name;
+  let n = 2;
+  while (names.includes(`${name} ${n}`)) n += 1;
+  return `${name} ${n}`;
+}
+
 /** Inserts `node` at `target` and selects it, as one undo step. */
 function insertAndSelect(state: EditorState, node: BuilderNode, target: DropTarget) {
   return commit(state, { root: insertNode(state.root, node, target), selectedId: node.id });
@@ -199,6 +224,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   root: createRoot(),
   theme: createTheme(),
   mockData: [],
+  customBlocks: [],
   selectedId: null,
   past: [],
   future: [],
@@ -230,6 +256,12 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     return node.id;
   },
   insertBlock: (blockId, target) => {
+    const custom = get().customBlocks.find((candidate) => candidate.id === blockId);
+    if (custom) {
+      const copy = cloneNode(custom.root);
+      set((state) => insertAndSelect(state, copy, target));
+      return copy.id;
+    }
     const block = getBlock(blockId);
     if (!block) return null;
     const { mockData } = get();
@@ -341,6 +373,36 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       const mockData = state.mockData.filter((source) => source.id !== id);
       return mockData.length === state.mockData.length ? state : commit(state, { mockData });
     }),
-  loadProject: ({ name, root, theme, mockData = [] }) =>
-    set({ name, root, theme, mockData, selectedId: null, past: [], future: [], lastEdit: null }),
+  saveAsBlock: (id, name) => {
+    const node = id === ROOT_ID ? undefined : findNode(get().root, id);
+    if (!node) return null;
+    const base = name?.trim() || (getComponentMeta(node.component)?.label ?? node.component);
+    const names = get().customBlocks.map((block) => block.name);
+    const block: CustomBlock = {
+      id: crypto.randomUUID(),
+      name: uniqueBlockName(base, names),
+      root: structuredClone(node),
+    };
+    set((state) => commit(state, { customBlocks: [...state.customBlocks, block] }));
+    return block.id;
+  },
+  removeCustomBlock: (id) =>
+    set((state) => {
+      const customBlocks = state.customBlocks.filter((block) => block.id !== id);
+      return customBlocks.length === state.customBlocks.length
+        ? state
+        : commit(state, { customBlocks });
+    }),
+  loadProject: ({ name, root, theme, mockData = [], customBlocks = [] }) =>
+    set({
+      name,
+      root,
+      theme,
+      mockData,
+      customBlocks,
+      selectedId: null,
+      past: [],
+      future: [],
+      lastEdit: null,
+    }),
 }));

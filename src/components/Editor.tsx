@@ -67,6 +67,7 @@ export function Editor() {
   const pointer = usePointerPosition();
   // Hidden rather than unmounted in preview, so open tabs and layer state survive it.
   const preview = useEditorStore((state) => state.previewMode);
+  const customBlocks = useEditorStore((state) => state.customBlocks);
   const panelVisibility = preview ? { display: 'none' } : {};
   useEditorShortcuts();
   useAutosave();
@@ -130,7 +131,9 @@ export function Editor() {
             {dragging && (
               <Tag color="blue" style={{ cursor: 'grabbing' }}>
                 {dragging.type === 'block'
-                  ? (getBlock(dragging.block)?.label ?? dragging.block)
+                  ? (getBlock(dragging.block)?.label ??
+                    customBlocks.find((block) => block.id === dragging.block)?.name ??
+                    dragging.block)
                   : (getComponentMeta(dragging.component)?.label ?? dragging.component)}
               </Tag>
             )}

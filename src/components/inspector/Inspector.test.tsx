@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { App } from 'antd';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ROOT_ID, createRoot, useEditorStore } from '@/lib/editor/store';
 import { createNode } from '@/lib/registry';
@@ -18,6 +19,7 @@ beforeEach(() =>
     past: [],
     future: [],
     lastEdit: null,
+    customBlocks: [],
   }),
 );
 
@@ -182,6 +184,24 @@ describe('Inspector', () => {
     expect(order()).toEqual(['a', 'b']);
   });
 
+  it('saves the selected component as a named block', async () => {
+    select(createNode('Card', 'card'));
+    render(
+      <App>
+        <Inspector />
+      </App>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Save as block' }));
+    const name = await screen.findByLabelText('Block name');
+    expect(name).toHaveValue('Card');
+    fireEvent.change(name, { target: { value: 'Hero card' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(useEditorStore.getState().customBlocks).toMatchObject([
+      { name: 'Hero card', root: { id: 'card', component: 'Card' } },
+    ]);
+    expect(await screen.findByText('Saved to My blocks in the palette')).toBeInTheDocument();
+  });
+
   it('edits the page root but does not offer to delete it', () => {
     useEditorStore.setState({ selectedId: ROOT_ID });
     render(<Inspector />);
@@ -189,6 +209,7 @@ describe('Inspector', () => {
     expect(screen.queryByRole('button', { name: 'Delete component' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Duplicate component' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Move up' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Save as block' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByLabelText('Wrap'));
     expect(propsOf(ROOT_ID)?.wrap).toBe(true);
   });

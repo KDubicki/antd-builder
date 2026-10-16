@@ -15,6 +15,7 @@ beforeEach(() => {
     root: createRoot(),
     theme: createTheme(),
     mockData: [],
+    customBlocks: [],
     selectedId: null,
   });
 });
@@ -72,6 +73,16 @@ describe('useAutosave', () => {
     });
     act(() => vi.runAllTimers());
     expect(savedProject().mockData).toMatchObject([{ name: 'users' }]);
+  });
+
+  it('saves custom blocks', () => {
+    useEditorStore.setState({ root: { ...createRoot(), children: [createNode('Tag', 't')] } });
+    renderHook(() => useAutosave());
+    act(() => {
+      useEditorStore.getState().saveAsBlock('t', 'Badge');
+    });
+    act(() => vi.runAllTimers());
+    expect(savedProject().customBlocks).toMatchObject([{ name: 'Badge' }]);
   });
 
   it('keeps working when storage is unavailable', () => {

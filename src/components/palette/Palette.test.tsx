@@ -1,8 +1,10 @@
 import { DndContext } from '@dnd-kit/core';
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { categoryLabels, components, getComponentMeta } from '@/lib/registry';
 import { blocks } from '@/lib/blocks';
+import { createRoot, useEditorStore } from '@/lib/editor/store';
+import { createNode } from '@/lib/registry';
 import { Palette, matchesQuery } from './Palette';
 
 const renderPalette = () =>
@@ -98,5 +100,30 @@ describe('Palette blocks search', () => {
     });
     expect(screen.getByText('Sign-in form')).toBeInTheDocument();
     expect(screen.queryByText('User table')).not.toBeInTheDocument();
+  });
+});
+
+describe('My blocks', () => {
+  beforeEach(() =>
+    useEditorStore.setState({
+      root: { ...createRoot(), children: [createNode('Tag', 'tag')] },
+      customBlocks: [],
+    }),
+  );
+
+  it('lists saved blocks, finds them by name and deletes them', async () => {
+    useEditorStore.getState().saveAsBlock('tag', 'Promo tag');
+    renderPalette();
+    expect(screen.getByText('My blocks')).toBeInTheDocument();
+    expect(screen.getByText('Promo tag')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Search components'), { target: { value: 'promo' } });
+    expect(screen.getByText('Promo tag')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Search components'), { target: { value: '' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete block Promo tag' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Delete' }));
+    await waitFor(() => expect(useEditorStore.getState().customBlocks).toEqual([]));
+    expect(screen.queryByText('My blocks')).not.toBeInTheDocument();
   });
 });

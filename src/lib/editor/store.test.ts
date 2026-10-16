@@ -15,6 +15,7 @@ beforeEach(() =>
     lastEdit: null,
     clipboard: null,
     mockData: [],
+    customBlocks: [],
   }),
 );
 
@@ -388,5 +389,56 @@ describe('editor UI state', () => {
     expect(state().viewport).toBe('mobile');
     expect(state().past).toHaveLength(steps);
     expect(findNode(state().root, id)).toBeDefined();
+  });
+});
+
+describe('custom blocks', () => {
+  const blocks = () => state().customBlocks;
+
+  it('saves a snapshot of a subtree under a unique name', () => {
+    const card = state().addNode('Card', { parentId: ROOT_ID, index: 0 });
+    state().addNode('Button', { parentId: card, index: 0 });
+    const first = state().saveAsBlock(card)!;
+    state().saveAsBlock(card);
+    state().saveAsBlock(card, '  Hero  ');
+    expect(blocks().map((b) => b.name)).toEqual(['Card', 'Card 2', 'Hero']);
+    expect(blocks()[0]?.root).toEqual(findNode(state().root, card));
+
+    // Later page edits don't change the saved block.
+    state().updateProps(card, { title: 'Changed' });
+    expect(blocks().find((b) => b.id === first)?.root.props.title).toBe('Card title');
+  });
+
+  it('inserts fresh copies and is undoable', () => {
+    const tag = state().addNode('Tag', { parentId: ROOT_ID, index: 0 });
+    const block = state().saveAsBlock(tag)!;
+    const copy = state().insertBlock(block, { parentId: ROOT_ID, index: 1 })!;
+    expect(copy).not.toBe(tag);
+    expect(state().root.children.map((c) => c.component)).toEqual(['Tag', 'Tag']);
+    expect(state().selectedId).toBe(copy);
+
+    state().undo(); // the insert
+    state().undo(); // the save
+    expect(blocks()).toEqual([]);
+  });
+
+  it('removes blocks and ignores the root, missing nodes and missing blocks', () => {
+    const tag = state().addNode('Tag', { parentId: ROOT_ID, index: 0 });
+    const block = state().saveAsBlock(tag)!;
+    expect(state().saveAsBlock(ROOT_ID)).toBeNull();
+    expect(state().saveAsBlock('missing')).toBeNull();
+    const steps = state().past.length;
+    state().removeCustomBlock('missing');
+    expect(state().past).toHaveLength(steps);
+    state().removeCustomBlock(block);
+    expect(blocks()).toEqual([]);
+  });
+
+  it('loads custom blocks with a project and defaults to none', () => {
+    const customBlocks = [{ id: 'b', name: 'Tag', root: createRoot() }];
+    state().loadProject({ name: 'P', root: createRoot(), theme: createTheme(), customBlocks });
+    expect(blocks()).toEqual(customBlocks);
+    state().loadProject({ name: 'P', root: createRoot(), theme: createTheme() });
+    expect(blocks()).toEqual([]);
   });
 });
