@@ -53,6 +53,7 @@ const project = {
       root: { id: 'promo', component: 'Button', props: { children: 'Buy' }, children: [] },
     },
   ],
+  versions: [],
 };
 
 test('opens a project file and saves it back', async ({ page }) => {

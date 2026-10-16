@@ -14,6 +14,17 @@ const content = {
   theme: { ...createTheme(), mode: 'dark' as const, token: { colorPrimary: '#722ed1' } },
   mockData: [{ id: 'd1', name: 'users', data: [{ name: 'Alice' }] }],
   customBlocks: [{ id: 'b1', name: 'Promo', root: createNode('Button', 'promo') }],
+  versions: [
+    {
+      id: 'v1',
+      name: 'First draft',
+      createdAt: '2026-10-16T10:00:00.000Z',
+      root: createRoot(),
+      theme: createTheme(),
+      mockData: [],
+      customBlocks: [],
+    },
+  ],
 };
 
 const withRoot = (root: BuilderNode) =>
@@ -121,6 +132,28 @@ describe('project custom blocks', () => {
     expect(!unknown.ok && unknown.error).toBe('Invalid block "Bad": Unknown component "Marquee"');
     const nested = block({ ...createNode('Row', 'r'), children: [createNode('Tag', 't')] });
     expect(!nested.ok && nested.error).toContain(`"Tag" can't be placed inside "Row"`);
+  });
+});
+
+describe('project versions', () => {
+  it('opens files saved before versions existed', () => {
+    const legacy: Partial<ReturnType<typeof toProject>> = toProject(content);
+    delete legacy.versions;
+    const result = parseProject(JSON.stringify(legacy));
+    expect(result.ok && result.content.versions).toEqual([]);
+  });
+
+  it('normalizes version root ids and rejects broken versions', () => {
+    const version = { ...content.versions[0]!, root: { ...createRoot(), id: 'other' } };
+    const ok = parseProject(JSON.stringify({ ...toProject(content), versions: [version] }));
+    expect(ok.ok && ok.content.versions[0]?.root.id).toBe(ROOT_ID);
+
+    const broken = {
+      ...version,
+      mockData: [{ id: 'd', name: 'Bad Name', data: 1 }],
+    };
+    const result = parseProject(JSON.stringify({ ...toProject(content), versions: [broken] }));
+    expect(!result.ok && result.error).toMatch(/^Invalid version "First draft": Data source/);
   });
 });
 

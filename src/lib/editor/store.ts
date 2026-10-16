@@ -2,7 +2,13 @@ import { create } from 'zustand';
 import { getBlock } from '@/lib/blocks';
 import { createNode, getComponentMeta } from '@/lib/registry';
 import { createDataSource, sourceNameError, uniqueSourceName } from '@/lib/mockData';
-import type { BuilderNode, CustomBlock, DataSource, ProjectTheme } from '@/lib/schema';
+import type {
+  BuilderNode,
+  CustomBlock,
+  DataSource,
+  ProjectTheme,
+  ProjectVersion,
+} from '@/lib/schema';
 import { createTheme } from '@/lib/theme';
 import {
   type DropTarget,
@@ -65,6 +71,16 @@ export interface EditorState {
    */
   saveAsBlock: (id: string, name?: string) => string | null;
   removeCustomBlock: (id: string) => void;
+  /**
+   * Named snapshots of the project, newest first. Saving and deleting them is not undoable
+   * (undo should never delete a snapshot), but restoring one is.
+   */
+  versions: ProjectVersion[];
+  /** Snapshots the current project as `name` (defaults to "Version N"). Returns its id. */
+  saveVersion: (name?: string) => string;
+  /** Replaces the project content with a version's, as one undo step. */
+  restoreVersion: (id: string) => void;
+  removeVersion: (id: string) => void;
   selectedId: string | null;
   /** Undo stack, oldest first. */
   past: HistoryEntry[];
@@ -144,6 +160,7 @@ export interface EditorState {
     theme: ProjectTheme;
     mockData?: DataSource[];
     customBlocks?: CustomBlock[];
+    versions?: ProjectVersion[];
   }) => void;
 }
 
@@ -225,6 +242,31 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   theme: createTheme(),
   mockData: [],
   customBlocks: [],
+  versions: [],
+  saveVersion: (name) => {
+    const state = get();
+    const version: ProjectVersion = {
+      id: crypto.randomUUID(),
+      name: name?.trim() || `Version ${state.versions.length + 1}`,
+      createdAt: new Date().toISOString(),
+      ...structuredClone(snapshot(state)),
+    };
+    set({ versions: [version, ...state.versions] });
+    return version.id;
+  },
+  restoreVersion: (id) =>
+    set((state) => {
+      const version = state.versions.find((candidate) => candidate.id === id);
+      if (!version) return state;
+      const content = structuredClone(snapshot(version));
+      const keepSelection = state.selectedId && findNode(content.root, state.selectedId);
+      return commit(state, { ...content, selectedId: keepSelection ? state.selectedId : null });
+    }),
+  removeVersion: (id) =>
+    set((state) => {
+      const versions = state.versions.filter((version) => version.id !== id);
+      return versions.length === state.versions.length ? state : { versions };
+    }),
   selectedId: null,
   past: [],
   future: [],
@@ -393,13 +435,14 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         ? state
         : commit(state, { customBlocks });
     }),
-  loadProject: ({ name, root, theme, mockData = [], customBlocks = [] }) =>
+  loadProject: ({ name, root, theme, mockData = [], customBlocks = [], versions = [] }) =>
     set({
       name,
       root,
       theme,
       mockData,
       customBlocks,
+      versions,
       selectedId: null,
       past: [],
       future: [],

@@ -28,6 +28,7 @@ import { useAutosave } from '@/components/project/autosave';
 import { ShortcutHelp } from '@/components/ShortcutHelp';
 import { SIDE_PANEL_ATTR, useEditorShortcuts } from '@/components/shortcuts';
 import { ThemeEditor } from '@/components/theme/ThemeEditor';
+import { VersionHistory } from '@/components/versions/VersionHistory';
 import { getBlock } from '@/lib/blocks';
 import type { DragData } from '@/lib/editor/drop';
 import { useEditorStore } from '@/lib/editor/store';
@@ -53,6 +54,7 @@ function AppHeader() {
       <Flex align="center" gap={token.margin}>
         <Typography.Text strong>antd-builder</Typography.Text>
         <HistoryActions />
+        <VersionHistory />
         <ShortcutHelp />
       </Flex>
       <ProjectActions />

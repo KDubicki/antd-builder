@@ -28,7 +28,8 @@ export function useAutosave() {
         state.root === prev.root &&
         state.theme === prev.theme &&
         state.mockData === prev.mockData &&
-        state.customBlocks === prev.customBlocks;
+        state.customBlocks === prev.customBlocks &&
+        state.versions === prev.versions;
       if (unchanged) return;
       clearTimeout(timer);
       timer = setTimeout(() => {

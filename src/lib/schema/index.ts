@@ -70,6 +70,19 @@ export const customBlockSchema = z.object({
 });
 export type CustomBlock = z.infer<typeof customBlockSchema>;
 
+/** A named snapshot of the project's content, restorable from the History panel. */
+export const projectVersionSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1),
+  /** ISO 8601 timestamp. */
+  createdAt: z.string(),
+  root: builderNodeSchema,
+  theme: projectThemeSchema,
+  mockData: z.array(dataSourceSchema),
+  customBlocks: z.array(customBlockSchema),
+});
+export type ProjectVersion = z.infer<typeof projectVersionSchema>;
+
 export const projectSchema = z.object({
   version: z.literal(1),
   name: z.string(),
@@ -79,5 +92,6 @@ export const projectSchema = z.object({
   /** Optional so project files saved before mock data existed still open. */
   mockData: z.array(dataSourceSchema).default([]),
   customBlocks: z.array(customBlockSchema).default([]),
+  versions: z.array(projectVersionSchema).default([]),
 });
 export type Project = z.infer<typeof projectSchema>;

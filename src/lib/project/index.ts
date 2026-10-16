@@ -6,6 +6,7 @@ import {
   type CustomBlock,
   type DataSource,
   type Project,
+  type ProjectVersion,
   type ProjectTheme,
   projectSchema,
 } from '@/lib/schema';
@@ -18,7 +19,10 @@ export interface ProjectContent {
   theme: ProjectTheme;
   mockData: DataSource[];
   customBlocks: CustomBlock[];
+  versions: ProjectVersion[];
 }
+
+type OptionalContent = 'mockData' | 'customBlocks' | 'versions';
 
 /** Builds the project document. The editor edits a single page for now. */
 export function toProject({
@@ -27,8 +31,9 @@ export function toProject({
   theme,
   mockData = [],
   customBlocks = [],
-}: Omit<ProjectContent, 'mockData' | 'customBlocks'> &
-  Partial<Pick<ProjectContent, 'mockData' | 'customBlocks'>>): Project {
+  versions = [],
+}: Omit<ProjectContent, OptionalContent> &
+  Partial<Pick<ProjectContent, OptionalContent>>): Project {
   return {
     version: 1,
     name,
@@ -37,6 +42,7 @@ export function toProject({
     customComponents: [],
     mockData,
     customBlocks,
+    versions,
   };
 }
 
@@ -116,8 +122,20 @@ export function parseProject(json: string): ParseResult {
     }
   }
 
+  for (const version of parsed.data.versions) {
+    const versionErrors = [...treeErrors(version.root), ...mockDataErrors(version.mockData)];
+    if (versionErrors.length > 0) {
+      return { ok: false, error: `Invalid version "${version.name}": ${versionErrors.join('; ')}` };
+    }
+  }
+
   const { name, theme, mockData, customBlocks } = parsed.data;
-  return { ok: true, content: { name, root, theme, mockData, customBlocks } };
+  // Version roots are addressed like the page root.
+  const versions = parsed.data.versions.map((version) => ({
+    ...version,
+    root: { ...version.root, id: ROOT_ID },
+  }));
+  return { ok: true, content: { name, root, theme, mockData, customBlocks, versions } };
 }
 
 /** File name for a downloaded project, e.g. "My shop" -> "my-shop.json". */

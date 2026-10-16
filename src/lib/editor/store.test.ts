@@ -16,6 +16,7 @@ beforeEach(() =>
     clipboard: null,
     mockData: [],
     customBlocks: [],
+    versions: [],
   }),
 );
 
@@ -440,5 +441,61 @@ describe('custom blocks', () => {
     expect(blocks()).toEqual(customBlocks);
     state().loadProject({ name: 'P', root: createRoot(), theme: createTheme() });
     expect(blocks()).toEqual([]);
+  });
+});
+
+describe('versions', () => {
+  afterEach(() => vi.useRealTimers());
+
+  it('snapshots the project, newest first, outside the undo history', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-16T10:00:00Z'));
+    state().addNode('Tag', { parentId: ROOT_ID, index: 0 });
+    state().addDataSource('users');
+    const steps = state().past.length;
+    state().saveVersion();
+    state().saveVersion('  Before redesign ');
+    expect(state().versions.map((v) => v.name)).toEqual(['Before redesign', 'Version 1']);
+    expect(state().versions[1]).toMatchObject({
+      createdAt: '2026-10-16T10:00:00.000Z',
+      root: state().root,
+      mockData: state().mockData,
+    });
+    expect(state().past).toHaveLength(steps);
+  });
+
+  it('restores a version as one undoable step, keeping later versions', () => {
+    const tag = state().addNode('Tag', { parentId: ROOT_ID, index: 0 });
+    const version = state().saveVersion('One tag');
+    state().addNode('Button', { parentId: ROOT_ID, index: 1 });
+    state().setThemeMode('dark');
+    state().saveVersion('Later');
+
+    state().restoreVersion(version);
+    expect(state().root.children.map((c) => c.id)).toEqual([tag]);
+    expect(state().theme.mode).toBe('light');
+    expect(state().versions).toHaveLength(2);
+
+    state().undo();
+    expect(state().root.children).toHaveLength(2);
+    expect(state().theme.mode).toBe('dark');
+  });
+
+  it('restored content is a copy: editing it leaves the version alone', () => {
+    const tag = state().addNode('Tag', { parentId: ROOT_ID, index: 0 });
+    const version = state().saveVersion();
+    state().restoreVersion(version);
+    state().updateProps(tag, { children: 'Edited' });
+    expect(state().versions[0]?.root.children[0]?.props.children).not.toBe('Edited');
+  });
+
+  it('removes versions and ignores missing ones', () => {
+    const version = state().saveVersion();
+    const before = state();
+    state().removeVersion('missing');
+    state().restoreVersion('missing');
+    expect(state()).toBe(before);
+    state().removeVersion(version);
+    expect(state().versions).toEqual([]);
   });
 });

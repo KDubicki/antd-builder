@@ -16,6 +16,7 @@ beforeEach(() => {
     theme: createTheme(),
     mockData: [],
     customBlocks: [],
+    versions: [],
     selectedId: null,
   });
 });
@@ -83,6 +84,15 @@ describe('useAutosave', () => {
     });
     act(() => vi.runAllTimers());
     expect(savedProject().customBlocks).toMatchObject([{ name: 'Badge' }]);
+  });
+
+  it('saves versions', () => {
+    renderHook(() => useAutosave());
+    act(() => {
+      useEditorStore.getState().saveVersion('Draft');
+    });
+    act(() => vi.runAllTimers());
+    expect(savedProject().versions).toMatchObject([{ name: 'Draft' }]);
   });
 
   it('keeps working when storage is unavailable', () => {
