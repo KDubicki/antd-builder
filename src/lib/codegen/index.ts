@@ -1,5 +1,5 @@
 import { type DataBinding, isBinding, pathSegments, resolveBinding } from '@/lib/mockData';
-import { type PropDefinition, getComponentMeta } from '@/lib/registry';
+import { type PropDefinition, antdProps, getComponentMeta } from '@/lib/registry';
 import type { BuilderNode, DataSource, ProjectTheme } from '@/lib/schema';
 import { algorithmNames } from '@/lib/theme';
 
@@ -61,14 +61,20 @@ export function nodeToJsx(
   const meta = getComponentMeta(node.component);
   // Bound props become expressions; unresolved ones are dropped, as on the canvas.
   const expressions = new Map<string, string>();
-  const literals: Record<string, unknown> = {};
+  const editorLiterals: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(node.props)) {
-    if (!isBinding(value)) literals[key] = value;
+    if (!isBinding(value)) editorLiterals[key] = value;
     else {
       const expression = bindingExpression(value, meta?.props[key], sources);
       if (expression) expressions.set(key, expression);
     }
   }
+  // Literal props in antd's shape (see `toProps`); a bound prop wins over a literal of its key.
+  const literals = Object.fromEntries(
+    Object.entries(meta ? antdProps(meta, editorLiterals) : editorLiterals).filter(
+      ([key]) => !expressions.has(key),
+    ),
+  );
 
   const { children: text, ...rest } = literals;
   const boundText = expressions.get('children');

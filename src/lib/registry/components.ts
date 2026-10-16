@@ -107,6 +107,7 @@ export const components: readonly ComponentMeta[] = [
     description: '24-column grid row. Holds columns.',
     props: {
       gutter: { type: 'number', label: 'Gutter (px)', min: 0 },
+      verticalGutter: { type: 'number', label: 'Vertical gutter (px)', min: 0 },
       justify: {
         type: 'enum',
         label: 'Justify',
@@ -115,6 +116,11 @@ export const components: readonly ComponentMeta[] = [
       align: { type: 'enum', label: 'Align', options: ['top', 'middle', 'bottom'] },
     },
     defaultProps: { gutter: 16 },
+    // antd takes both gutters as one `[horizontal, vertical]` prop.
+    toProps: ({ verticalGutter, ...props }) =>
+      verticalGutter === undefined
+        ? props
+        : { ...props, gutter: [props.gutter ?? 0, verticalGutter] },
     children: ['Col'],
   },
   {
@@ -1344,6 +1350,7 @@ export const components: readonly ComponentMeta[] = [
     props: {
       columns: json('Columns'),
       dataSource: json('Rows'),
+      horizontalScroll: bool('Scroll horizontally'),
       size: { type: 'enum', label: 'Size', options: ['small', 'middle', 'large'] },
       bordered: bool('Bordered'),
       pagination: { type: 'boolean', label: 'Pagination', default: true },
@@ -1362,6 +1369,9 @@ export const components: readonly ComponentMeta[] = [
         { key: '3', name: 'Alan', age: 41, city: 'Manchester' },
       ],
     },
+    // Wide tables scroll inside their container instead of overflowing it (narrow screens).
+    toProps: ({ horizontalScroll, ...props }) =>
+      horizontalScroll ? { ...props, scroll: { x: 'max-content' } } : props,
     children: 'none',
   },
   {

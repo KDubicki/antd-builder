@@ -305,3 +305,23 @@ describe('blocks', () => {
     expect(typeErrors(source)).toEqual([]);
   }, 30_000);
 });
+
+describe('props in antd shape (toProps)', () => {
+  it('exports a vertical gutter and horizontal table scroll as antd props', () => {
+    const row = { ...createNode('Row', 'r'), props: { gutter: 16, verticalGutter: 8 } };
+    expect(nodeToJsx(row)).toBe('<Row gutter={[16,8]} />');
+    const table = { ...createNode('Table', 't'), props: { horizontalScroll: true } };
+    expect(nodeToJsx(table)).toBe('<Table scroll={{"x":"max-content"}} />');
+    const plain = { ...createNode('Table', 't'), props: { horizontalScroll: false } };
+    expect(nodeToJsx(plain)).toBe('<Table />');
+  });
+
+  it('lets a bound prop win over a literal of the same key', () => {
+    const mockData = [{ id: 'g', name: 'layout', data: { gap: 24 } }];
+    const row = {
+      ...createNode('Row', 'r'),
+      props: { gutter: { $data: 'g', path: 'gap' }, verticalGutter: 8 },
+    };
+    expect(nodeToJsx(row, 0, mockData)).toBe('<Row gutter={layout.gap} />');
+  });
+});

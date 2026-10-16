@@ -6,7 +6,7 @@ import { type MouseEvent, useMemo } from 'react';
 import type { DragData } from '@/lib/editor/drop';
 import { ROOT_ID, useEditorStore } from '@/lib/editor/store';
 import { resolveProps } from '@/lib/mockData';
-import { codePropValues, getComponentMeta } from '@/lib/registry';
+import { antdProps, codePropValues, getComponentMeta } from '@/lib/registry';
 import type { BuilderNode } from '@/lib/schema';
 import { toThemeConfig } from '@/lib/theme';
 import { viewports } from './CanvasToolbar';
@@ -62,7 +62,10 @@ function CanvasNode({ node }: { node: BuilderNode }) {
   // Bound props show their mock data; code props fill in what the page can't store.
   const props = useMemo(() => {
     if (!meta) return node.props;
-    return { ...codePropValues(meta), ...resolveProps(node.props, meta.props, mockData) };
+    return {
+      ...codePropValues(meta),
+      ...antdProps(meta, resolveProps(node.props, meta.props, mockData)),
+    };
   }, [meta, node.props, mockData]);
   if (!Component || !meta) {
     return <Typography.Text type="danger">Unknown component: {node.component}</Typography.Text>;

@@ -1,6 +1,7 @@
 import * as antd from 'antd';
 import { describe, expect, it } from 'vitest';
 import {
+  antdProps,
   canContain,
   codePropValues,
   components,
@@ -202,5 +203,21 @@ describe('antd coverage', () => {
 
   it('only excludes names antd still exports', () => {
     for (const name of Object.keys(notInPalette)) expect(antd, name).toHaveProperty(name);
+  });
+});
+
+describe('antdProps', () => {
+  it('maps friendly editor props to antd props where a component defines it', () => {
+    const row = getComponentMeta('Row')!;
+    expect(antdProps(row, { gutter: 16 })).toEqual({ gutter: 16 });
+    expect(antdProps(row, { verticalGutter: 8 })).toEqual({ gutter: [0, 8] });
+    const table = getComponentMeta('Table')!;
+    expect(antdProps(table, { horizontalScroll: true, size: 'small' })).toEqual({
+      size: 'small',
+      scroll: { x: 'max-content' },
+    });
+    const button = getComponentMeta('Button')!;
+    const props = { type: 'primary' };
+    expect(antdProps(button, props)).toBe(props);
   });
 });

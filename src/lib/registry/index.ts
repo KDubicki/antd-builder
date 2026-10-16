@@ -44,6 +44,14 @@ export function hasRoomFor(node: BuilderNode, movingId?: string): boolean {
   return node.children.filter((child) => child.id !== movingId).length < max;
 }
 
+/** The props antd receives for a node's (resolved) props: see `ComponentMeta.toProps`. */
+export function antdProps(
+  meta: ComponentMeta,
+  props: Readonly<Record<string, unknown>>,
+): Record<string, unknown> {
+  return meta.toProps ? meta.toProps(props) : (props as Record<string, unknown>);
+}
+
 /** Runtime values of a component's code props, to spread onto the rendered component. */
 export function codePropValues(meta: ComponentMeta): Record<string, unknown> {
   return Object.fromEntries(

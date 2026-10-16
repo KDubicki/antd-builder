@@ -22,7 +22,8 @@ function node(
 }
 
 const statTile = (title: string, sourceId: string, path: string, props = {}) =>
-  node('Col', { span: 8 }, [
+  // A full row each on phones, three across from 576px.
+  node('Col', { span: 8, xs: 24, sm: 8 }, [
     node('Card', {}, [node('Statistic', { title, value: { $data: sourceId, path }, ...props })]),
   ]);
 
@@ -65,7 +66,7 @@ export const blocks: readonly Block[] = [
     component: 'Row',
     data: { name: 'stats', data: { users: 1128, orders: 93, revenue: 12450.5 } },
     build: (sourceId) =>
-      node('Row', { gutter: 16 }, [
+      node('Row', { gutter: 16, verticalGutter: 16 }, [
         statTile('Active users', sourceId, 'users'),
         statTile('Orders', sourceId, 'orders'),
         statTile('Revenue', sourceId, 'revenue', { precision: 2, prefix: '$' }),
@@ -93,6 +94,7 @@ export const blocks: readonly Block[] = [
             { title: 'Role', dataIndex: 'role', key: 'role' },
           ],
           dataSource: { $data: sourceId },
+          horizontalScroll: true,
         }),
       ]),
   },

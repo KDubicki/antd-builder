@@ -54,4 +54,10 @@ export interface ComponentMeta {
   defaultChildren?: readonly string[];
   /** Props that hold code; see `CodeProp`. */
   codeProps?: Readonly<Record<string, CodeProp>>;
+  /**
+   * Maps the editor's props to the props antd receives, on the canvas and in exported code, for
+   * props that are friendlier to edit in another shape (e.g. a vertical gutter number that
+   * becomes `gutter={[h, v]}`).
+   */
+  toProps?: (props: Readonly<Record<string, unknown>>) => Record<string, unknown>;
 }

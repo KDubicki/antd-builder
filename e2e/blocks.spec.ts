@@ -28,3 +28,33 @@ test('drops ready-made blocks, with their mock data', async ({ page }) => {
   await expect(canvas.locator('.ant-table')).toHaveCount(0);
   await expect(data.getByText('No data sources yet')).toBeVisible();
 });
+
+test('data blocks fit a mobile screen', async ({ page }) => {
+  await page.goto('/');
+  const palette = page.getByLabel('Component palette');
+  const canvas = page.getByTestId('canvas');
+  await page.getByText('Mobile', { exact: true }).click();
+  await dragTo(page, palette.getByRole('button', { name: 'Stats row' }), canvas);
+  await dragTo(page, palette.getByRole('button', { name: 'User table' }), canvas);
+  await expect(canvas.getByRole('cell', { name: 'Alice Johnson' })).toBeVisible();
+
+  const right = async (locator: ReturnType<typeof canvas.locator>) => {
+    const box = (await locator.boundingBox())!;
+    return box.x + box.width;
+  };
+  const edge = await right(canvas);
+
+  // Stat tiles stack one per row, inside the page.
+  const tiles = canvas.locator('.ant-statistic');
+  await expect(tiles).toHaveCount(3);
+  const tops = await tiles.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().top));
+  expect(tops[0]).toBeLessThan(tops[1]!);
+  expect(tops[1]).toBeLessThan(tops[2]!);
+  for (const tile of await canvas.locator('.ant-card').all()) {
+    expect(await right(tile)).toBeLessThanOrEqual(edge);
+  }
+
+  // The table scrolls inside its card instead of overflowing it.
+  const scroller = canvas.locator('.ant-table-content');
+  expect(await scroller.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+});
