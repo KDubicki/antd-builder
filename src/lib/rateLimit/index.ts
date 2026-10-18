@@ -18,6 +18,7 @@ export const LIMITS_PER_MINUTE = {
   dataFetch: 30,
   export: 20,
   share: 10,
+  shareDelete: 30,
 } as const;
 
 /** A limiter for one of the routes in `LIMITS_PER_MINUTE`. */

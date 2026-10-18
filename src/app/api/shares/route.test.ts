@@ -8,7 +8,7 @@ import { MAX_PROJECT_BYTES, toProject } from '@/lib/project';
 import { LIMITS_PER_MINUTE } from '@/lib/rateLimit';
 import { saveShare } from '@/lib/shares';
 import { createTheme } from '@/lib/theme';
-import { GET } from './[id]/route';
+import { DELETE, GET } from './[id]/route';
 import { POST } from './route';
 
 vi.mock('@/lib/shares', async (importOriginal) => {
@@ -51,6 +51,11 @@ const post = (body: string, headers: Record<string, string> = {}) =>
 const get = (id: string) =>
   GET(new Request(`http://localhost/api/shares/${id}`), { params: Promise.resolve({ id }) });
 
+const del = (id: string, headers: Record<string, string> = {}) =>
+  DELETE(new Request(`http://localhost/api/shares/${id}`, { method: 'DELETE', headers }), {
+    params: Promise.resolve({ id }),
+  });
+
 describe('POST /api/shares', () => {
   it('limits requests per client', async () => {
     const from = (ip: string) =>
@@ -71,7 +76,8 @@ describe('POST /api/shares', () => {
   it('stores a snapshot without the version history and serves it back', async () => {
     const response = await post(JSON.stringify(project()));
     expect(response.status).toBe(201);
-    const { id } = (await response.json()) as { id: string };
+    const { id, deleteToken } = (await response.json()) as { id: string; deleteToken: string };
+    expect(deleteToken).toMatch(/^[A-Za-z0-9_-]{32}$/);
 
     const shared = await get(id);
     expect(shared.status).toBe(200);
@@ -107,5 +113,30 @@ describe('GET /api/shares/[id]', () => {
   it('answers 404 for unknown and malformed ids', async () => {
     expect((await get('A'.repeat(22))).status).toBe(404);
     expect((await get('..%2F..%2Fpackage')).status).toBe(404);
+  });
+});
+
+describe('DELETE /api/shares/[id]', () => {
+  const create = async () =>
+    (await (await post(JSON.stringify(project()))).json()) as { id: string; deleteToken: string };
+
+  it('deletes with the Bearer delete token', async () => {
+    const { id, deleteToken } = await create();
+    expect((await del(id)).status).toBe(401);
+    expect((await del(id, { authorization: 'Bearer nope' })).status).toBe(403);
+    expect((await get(id)).status).toBe(200);
+
+    const deleted = await del(id, { authorization: `Bearer ${deleteToken}` });
+    expect(deleted.status).toBe(204);
+    expect((await get(id)).status).toBe(404);
+    expect((await del(id, { authorization: `Bearer ${deleteToken}` })).status).toBe(404);
+  });
+
+  it('limits requests per client', async () => {
+    const headers = { authorization: 'Bearer x', 'x-forwarded-for': '198.51.100.3' };
+    for (let i = 0; i < LIMITS_PER_MINUTE.shareDelete; i += 1) {
+      expect((await del('A'.repeat(22), headers)).status).toBe(404);
+    }
+    expect((await del('A'.repeat(22), headers)).status).toBe(429);
   });
 });

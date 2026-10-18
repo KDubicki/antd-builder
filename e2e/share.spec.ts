@@ -16,6 +16,7 @@ test('shares a read-only copy that others can open in their editor', async ({ pa
 
   await page.getByRole('button', { name: 'Share' }).click();
   const dialog = page.getByRole('dialog', { name: 'Share a read-only copy' });
+  await dialog.getByRole('button', { name: /Create link/ }).click();
   const link = await dialog.getByLabel('Share link').inputValue();
   expect(link).toMatch(/\/s\/[A-Za-z0-9_-]{22}$/);
 
@@ -46,6 +47,25 @@ test('shares a read-only copy that others can open in their editor', async ({ pa
   await expect(page.getByRole('dialog', { name: 'Replace your project?' })).toBeVisible();
   await page.getByRole('button', { name: 'Cancel' }).click();
   await expect(page).toHaveURL(link);
+});
+
+test('deletes a shared link from the Share dialog', async ({ page, request }) => {
+  await page.goto('/');
+  await page.getByLabel('Project name').fill('Short-lived');
+  await page.getByRole('button', { name: 'Share' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Share a read-only copy' });
+  await dialog.getByRole('button', { name: /Create link/ }).click();
+  const link = await dialog.getByLabel('Share link').inputValue();
+  expect((await request.get(link)).status()).toBe(200);
+
+  // The link stays listed after a reload.
+  await page.reload();
+  await page.getByRole('button', { name: 'Share' }).click();
+  const item = dialog.getByRole('listitem').filter({ hasText: 'Short-lived' });
+  await item.getByRole('button', { name: 'Delete link' }).click();
+  await page.getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect(dialog.getByText('No links yet')).toBeVisible();
+  expect((await request.get(link)).status()).toBe(404);
 });
 
 test('unknown share links show the not-found page', async ({ page }) => {

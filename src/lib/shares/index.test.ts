@@ -1,16 +1,17 @@
 // @vitest-environment node
-import { mkdtemp, readdir, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { isShareId, loadShare, saveShare } from '.';
+import { deleteShare, isShareId, loadShare, saveShare } from '.';
 
 let dir: string;
+const sharesDir = () => path.join(dir, 'nested');
 
 beforeEach(async () => {
   dir = await mkdtemp(path.join(tmpdir(), 'shares-'));
   vi.stubEnv('GEMINI_API_KEY', 'key');
-  vi.stubEnv('SHARES_DIR', path.join(dir, 'nested'));
+  vi.stubEnv('SHARES_DIR', sharesDir());
 });
 
 afterEach(async () => {
@@ -18,18 +19,28 @@ afterEach(async () => {
   await rm(dir, { recursive: true, force: true });
 });
 
-describe('shares', () => {
+describe('saveShare and loadShare', () => {
   it('saves snapshots under new unguessable ids and loads them back', async () => {
     const a = await saveShare('{"a":1}');
     const b = await saveShare('{"b":2}');
-    expect(isShareId(a)).toBe(true);
-    expect(a).not.toBe(b);
-    expect(await loadShare(a)).toBe('{"a":1}');
-    expect(await loadShare(b)).toBe('{"b":2}');
-    // No temporary files are left behind.
-    expect((await readdir(path.join(dir, 'nested'))).sort()).toEqual(
-      [`${a}.json`, `${b}.json`].sort(),
+    expect(isShareId(a.id)).toBe(true);
+    expect(a.id).not.toBe(b.id);
+    expect(a.deleteToken).not.toBe(b.deleteToken);
+    expect(await loadShare(a.id)).toBe('{"a":1}');
+    expect(await loadShare(b.id)).toBe('{"b":2}');
+    // A snapshot and its metadata each, no temporary files left behind.
+    expect((await readdir(sharesDir())).sort()).toEqual(
+      [a, b].flatMap(({ id }) => [`${id}.json`, `${id}.meta.json`]).sort(),
     );
+  });
+
+  it('keeps only a hash of the delete token', async () => {
+    const { id, deleteToken } = await saveShare('{}');
+    const meta = await import('node:fs/promises').then((fs) =>
+      fs.readFile(path.join(sharesDir(), `${id}.meta.json`), 'utf8'),
+    );
+    expect(meta).not.toContain(deleteToken);
+    expect(JSON.parse(meta)).toMatchObject({ tokenHash: expect.stringMatching(/^[0-9a-f]{64}$/) });
   });
 
   it('returns null for unknown or malformed ids without touching other files', async () => {
@@ -41,11 +52,30 @@ describe('shares', () => {
 
   it('passes on unexpected storage errors', async () => {
     // A directory where the file should be: reading it fails with EISDIR.
-    vi.stubEnv('SHARES_DIR', dir);
     const id = 'B'.repeat(22);
-    await saveShare('{}'); // creates the folder
-    const { mkdir } = await import('node:fs/promises');
-    await mkdir(path.join(dir, `${id}.json`));
+    await mkdir(path.join(sharesDir(), `${id}.json`), { recursive: true });
     await expect(loadShare(id)).rejects.toThrow();
+  });
+});
+
+describe('deleteShare', () => {
+  it('deletes a share with its token, and only with it', async () => {
+    const { id, deleteToken } = await saveShare('{}');
+    expect(await deleteShare(id, 'wrong')).toBe('forbidden');
+    expect(await deleteShare(id, `${deleteToken}x`)).toBe('forbidden');
+    expect(await loadShare(id)).toBe('{}');
+
+    expect(await deleteShare(id, deleteToken)).toBe('deleted');
+    expect(await loadShare(id)).toBeNull();
+    expect(await readdir(sharesDir())).toEqual([]);
+    expect(await deleteShare(id, deleteToken)).toBe('not-found');
+  });
+
+  it('refuses shares without metadata and unknown ids', async () => {
+    const id = 'C'.repeat(22);
+    await mkdir(sharesDir(), { recursive: true });
+    await writeFile(path.join(sharesDir(), `${id}.json`), '{}');
+    expect(await deleteShare(id, 'any')).toBe('forbidden');
+    expect(await deleteShare('../x', 'any')).toBe('not-found');
   });
 });
