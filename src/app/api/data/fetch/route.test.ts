@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { LIMITS_PER_MINUTE } from '@/lib/rateLimit';
 import { RemoteJsonError, fetchJson } from '@/lib/remoteJson';
 import { POST } from './route';
 
@@ -24,6 +25,22 @@ afterEach(() => {
 });
 
 describe('POST /api/data/fetch', () => {
+  it('limits requests per client', async () => {
+    const from = (ip: string) =>
+      new Request('http://localhost/api/data/fetch', {
+        method: 'POST',
+        body: '{}',
+        headers: { 'x-forwarded-for': ip },
+      });
+    for (let i = 0; i < LIMITS_PER_MINUTE.dataFetch; i += 1) {
+      expect((await POST(from('198.51.100.1'))).status).not.toBe(429);
+    }
+    const limited = await POST(from('198.51.100.1'));
+    expect(limited.status).toBe(429);
+    expect(limited.headers.get('retry-after')).toMatch(/^\d+$/);
+    expect((await POST(from('198.51.100.2'))).status).not.toBe(429);
+  });
+
   it.each([[{}], [{ url: '  ' }], ['{not json']])('rejects the body %j', async (body) => {
     expect((await post(body)).status).toBe(400);
     expect(fetchJson).not.toHaveBeenCalled();

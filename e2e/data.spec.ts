@@ -115,3 +115,14 @@ test('the fetch API refuses internal addresses', async ({ request, baseURL }) =>
   const bad = await request.post('/api/data/fetch', { data: { url: 'file:///etc/passwd' } });
   expect(bad.status()).toBe(400);
 });
+
+test('the fetch API limits requests per client', async ({ request }) => {
+  const headers = { 'x-forwarded-for': '198.51.100.77' };
+  const statuses: number[] = [];
+  for (let i = 0; i < 31; i += 1) {
+    const response = await request.post('/api/data/fetch', { data: {}, headers });
+    statuses.push(response.status());
+  }
+  expect(statuses.slice(0, 30).every((status) => status === 400)).toBe(true);
+  expect(statuses[30]).toBe(429);
+});

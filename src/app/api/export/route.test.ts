@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { createRoot } from '@/lib/editor/store';
 import { MAX_PROJECT_BYTES, toProject } from '@/lib/project';
+import { LIMITS_PER_MINUTE } from '@/lib/rateLimit';
 import { createTheme } from '@/lib/theme';
 import { POST } from './route';
 
@@ -22,6 +23,22 @@ function entryNames(zip: Buffer): string[] {
 }
 
 describe('POST /api/export', () => {
+  it('limits requests per client', async () => {
+    const from = (ip: string) =>
+      new Request('http://localhost/api/export', {
+        method: 'POST',
+        body: '{}',
+        headers: { 'x-forwarded-for': ip },
+      });
+    for (let i = 0; i < LIMITS_PER_MINUTE.export; i += 1) {
+      expect((await POST(from('198.51.100.1'))).status).not.toBe(429);
+    }
+    const limited = await POST(from('198.51.100.1'));
+    expect(limited.status).toBe(429);
+    expect(limited.headers.get('retry-after')).toMatch(/^\d+$/);
+    expect((await POST(from('198.51.100.2'))).status).not.toBe(429);
+  });
+
   it('returns the scaffold as a ZIP inside a project folder', async () => {
     const project = toProject({ name: 'My Shop', root: createRoot(), theme: createTheme() });
     const response = await post(JSON.stringify(project));

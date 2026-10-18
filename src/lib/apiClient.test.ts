@@ -40,6 +40,22 @@ describe('postJson', () => {
     },
   );
 
+  it('explains rate limiting without a message from the server', async () => {
+    vi.stubGlobal('fetch', fetchMock);
+    fetchMock.mockResolvedValueOnce(
+      new Response('Too Many Requests', { status: 429, headers: { 'retry-after': '12' } }),
+    );
+    expect(await postJson('/api/x', {})).toEqual({
+      ok: false,
+      error: 'Too many requests. Try again in 12 s.',
+    });
+    fetchMock.mockResolvedValueOnce(new Response('', { status: 429 }));
+    expect(await postJson('/api/x', {})).toEqual({
+      ok: false,
+      error: 'Too many requests. Try again in a minute.',
+    });
+  });
+
   it('reports network failures', async () => {
     vi.stubGlobal('fetch', fetchMock);
     fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { generateComponent } from '@/lib/ai';
+import { LIMITS_PER_MINUTE } from '@/lib/rateLimit';
 import { POST } from './route';
 
 vi.mock('@/lib/ai', () => ({ generateComponent: vi.fn() }));
@@ -23,6 +24,22 @@ afterEach(() => {
 });
 
 describe('POST /api/ai/component', () => {
+  it('limits requests per client', async () => {
+    const from = (ip: string) =>
+      new Request('http://localhost/api/ai/component', {
+        method: 'POST',
+        body: '{}',
+        headers: { 'x-forwarded-for': ip },
+      });
+    for (let i = 0; i < LIMITS_PER_MINUTE.aiComponent; i += 1) {
+      expect((await POST(from('198.51.100.1'))).status).not.toBe(429);
+    }
+    const limited = await POST(from('198.51.100.1'));
+    expect(limited.status).toBe(429);
+    expect(limited.headers.get('retry-after')).toMatch(/^\d+$/);
+    expect((await POST(from('198.51.100.2'))).status).not.toBe(429);
+  });
+
   it('rejects a missing prompt', async () => {
     expect((await post({})).status).toBe(400);
   });

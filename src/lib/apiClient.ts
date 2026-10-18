@@ -6,6 +6,17 @@ function errorMessage(body: unknown): string | null {
   return typeof body.error === 'string' ? body.error : null;
 }
 
+/** A message for an error response without one, e.g. from a proxy in front of the app. */
+function fallbackMessage(response: Response): string {
+  if (response.status === 429) {
+    const seconds = Number(response.headers.get('retry-after'));
+    return seconds > 0
+      ? `Too many requests. Try again in ${seconds} s.`
+      : 'Too many requests. Try again in a minute.';
+  }
+  return `Request failed (${response.status})`;
+}
+
 /** POSTs JSON to one of the app's API routes; a failed request becomes a message to show. */
 async function post(path: string, body: unknown): Promise<ApiResult<Response>> {
   let response: Response;
@@ -20,7 +31,7 @@ async function post(path: string, body: unknown): Promise<ApiResult<Response>> {
   }
   if (response.ok) return { ok: true, value: response };
   const json: unknown = await response.json().catch(() => null);
-  return { ok: false, error: errorMessage(json) ?? `Request failed (${response.status})` };
+  return { ok: false, error: errorMessage(json) ?? fallbackMessage(response) };
 }
 
 /**

@@ -1,12 +1,18 @@
 import { z } from 'zod';
 import { generateComponent } from '@/lib/ai';
 import { getServerEnv } from '@/lib/env';
+import { rateLimit, routeLimiter } from '@/lib/rateLimit';
+
+const limiter = routeLimiter('aiComponent');
 
 const requestSchema = z.object({
   prompt: z.string().trim().min(1).max(4000),
 });
 
 export async function POST(request: Request) {
+  const limited = rateLimit(request, limiter);
+  if (limited) return limited;
+
   const body = requestSchema.safeParse(await request.json().catch(() => null));
   if (!body.success) {
     return Response.json({ error: z.prettifyError(body.error) }, { status: 400 });

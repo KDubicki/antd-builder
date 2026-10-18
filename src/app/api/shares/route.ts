@@ -1,5 +1,8 @@
 import { MAX_PROJECT_BYTES, parseProject, toProject } from '@/lib/project';
+import { rateLimit, routeLimiter } from '@/lib/rateLimit';
 import { saveShare } from '@/lib/shares';
+
+const limiter = routeLimiter('share');
 
 /**
  * Shares a project: stores a read-only snapshot and returns its id, viewable at `/s/<id>`.
@@ -7,6 +10,9 @@ import { saveShare } from '@/lib/shares';
  * version history, which stays private to the author.
  */
 export async function POST(request: Request) {
+  const limited = rateLimit(request, limiter);
+  if (limited) return limited;
+
   const tooLarge = () =>
     Response.json(
       { error: `The project is larger than ${MAX_PROJECT_BYTES / 1024 / 1024} MB` },

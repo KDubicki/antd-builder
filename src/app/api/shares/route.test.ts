@@ -5,6 +5,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRoot } from '@/lib/editor/store';
 import { MAX_PROJECT_BYTES, toProject } from '@/lib/project';
+import { LIMITS_PER_MINUTE } from '@/lib/rateLimit';
 import { saveShare } from '@/lib/shares';
 import { createTheme } from '@/lib/theme';
 import { GET } from './[id]/route';
@@ -51,6 +52,22 @@ const get = (id: string) =>
   GET(new Request(`http://localhost/api/shares/${id}`), { params: Promise.resolve({ id }) });
 
 describe('POST /api/shares', () => {
+  it('limits requests per client', async () => {
+    const from = (ip: string) =>
+      new Request('http://localhost/api/shares', {
+        method: 'POST',
+        body: '{}',
+        headers: { 'x-forwarded-for': ip },
+      });
+    for (let i = 0; i < LIMITS_PER_MINUTE.share; i += 1) {
+      expect((await POST(from('198.51.100.1'))).status).not.toBe(429);
+    }
+    const limited = await POST(from('198.51.100.1'));
+    expect(limited.status).toBe(429);
+    expect(limited.headers.get('retry-after')).toMatch(/^\d+$/);
+    expect((await POST(from('198.51.100.2'))).status).not.toBe(429);
+  });
+
   it('stores a snapshot without the version history and serves it back', async () => {
     const response = await post(JSON.stringify(project()));
     expect(response.status).toBe(201);
