@@ -26,6 +26,15 @@ test('shares a read-only copy that others can open in their editor', async ({ pa
   await expect(viewer.getByText('Landing page')).toBeVisible();
   await expect(viewer.getByText('Read-only')).toBeVisible();
   await expect(viewer.getByText(/Link expires/)).toBeVisible();
+  await expect(viewer).toHaveTitle('Landing page · antd-builder');
+  await expect(viewer.locator('meta[property="og:title"]')).toHaveAttribute(
+    'content',
+    'Landing page',
+  );
+  await expect(viewer.locator('meta[name="robots"]')).toHaveAttribute(
+    'content',
+    'noindex, nofollow',
+  );
   const shared = viewer.getByTestId('canvas');
   await expect(shared).toHaveAttribute('data-preview', 'true');
   await expect(shared.locator('.ant-card')).toBeVisible();
