@@ -13,6 +13,9 @@ import {
 
 export const PAGE_ID = 'home';
 
+/** Largest project file the server accepts (sharing, export), in bytes of JSON. */
+export const MAX_PROJECT_BYTES = 2 * 1024 * 1024;
+
 export interface ProjectContent {
   name: string;
   root: BuilderNode;
@@ -138,11 +141,16 @@ export function parseProject(json: string): ParseResult {
   return { ok: true, content: { name, root, theme, mockData, customBlocks, versions } };
 }
 
-/** File name for a downloaded project, e.g. "My shop" -> "my-shop.json". */
-export function projectFileName(name: string, extension = 'json'): string {
+/** File-system friendly form of a project name, e.g. "My shop" -> "my-shop". */
+export function projectSlug(name: string): string {
   const slug = name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
-  return `${slug || 'project'}.${extension}`;
+  return slug || 'project';
+}
+
+/** File name for a downloaded project, e.g. "My shop" -> "my-shop.json". */
+export function projectFileName(name: string, extension = 'json'): string {
+  return `${projectSlug(name)}.${extension}`;
 }

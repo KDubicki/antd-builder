@@ -4,9 +4,6 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { getServerEnv } from '@/lib/env';
 
-/** Largest project accepted for sharing, in bytes of JSON. */
-export const MAX_SHARE_BYTES = 2 * 1024 * 1024;
-
 /** 16 random bytes in base64url: unguessable, and safe as a file name. */
 const ID_PATTERN = /^[A-Za-z0-9_-]{22}$/;
 

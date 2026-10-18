@@ -1,5 +1,5 @@
-import { parseProject, toProject } from '@/lib/project';
-import { MAX_SHARE_BYTES, saveShare } from '@/lib/shares';
+import { MAX_PROJECT_BYTES, parseProject, toProject } from '@/lib/project';
+import { saveShare } from '@/lib/shares';
 
 /**
  * Shares a project: stores a read-only snapshot and returns its id, viewable at `/s/<id>`.
@@ -9,12 +9,12 @@ import { MAX_SHARE_BYTES, saveShare } from '@/lib/shares';
 export async function POST(request: Request) {
   const tooLarge = () =>
     Response.json(
-      { error: `The project is larger than ${MAX_SHARE_BYTES / 1024 / 1024} MB` },
+      { error: `The project is larger than ${MAX_PROJECT_BYTES / 1024 / 1024} MB` },
       { status: 413 },
     );
-  if (Number(request.headers.get('content-length')) > MAX_SHARE_BYTES) return tooLarge();
+  if (Number(request.headers.get('content-length')) > MAX_PROJECT_BYTES) return tooLarge();
   const body = await request.text();
-  if (Buffer.byteLength(body) > MAX_SHARE_BYTES) return tooLarge();
+  if (Buffer.byteLength(body) > MAX_PROJECT_BYTES) return tooLarge();
 
   const result = parseProject(body);
   if (!result.ok) return Response.json({ error: result.error }, { status: 400 });

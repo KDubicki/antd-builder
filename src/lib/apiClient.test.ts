@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { postJson } from './apiClient';
+import { postForFile, postJson } from './apiClient';
 
 const fetchMock = vi.fn<typeof fetch>();
 
@@ -47,5 +47,22 @@ describe('postJson', () => {
       ok: false,
       error: "Couldn't reach the server. Check your connection.",
     });
+  });
+});
+
+describe('postForFile', () => {
+  it('returns the answer as a file', async () => {
+    vi.stubGlobal('fetch', fetchMock);
+    fetchMock.mockResolvedValue(
+      new Response('PK', { headers: { 'content-type': 'application/zip' } }),
+    );
+    const result = await postForFile('/api/export', {});
+    expect(result.ok && (await result.value.text())).toBe('PK');
+  });
+
+  it('returns errors like postJson', async () => {
+    vi.stubGlobal('fetch', fetchMock);
+    respond(400, { error: 'Invalid project' });
+    expect(await postForFile('/api/export', {})).toEqual({ ok: false, error: 'Invalid project' });
   });
 });

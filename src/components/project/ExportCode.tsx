@@ -1,11 +1,12 @@
 'use client';
 
-import { CodeOutlined, CopyOutlined, DownloadOutlined } from '@ant-design/icons';
+import { CodeOutlined, CopyOutlined, DownloadOutlined, FileZipOutlined } from '@ant-design/icons';
 import { App, Button, Modal, Typography, theme } from 'antd';
 import { useState } from 'react';
 import { generatePage } from '@/lib/codegen';
 import { useEditorStore } from '@/lib/editor/store';
-import { projectFileName } from '@/lib/project';
+import { postForFile } from '@/lib/apiClient';
+import { projectFileName, toProject } from '@/lib/project';
 import { downloadFile } from './download';
 
 /** "Export code" button: shows the generated TSX page with copy and download actions. */
@@ -21,6 +22,16 @@ export function ExportCode() {
     } catch (error) {
       message.error(error instanceof Error ? error.message : 'Could not generate code');
     }
+  };
+
+  const [zipping, setZipping] = useState(false);
+  const downloadProject = async () => {
+    setZipping(true);
+    const project = { ...toProject(useEditorStore.getState()), versions: [] };
+    const result = await postForFile('/api/export', project);
+    setZipping(false);
+    if (result.ok) downloadFile(projectFileName(name, 'zip'), result.value);
+    else message.error(result.error);
   };
 
   const copy = async () => {
@@ -43,6 +54,15 @@ export function ExportCode() {
         width={860}
         onCancel={() => setSource(null)}
         footer={[
+          <Button
+            key="project"
+            icon={<FileZipOutlined />}
+            loading={zipping}
+            title="A runnable Next.js app with this page, its mock data and stub API routes"
+            onClick={downloadProject}
+          >
+            Download Next.js project
+          </Button>,
           <Button key="copy" icon={<CopyOutlined />} onClick={copy}>
             Copy
           </Button>,

@@ -166,26 +166,42 @@ export function boundSourceIds(node: BuilderNode, into = new Set<string>()): Set
   return into;
 }
 
-/** `const` declarations for the mock data the page uses, in Data panel order. */
-function mockDataSource(root: BuilderNode, sources: readonly DataSource[]): string | null {
+/** The data sources the page's props are bound to, in Data panel order. */
+function usedSources(root: BuilderNode, sources: readonly DataSource[]): DataSource[] {
   const used = boundSourceIds(root);
-  const declarations = sources
-    .filter((source) => used.has(source.id))
-    .map((source) => {
-      const declaration = `const ${source.name} = ${JSON.stringify(source.data, null, 2)};`;
-      // Line breaks would end the comment early; URLs never contain them, project files might.
-      return source.url
-        ? `// From ${source.url.replace(/\s+/g, ' ')}\n${declaration}`
-        : declaration;
-    });
+  return sources.filter((source) => used.has(source.id));
+}
+
+/** `const` declarations for the mock data the page uses. */
+function mockDataSource(sources: readonly DataSource[]): string | null {
+  const declarations = sources.map((source) => {
+    const declaration = `const ${source.name} = ${JSON.stringify(source.data, null, 2)};`;
+    // Line breaks would end the comment early; URLs never contain them, project files might.
+    return source.url ? `// From ${source.url.replace(/\s+/g, ' ')}\n${declaration}` : declaration;
+  });
   if (declarations.length === 0) return null;
   return ['// Mock API responses: replace with real data fetching.', ...declarations].join('\n');
 }
 
+export interface GenerateOptions {
+  /**
+   * Module path to import each used data source from (e.g. a JSON file), instead of declaring
+   * the data in the page.
+   */
+  dataModule?: (source: DataSource) => string;
+}
+
 /** Generates a self-contained React + TypeScript page component for a project page. */
-export function generatePage({ name, root, theme, mockData = [] }: PageSource): string {
+export function generatePage(
+  { name, root, theme, mockData = [] }: PageSource,
+  { dataModule }: GenerateOptions = {},
+): string {
   const themeConfig = themeConfigSource(theme);
-  const data = mockDataSource(root, mockData);
+  const sources = usedSources(root, mockData);
+  const data = dataModule ? null : mockDataSource(sources);
+  const dataImports = dataModule
+    ? sources.map((source) => `import ${source.name} from '${dataModule(source)}';`)
+    : [];
   const imports = collectImports(root);
   if (themeConfig) imports.add('ConfigProvider');
   if (themeConfig && algorithmNames(theme).length > 0) imports.add('theme');
@@ -200,6 +216,7 @@ export function generatePage({ name, root, theme, mockData = [] }: PageSource): 
     '',
     `import { ${sorted.join(', ')} } from 'antd';`,
     ...(themeConfig ? ["import type { ThemeConfig } from 'antd';"] : []),
+    ...dataImports,
     '',
     ...(themeConfig ? [themeConfig, ''] : []),
     ...(data ? [data, ''] : []),

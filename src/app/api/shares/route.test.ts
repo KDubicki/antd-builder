@@ -4,8 +4,8 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRoot } from '@/lib/editor/store';
-import { toProject } from '@/lib/project';
-import { MAX_SHARE_BYTES, saveShare } from '@/lib/shares';
+import { MAX_PROJECT_BYTES, toProject } from '@/lib/project';
+import { saveShare } from '@/lib/shares';
 import { createTheme } from '@/lib/theme';
 import { GET } from './[id]/route';
 import { POST } from './route';
@@ -71,9 +71,9 @@ describe('POST /api/shares', () => {
   });
 
   it('rejects projects over the size limit', async () => {
-    const declared = await post('{}', { 'content-length': String(MAX_SHARE_BYTES + 1) });
+    const declared = await post('{}', { 'content-length': String(MAX_PROJECT_BYTES + 1) });
     expect(declared.status).toBe(413);
-    const big = { ...project(), name: 'x'.repeat(MAX_SHARE_BYTES) };
+    const big = { ...project(), name: 'x'.repeat(MAX_PROJECT_BYTES) };
     expect((await post(JSON.stringify(big))).status).toBe(413);
   });
 

@@ -1,6 +1,7 @@
 /** Offers `content` to the user as a file download. */
-export function downloadFile(fileName: string, content: string, type: string) {
-  const url = URL.createObjectURL(new Blob([content], { type }));
+export function downloadFile(fileName: string, content: string | Blob, type?: string) {
+  const blob = content instanceof Blob ? content : new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
   link.download = fileName;

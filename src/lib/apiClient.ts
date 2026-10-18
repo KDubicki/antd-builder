@@ -6,11 +6,8 @@ function errorMessage(body: unknown): string | null {
   return typeof body.error === 'string' ? body.error : null;
 }
 
-/**
- * POSTs JSON to one of the app's API routes and reads the JSON answer. Failures come back as a
- * message to show the user, never as a thrown error.
- */
-export async function postJson<T>(path: string, body: unknown): Promise<ApiResult<T>> {
+/** POSTs JSON to one of the app's API routes; a failed request becomes a message to show. */
+async function post(path: string, body: unknown): Promise<ApiResult<Response>> {
   let response: Response;
   try {
     response = await fetch(path, {
@@ -21,9 +18,24 @@ export async function postJson<T>(path: string, body: unknown): Promise<ApiResul
   } catch {
     return { ok: false, error: "Couldn't reach the server. Check your connection." };
   }
+  if (response.ok) return { ok: true, value: response };
   const json: unknown = await response.json().catch(() => null);
-  if (!response.ok) {
-    return { ok: false, error: errorMessage(json) ?? `Request failed (${response.status})` };
-  }
-  return { ok: true, value: json as T };
+  return { ok: false, error: errorMessage(json) ?? `Request failed (${response.status})` };
+}
+
+/**
+ * POSTs JSON to one of the app's API routes and reads the JSON answer. Failures come back as a
+ * message to show the user, never as a thrown error.
+ */
+export async function postJson<T>(path: string, body: unknown): Promise<ApiResult<T>> {
+  const result = await post(path, body);
+  if (!result.ok) return result;
+  return { ok: true, value: (await result.value.json()) as T };
+}
+
+/** Like `postJson`, for routes that answer with a file. */
+export async function postForFile(path: string, body: unknown): Promise<ApiResult<Blob>> {
+  const result = await post(path, body);
+  if (!result.ok) return result;
+  return { ok: true, value: await result.value.blob() };
 }

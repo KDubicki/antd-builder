@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { App } from 'antd';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { generatePage } from '@/lib/codegen';
@@ -66,6 +66,42 @@ describe('ExportCode', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Download shop\.tsx/ }));
     expect(click).toHaveBeenCalledOnce();
     expect((click.mock.contexts[0] as HTMLAnchorElement).download).toBe('shop.tsx');
+  });
+
+  it('downloads a Next.js project built by the server', async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(new Response('PK'));
+    vi.stubGlobal('fetch', fetchMock);
+    const createObjectURL = vi.fn<(blob: Blob) => string>(() => 'blob:zip');
+    URL.createObjectURL = createObjectURL;
+    URL.revokeObjectURL = vi.fn();
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    renderExport();
+    fireEvent.click(screen.getByRole('button', { name: /Export code/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Download Next.js project/ }));
+
+    await waitFor(() => expect(click).toHaveBeenCalledOnce());
+    expect((click.mock.contexts[0] as HTMLAnchorElement).download).toBe('shop.zip');
+    expect(await createObjectURL.mock.calls[0]![0].text()).toBe('PK');
+    const [path, init] = fetchMock.mock.calls[0]!;
+    expect(path).toBe('/api/export');
+    expect(JSON.parse(init?.body as string)).toMatchObject({ name: 'Shop', versions: [] });
+    vi.unstubAllGlobals();
+  });
+
+  it('reports a failed project export', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(JSON.stringify({ error: 'The project is too large to export' }), {
+          status: 413,
+        }),
+      ),
+    );
+    renderExport();
+    fireEvent.click(screen.getByRole('button', { name: /Export code/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Download Next.js project/ }));
+    expect(await screen.findByText('The project is too large to export')).toBeInTheDocument();
+    vi.unstubAllGlobals();
   });
 
   it('reports projects that cannot be exported', async () => {
