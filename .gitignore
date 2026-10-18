@@ -27,6 +27,9 @@ playwright/.cache/
 npm-debug.log*
 pnpm-debug.log*
 
+# shared project snapshots (SHARES_DIR)
+.data/
+
 # misc
 .DS_Store
 *.pem

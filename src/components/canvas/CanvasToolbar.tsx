@@ -20,11 +20,31 @@ export const viewports: Readonly<
   mobile: { label: 'Mobile', width: 375, icon: <MobileOutlined /> },
 };
 
+/** The canvas width preset. */
+export function ViewportSwitch() {
+  const viewport = useEditorStore((state) => state.viewport);
+  const setViewport = useEditorStore((state) => state.setViewport);
+  return (
+    <Segmented<Viewport>
+      aria-label="Canvas width"
+      value={viewport}
+      onChange={setViewport}
+      options={(Object.keys(viewports) as Viewport[]).map((key) => {
+        const { label, width, icon } = viewports[key];
+        return {
+          value: key,
+          icon,
+          label,
+          title: width ? `${label} (${width}px)` : `${label} (full width)`,
+        };
+      })}
+    />
+  );
+}
+
 /** Controls above the canvas: the width preset and preview mode. */
 export function CanvasToolbar() {
   const { token } = theme.useToken();
-  const viewport = useEditorStore((state) => state.viewport);
-  const setViewport = useEditorStore((state) => state.setViewport);
   const preview = useEditorStore((state) => state.previewMode);
   const setPreviewMode = useEditorStore((state) => state.setPreviewMode);
 
@@ -39,20 +59,7 @@ export function CanvasToolbar() {
         background: token.colorBgContainer,
       }}
     >
-      <Segmented<Viewport>
-        aria-label="Canvas width"
-        value={viewport}
-        onChange={setViewport}
-        options={(Object.keys(viewports) as Viewport[]).map((key) => {
-          const { label, width, icon } = viewports[key];
-          return {
-            value: key,
-            icon,
-            label,
-            title: width ? `${label} (${width}px)` : `${label} (full width)`,
-          };
-        })}
-      />
+      <ViewportSwitch />
       <Button
         type={preview ? 'primary' : 'default'}
         icon={preview ? <EditOutlined /> : <EyeOutlined />}

@@ -19,16 +19,21 @@ WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=3000 \
-    HOSTNAME=0.0.0.0
+    HOSTNAME=0.0.0.0 \
+    SHARES_DIR=/app/.data/shares
 
 # The standalone server only needs `node`; drop the bundled package managers (and their CVEs).
 RUN rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx \
       /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg /opt/yarn-* \
- && addgroup -S -g 1001 nodejs && adduser -S -u 1001 -G nodejs nextjs
+ && addgroup -S -g 1001 nodejs && adduser -S -u 1001 -G nodejs nextjs \
+ && mkdir -p /app/.data/shares && chown -R nextjs:nodejs /app/.data
 
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Shared project snapshots; mount a volume to keep them across container restarts.
+VOLUME /app/.data
 
 USER nextjs
 EXPOSE 3000

@@ -5,6 +5,7 @@ import { App, Button, Input, Space } from 'antd';
 import { type ChangeEvent, useRef } from 'react';
 import { DEFAULT_PROJECT_NAME, useEditorStore } from '@/lib/editor/store';
 import { parseProject, projectFileName, toProject } from '@/lib/project';
+import { ShareButton } from '@/components/share/ShareButton';
 import { ExportCode } from './ExportCode';
 import { downloadFile } from './download';
 
@@ -64,6 +65,7 @@ export function ProjectActions() {
         Save
       </Button>
       <ExportCode />
+      <ShareButton />
     </Space>
   );
 }

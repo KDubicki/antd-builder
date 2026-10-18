@@ -12,6 +12,11 @@ describe('getServerEnv', () => {
   it('applies the default model', () => {
     vi.stubEnv('GEMINI_API_KEY', 'key');
     vi.stubEnv('GEMINI_MODEL', undefined);
-    expect(getServerEnv()).toEqual({ GEMINI_API_KEY: 'key', GEMINI_MODEL: 'gemini-3.8-flash' });
+    vi.stubEnv('SHARES_DIR', undefined);
+    expect(getServerEnv()).toEqual({
+      GEMINI_API_KEY: 'key',
+      GEMINI_MODEL: 'gemini-3.8-flash',
+      SHARES_DIR: '.data/shares',
+    });
   });
 });
