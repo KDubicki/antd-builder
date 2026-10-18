@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { SAMPLE_DATA, createDataSource, sourceNameError, uniqueSourceName } from '.';
+import {
+  SAMPLE_DATA,
+  createDataSource,
+  sourceNameError,
+  sourceNameFromUrl,
+  uniqueSourceName,
+} from '.';
 
 describe('sourceNameError', () => {
   it('accepts lowercase-first identifiers', () => {
@@ -37,5 +43,22 @@ describe('createDataSource', () => {
     expect(a.data).not.toBe(SAMPLE_DATA);
     expect(b.data).toEqual({ ok: true });
     expect(a.id).not.toBe(b.id);
+  });
+});
+
+describe('sourceNameFromUrl', () => {
+  it.each([
+    ['https://api.example.com/users', 'users'],
+    ['https://api.example.com/v1/user-list/42', 'userList'],
+    ['https://example.com/api/orders.json?page=2', 'orders'],
+    ['https://example.com/data/top%20products/', 'topProducts'],
+    ['https://example.com/Customers', 'customers'],
+    ['https://example.com/class', 'classData'],
+    ['https://example.com/', 'data'],
+    ['https://example.com/api/v2/123', 'data'],
+    ['https://example.com/%E0%A4%A', 'data'],
+    ['not a url', 'data'],
+  ])('names %s %s', (url, name) => {
+    expect(sourceNameFromUrl(url)).toBe(name);
   });
 });

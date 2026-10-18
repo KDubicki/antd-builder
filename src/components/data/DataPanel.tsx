@@ -4,6 +4,7 @@ import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { Button, Card, Empty, Flex, Form, Input, Popconfirm, Typography, theme } from 'antd';
 import { useState } from 'react';
 import { JsonEditor } from '@/components/JsonEditor';
+import { ImportFromUrl } from './ImportFromUrl';
 import { useEditorStore } from '@/lib/editor/store';
 import { sourceNameError } from '@/lib/mockData';
 import type { DataSource } from '@/lib/schema';
@@ -77,6 +78,11 @@ function DataSourceCard({ source, otherNames }: { source: DataSource; otherNames
       <Form layout="vertical" component="div">
         <Flex vertical gap="small">
           <NameField source={source} otherNames={otherNames} />
+          {source.url && (
+            <Typography.Text type="secondary" ellipsis={{ tooltip: source.url }}>
+              From {source.url}
+            </Typography.Text>
+          )}
           <Form.Item
             label="Response (JSON)"
             htmlFor={`data-json-${source.id}`}
@@ -130,6 +136,7 @@ export function DataPanel() {
       <Button icon={<PlusOutlined />} onClick={() => addDataSource()}>
         Add data source
       </Button>
+      <ImportFromUrl />
     </Flex>
   );
 }

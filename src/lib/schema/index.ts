@@ -59,6 +59,8 @@ export const dataSourceSchema = z.object({
   id: z.string(),
   name: z.string(),
   data: z.json(),
+  /** The API URL the data was imported from, if any. */
+  url: z.string().optional(),
 });
 export type DataSource = z.infer<typeof dataSourceSchema>;
 

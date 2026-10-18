@@ -81,3 +81,29 @@ test('mocks a page with API data: bind, edit the data, export', async ({ page })
   await expect(code).toContainText('dataSource={users}');
   await expect(code).toContainText('<Typography.Text>{users[1]?.email}</Typography.Text>');
 });
+
+test('imports a data source from an API URL', async ({ page }) => {
+  // The server would fetch the URL; e2e has no internet, so the API answer is stubbed.
+  await page.route('**/api/data/fetch', (route) =>
+    route.fulfill({ json: { data: [{ id: 1, title: 'First post' }] } }),
+  );
+  await page.goto('/');
+  await page.getByRole('tab', { name: 'Data' }).click();
+  const panel = page.getByLabel('Mock data');
+
+  await panel.getByLabel('Import from URL').fill('https://api.example.com/posts');
+  await panel.getByRole('button', { name: /Import$/ }).click();
+  await expect(panel.getByLabel('Name')).toHaveValue('posts');
+  await expect(panel.getByText('From https://api.example.com/posts')).toBeVisible();
+  await expect(panel.getByText('List of 1 item')).toBeVisible();
+});
+
+test('the fetch API refuses internal addresses', async ({ request, baseURL }) => {
+  for (const url of [`${baseURL}/api/health`, 'http://169.254.169.254/latest/meta-data']) {
+    const response = await request.post('/api/data/fetch', { data: { url } });
+    expect(response.status(), url).toBe(400);
+    expect(await response.json()).toEqual({ error: "That address isn't allowed" });
+  }
+  const bad = await request.post('/api/data/fetch', { data: { url: 'file:///etc/passwd' } });
+  expect(bad.status()).toBe(400);
+});

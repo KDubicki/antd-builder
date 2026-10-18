@@ -333,6 +333,18 @@ describe('mock data', () => {
     expect(Array.isArray(sources()[0]?.data)).toBe(true);
   });
 
+  it('adds imported data with its URL', () => {
+    state().addDataSource('users', { data: [{ id: 1 }], url: 'https://api.example.com/users' });
+    state().addDataSource('empty', { data: null });
+    expect(sources()[0]).toMatchObject({
+      name: 'users',
+      data: [{ id: 1 }],
+      url: 'https://api.example.com/users',
+    });
+    expect(sources()[1]).not.toHaveProperty('url');
+    expect(sources()[1]?.data).toBeNull();
+  });
+
   it('renames only to valid, free names', () => {
     const a = state().addDataSource('users');
     state().addDataSource('orders');

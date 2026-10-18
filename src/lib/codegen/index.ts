@@ -171,7 +171,13 @@ function mockDataSource(root: BuilderNode, sources: readonly DataSource[]): stri
   const used = boundSourceIds(root);
   const declarations = sources
     .filter((source) => used.has(source.id))
-    .map((source) => `const ${source.name} = ${JSON.stringify(source.data, null, 2)};`);
+    .map((source) => {
+      const declaration = `const ${source.name} = ${JSON.stringify(source.data, null, 2)};`;
+      // Line breaks would end the comment early; URLs never contain them, project files might.
+      return source.url
+        ? `// From ${source.url.replace(/\s+/g, ' ')}\n${declaration}`
+        : declaration;
+    });
   if (declarations.length === 0) return null;
   return ['// Mock API responses: replace with real data fetching.', ...declarations].join('\n');
 }

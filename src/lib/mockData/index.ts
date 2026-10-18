@@ -54,4 +54,30 @@ export function createDataSource(
   return { id: crypto.randomUUID(), name, data };
 }
 
+/**
+ * A data source name suggested by an API URL: its last meaningful path segment in camelCase,
+ * e.g. `https://api.example.com/v1/user-list/42` -> `userList`. Falls back to `data`.
+ */
+export function sourceNameFromUrl(url: string): string {
+  let segments: string[];
+  try {
+    segments = new URL(url).pathname.split('/').map(decodeURIComponent);
+  } catch {
+    return 'data';
+  }
+  const segment = segments
+    .map((part) => part.replace(/\.[a-z]+$/i, '')) // users.json
+    .reverse()
+    .find((part) => /[a-z]/i.test(part) && !/^v\d+$/i.test(part) && part !== 'api');
+  const words = segment?.split(/[^A-Za-z0-9]+/).filter(Boolean) ?? [];
+  const name = words
+    .map((word, i) =>
+      i === 0 ? word[0]!.toLowerCase() + word.slice(1) : word[0]!.toUpperCase() + word.slice(1),
+    )
+    .join('');
+  if (sourceNameError(name, []) === null) return name;
+  // Reserved words and names starting with a digit get a suffix or fall back.
+  return sourceNameError(`${name}Data`, []) === null ? `${name}Data` : 'data';
+}
+
 export * from './binding';

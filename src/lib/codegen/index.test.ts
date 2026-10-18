@@ -282,6 +282,19 @@ describe('mock data bindings', () => {
     ).not.toContain('Mock API');
   });
 
+  it('notes where imported data came from', () => {
+    const imported = mockData.map((source) =>
+      source.id === 'u' ? { ...source, url: 'https://api.example.com/users\n// injected' } : source,
+    );
+    const source = generatePage({
+      name: 'U',
+      root: page,
+      theme: createTheme(),
+      mockData: imported,
+    });
+    expect(source).toContain('// From https://api.example.com/users // injected\nconst users = [');
+  });
+
   it('produces code that type-checks against antd', () => {
     const source = generatePage({
       name: 'Users',

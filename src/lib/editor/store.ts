@@ -142,8 +142,11 @@ export interface EditorState {
   setPreviewMode: (on: boolean) => void;
   setShortcutHelpOpen: (open: boolean) => void;
   /** Replaces the whole project (e.g. after opening a file); clears the selection and history. */
-  /** Adds a data source with sample data and a free name based on `name`. Returns its id. */
-  addDataSource: (name?: string) => string;
+  /**
+   * Adds a data source with a free name based on `name`, holding `init` (e.g. an imported API
+   * response) or else sample data. Returns its id.
+   */
+  addDataSource: (name?: string, init?: Pick<DataSource, 'data' | 'url'>) => string;
   /**
    * Renames a data source or replaces its data. Invalid or taken names are ignored. With
    * `coalesce`, quick successive data edits become one undo step (typing).
@@ -388,9 +391,12 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   setPreviewMode: (on) =>
     set(on ? { previewMode: true, selectedId: null } : { previewMode: false }),
   setShortcutHelpOpen: (open) => set({ shortcutHelpOpen: open }),
-  addDataSource: (name = 'data') => {
+  addDataSource: (name = 'data', init) => {
     const names = get().mockData.map((source) => source.name);
-    const source = createDataSource(uniqueSourceName(name, names));
+    const source = {
+      ...createDataSource(uniqueSourceName(name, names), init?.data),
+      ...(init?.url ? { url: init.url } : {}),
+    };
     set((state) => commit(state, { mockData: [...state.mockData, source] }));
     return source.id;
   },
