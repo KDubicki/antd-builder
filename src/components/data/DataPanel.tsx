@@ -1,10 +1,10 @@
 'use client';
 
-import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { DeleteOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import { Button, Card, Empty, Flex, Form, Input, Popconfirm, Typography, theme } from 'antd';
 import { useState } from 'react';
 import { JsonEditor } from '@/components/JsonEditor';
-import { ImportFromUrl } from './ImportFromUrl';
+import { ImportFromUrl, fetchSample } from './ImportFromUrl';
 import { useEditorStore } from '@/lib/editor/store';
 import { sourceNameError } from '@/lib/mockData';
 import type { DataSource } from '@/lib/schema';
@@ -49,6 +49,44 @@ function NameField({ source, otherNames }: { source: DataSource; otherNames: str
   );
 }
 
+/** Where imported data came from, with a button to fetch it again. */
+function SourceUrl({ source, url }: { source: DataSource; url: string }) {
+  const updateDataSource = useEditorStore((state) => state.updateDataSource);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = async () => {
+    setLoading(true);
+    const result = await fetchSample(url);
+    setLoading(false);
+    setError(result.ok ? null : result.error);
+    if (result.ok) updateDataSource(source.id, { data: result.value.data });
+  };
+
+  return (
+    <Flex vertical>
+      <Flex align="center" gap="small">
+        <Typography.Text type="secondary" ellipsis={{ tooltip: url }} style={{ flex: 1 }}>
+          From {url}
+        </Typography.Text>
+        <Button
+          size="small"
+          icon={<ReloadOutlined />}
+          loading={loading}
+          aria-label={`Refresh ${source.name} from its URL`}
+          title="Fetch the latest response"
+          onClick={refresh}
+        />
+      </Flex>
+      {error && (
+        <Typography.Text type="danger" role="alert">
+          {error}
+        </Typography.Text>
+      )}
+    </Flex>
+  );
+}
+
 function DataSourceCard({ source, otherNames }: { source: DataSource; otherNames: string[] }) {
   const updateDataSource = useEditorStore((state) => state.updateDataSource);
   const removeDataSource = useEditorStore((state) => state.removeDataSource);
@@ -78,11 +116,7 @@ function DataSourceCard({ source, otherNames }: { source: DataSource; otherNames
       <Form layout="vertical" component="div">
         <Flex vertical gap="small">
           <NameField source={source} otherNames={otherNames} />
-          {source.url && (
-            <Typography.Text type="secondary" ellipsis={{ tooltip: source.url }}>
-              From {source.url}
-            </Typography.Text>
-          )}
+          {source.url && <SourceUrl source={source} url={source.url} />}
           <Form.Item
             label="Response (JSON)"
             htmlFor={`data-json-${source.id}`}

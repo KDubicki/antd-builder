@@ -65,3 +65,48 @@ describe('Import from URL', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });
+
+describe('Refresh', () => {
+  const imported = (data: unknown) =>
+    useEditorStore.setState({
+      mockData: [{ id: 'p', name: 'posts', data: data as never, url: 'https://x.dev/posts' }],
+    });
+  const refresh = () => screen.getByRole('button', { name: 'Refresh posts from its URL' });
+
+  it('fetches the URL again and replaces the data, as one undo step', async () => {
+    imported([1]);
+    respond(200, { data: [1, 2, 3] });
+    render(<DataPanel />);
+    fireEvent.click(refresh());
+
+    await waitFor(() => expect(sources()[0]?.data).toEqual([1, 2, 3]));
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/data/fetch',
+      expect.objectContaining({ body: '{"url":"https://x.dev/posts"}' }),
+    );
+    useEditorStore.getState().undo();
+    expect(sources()[0]?.data).toEqual([1]);
+  });
+
+  it('keeps the data and explains a failed refresh', async () => {
+    imported([1]);
+    respond(502, { error: 'The server answered with status 500' });
+    render(<DataPanel />);
+    fireEvent.click(refresh());
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('status 500');
+    expect(sources()[0]?.data).toEqual([1]);
+
+    // antd clears a button's loading state in an effect; until then it ignores clicks.
+    await waitFor(() => expect(refresh()).not.toHaveClass('ant-btn-loading'));
+    respond(200, { data: [2] });
+    fireEvent.click(refresh());
+    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
+  });
+
+  it('is only offered for imported sources', () => {
+    useEditorStore.setState({ mockData: [{ id: 'd', name: 'data', data: [] }] });
+    render(<DataPanel />);
+    expect(screen.queryByRole('button', { name: /Refresh/ })).not.toBeInTheDocument();
+  });
+});

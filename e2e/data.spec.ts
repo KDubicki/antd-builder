@@ -96,6 +96,14 @@ test('imports a data source from an API URL', async ({ page }) => {
   await expect(panel.getByLabel('Name')).toHaveValue('posts');
   await expect(panel.getByText('From https://api.example.com/posts')).toBeVisible();
   await expect(panel.getByText('List of 1 item')).toBeVisible();
+
+  // Refresh fetches the URL again.
+  await page.unroute('**/api/data/fetch');
+  await page.route('**/api/data/fetch', (route) =>
+    route.fulfill({ json: { data: [{ id: 1 }, { id: 2 }] } }),
+  );
+  await panel.getByRole('button', { name: 'Refresh posts from its URL' }).click();
+  await expect(panel.getByText('List of 2 items')).toBeVisible();
 });
 
 test('the fetch API refuses internal addresses', async ({ request, baseURL }) => {
