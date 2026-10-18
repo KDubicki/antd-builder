@@ -1350,6 +1350,7 @@ export const components: readonly ComponentMeta[] = [
     props: {
       columns: json('Columns'),
       dataSource: json('Rows'),
+      rowKey: text('Row key field'),
       horizontalScroll: bool('Scroll horizontally'),
       size: { type: 'enum', label: 'Size', options: ['small', 'middle', 'large'] },
       bordered: bool('Bordered'),

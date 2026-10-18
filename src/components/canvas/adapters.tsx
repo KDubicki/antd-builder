@@ -1,4 +1,4 @@
-import { Col, Drawer, Modal, Splitter, Tour } from 'antd';
+import { Col, Drawer, Modal, Splitter, Table, Tour } from 'antd';
 import {
   Children,
   type ComponentProps,
@@ -42,6 +42,16 @@ export function SplitterAdapter({ children, ...props }: ComponentProps<typeof Sp
 export function ColAdapter(props: ComponentProps<typeof Col>) {
   const width = useEditorStore((state) => viewports[state.viewport].width);
   return <Col {...(width === null ? props : colPropsAt({ ...props }, width))} />;
+}
+
+/**
+ * Table on the canvas: a row key field that some row lacks (a typo, or data that changed) is
+ * ignored rather than breaking row keys, and antd falls back to each row's `key`.
+ */
+export function TableAdapter({ rowKey, dataSource, ...props }: ComponentProps<typeof Table>) {
+  const rows: readonly object[] = Array.isArray(dataSource) ? dataSource : [];
+  const usable = typeof rowKey === 'string' && rows.every((row) => rowKey in row);
+  return <Table {...props} dataSource={dataSource} {...(usable ? { rowKey } : {})} />;
 }
 
 /** A splitter panel's own canvas node: the panel itself comes from `SplitterAdapter`. */

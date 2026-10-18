@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { Row, Tooltip } from 'antd';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { useEditorStore } from '@/lib/editor/store';
 import { createNode } from '@/lib/registry';
 import type { BuilderNode } from '@/lib/schema';
@@ -8,6 +8,7 @@ import {
   ColAdapter,
   DrawerPreview,
   ModalPreview,
+  TableAdapter,
   TourPreview,
   childNode,
   withTriggerTarget,
@@ -117,5 +118,31 @@ describe('ColAdapter', () => {
     expect(renderCol('mobile').className).toMatch(/\bant-col-24\b/);
     expect(renderCol('mobile').className).not.toMatch(/ant-col-(xs|md)-/);
     expect(renderCol('tablet').className).toMatch(/\bant-col-12\b/);
+  });
+});
+
+describe('TableAdapter', () => {
+  const columns = [{ title: 'Name', dataIndex: 'name', key: 'name' }];
+
+  it('uses a row key field every row has', () => {
+    render(<TableAdapter columns={columns} rowKey="id" dataSource={[{ id: 7, name: 'Ann' }]} />);
+    expect(screen.getByText('Ann').closest('tr')).toHaveAttribute('data-row-key', '7');
+  });
+
+  it('ignores a row key field some row lacks, without key warnings', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(
+      <TableAdapter
+        columns={columns}
+        rowKey="nope"
+        dataSource={[
+          { key: 'a', name: 'Ann' },
+          { key: 'b', name: 'Bob' },
+        ]}
+      />,
+    );
+    expect(screen.getByText('Bob').closest('tr')).toHaveAttribute('data-row-key', 'b');
+    expect(error).not.toHaveBeenCalled();
+    error.mockRestore();
   });
 });

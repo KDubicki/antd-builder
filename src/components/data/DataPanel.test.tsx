@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { useEditorStore } from '@/lib/editor/store';
+import { createRoot, useEditorStore } from '@/lib/editor/store';
 import { DataPanel, describeData } from './DataPanel';
 
 const sources = () => useEditorStore.getState().mockData;
@@ -71,5 +71,20 @@ describe('DataPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Delete users' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Delete' }));
     await waitFor(() => expect(sources()).toEqual([]));
+  });
+
+  it('creates a table from a list of objects', () => {
+    act(() => {
+      useEditorStore.setState({ root: createRoot() });
+      useEditorStore.getState().addDataSource('users');
+      useEditorStore.getState().addDataSource('total', { data: 7 });
+    });
+    render(<DataPanel />);
+    expect(screen.getByRole('button', { name: 'Create a table from total' })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create a table from users' }));
+    const table = useEditorStore.getState().root.children[0];
+    expect(table?.component).toBe('Table');
+    expect(table?.props.dataSource).toEqual({ $data: sources()[0]?.id });
   });
 });

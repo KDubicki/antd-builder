@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { getBlock } from '@/lib/blocks';
 import { createNode, getComponentMeta } from '@/lib/registry';
-import { createDataSource, sourceNameError, uniqueSourceName } from '@/lib/mockData';
+import { createDataSource, planTable, sourceNameError, uniqueSourceName } from '@/lib/mockData';
 import type {
   BuilderNode,
   CustomBlock,
@@ -99,6 +99,11 @@ export interface EditorState {
    * with the same name exists, as one undo step. Returns the block's root id.
    */
   insertBlock: (blockId: string, target: DropTarget) => string | null;
+  /**
+   * Appends a table showing a data source (columns from its fields, rows bound to it) to the
+   * page and selects it. Returns its id, or `null` when the data holds no list of objects.
+   */
+  insertDataTable: (sourceId: string) => string | null;
   removeNode: (id: string) => void;
   /** Moves a node one place up (`-1`) or down (`1`) among its siblings. */
   nudgeNode: (id: string, delta: -1 | 1) => void;
@@ -298,6 +303,16 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   addNode: (component, target) => {
     const node = createNode(component);
     set((state) => insertAndSelect(state, node, target));
+    return node.id;
+  },
+  insertDataTable: (sourceId) => {
+    const source = get().mockData.find((candidate) => candidate.id === sourceId);
+    const plan = source ? planTable(source.id, source.data) : null;
+    if (!plan) return null;
+    const node = { ...createNode('Table'), props: { ...plan, horizontalScroll: true } };
+    set((state) =>
+      insertAndSelect(state, node, { parentId: ROOT_ID, index: state.root.children.length }),
+    );
     return node.id;
   },
   insertBlock: (blockId, target) => {

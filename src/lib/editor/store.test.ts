@@ -345,6 +345,30 @@ describe('mock data', () => {
     expect(sources()[1]?.data).toBeNull();
   });
 
+  it('appends a table bound to a data source, as one undo step', () => {
+    const users = state().addDataSource('users', { data: [{ id: 1, name: 'Ann' }] });
+    const steps = state().past.length;
+    const id = state().insertDataTable(users)!;
+
+    const table = state().root.children.at(-1)!;
+    expect(table).toMatchObject({ id, component: 'Table' });
+    expect(table.props).toMatchObject({
+      dataSource: { $data: users },
+      rowKey: 'id',
+      horizontalScroll: true,
+      columns: [
+        { title: 'Id', dataIndex: 'id', key: 'id' },
+        { title: 'Name', dataIndex: 'name', key: 'name' },
+      ],
+    });
+    expect(state().selectedId).toBe(id);
+    expect(state().past).toHaveLength(steps + 1);
+
+    const scalar = state().addDataSource('total', { data: 42 });
+    expect(state().insertDataTable(scalar)).toBeNull();
+    expect(state().insertDataTable('missing')).toBeNull();
+  });
+
   it('renames only to valid, free names', () => {
     const a = state().addDataSource('users');
     state().addDataSource('orders');

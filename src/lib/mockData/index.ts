@@ -81,3 +81,4 @@ export function sourceNameFromUrl(url: string): string {
 }
 
 export * from './binding';
+export * from './table';

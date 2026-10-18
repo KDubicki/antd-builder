@@ -253,6 +253,7 @@ describe('mock data bindings', () => {
       node('Table', {
         columns: [{ title: 'Name', dataIndex: 'name', key: 'name' }],
         dataSource: { $data: 'u' },
+        rowKey: 'key',
       }),
       node('Select', { options: { $data: 'o' }, placeholder: { $data: 'gone' } }),
     ],
@@ -263,7 +264,7 @@ describe('mock data bindings', () => {
     expect(jsx).toContain('<Typography.Text strong>{users[0]?.name}</Typography.Text>');
     expect(jsx).toContain('<Typography.Title>{String(users.length)}</Typography.Title>');
     expect(jsx).toContain('<Statistic title={stats.label} value={stats["active users"]} />');
-    expect(jsx).toContain('dataSource={users} />');
+    expect(jsx).toContain('rowKey="key" dataSource={users} />');
     // Bindings that don't resolve are left out, as on the canvas.
     expect(jsx).toContain('<Select options={fruits} />');
   });

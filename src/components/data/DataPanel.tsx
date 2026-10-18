@@ -1,12 +1,12 @@
 'use client';
 
-import { DeleteOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
+import { DeleteOutlined, PlusOutlined, ReloadOutlined, TableOutlined } from '@ant-design/icons';
 import { Button, Card, Empty, Flex, Form, Input, Popconfirm, Typography, theme } from 'antd';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { JsonEditor } from '@/components/JsonEditor';
 import { ImportFromUrl, fetchSample } from './ImportFromUrl';
 import { useEditorStore } from '@/lib/editor/store';
-import { sourceNameError } from '@/lib/mockData';
+import { planTable, sourceNameError } from '@/lib/mockData';
 import type { DataSource } from '@/lib/schema';
 
 /** Short description of a JSON value's shape, e.g. "List of 3 items". */
@@ -87,6 +87,27 @@ function SourceUrl({ source, url }: { source: DataSource; url: string }) {
   );
 }
 
+/** Adds a table of the source's rows to the page, when its data holds a list of objects. */
+function CreateTableButton({ source }: { source: DataSource }) {
+  const insertDataTable = useEditorStore((state) => state.insertDataTable);
+  const usable = useMemo(() => planTable(source.id, source.data) !== null, [source]);
+  return (
+    <Button
+      size="small"
+      type="text"
+      icon={<TableOutlined />}
+      disabled={!usable}
+      aria-label={`Create a table from ${source.name}`}
+      title={
+        usable
+          ? 'Add a table of these rows to the page'
+          : 'Needs a list of objects, or an object with one'
+      }
+      onClick={() => insertDataTable(source.id)}
+    />
+  );
+}
+
 function DataSourceCard({ source, otherNames }: { source: DataSource; otherNames: string[] }) {
   const updateDataSource = useEditorStore((state) => state.updateDataSource);
   const removeDataSource = useEditorStore((state) => state.removeDataSource);
@@ -96,21 +117,24 @@ function DataSourceCard({ source, otherNames }: { source: DataSource; otherNames
       size="small"
       title={<Typography.Text code>{source.name}</Typography.Text>}
       extra={
-        <Popconfirm
-          title="Delete this data source?"
-          description="Props bound to it will be left empty."
-          okText="Delete"
-          okButtonProps={{ danger: true }}
-          onConfirm={() => removeDataSource(source.id)}
-        >
-          <Button
-            size="small"
-            type="text"
-            danger
-            icon={<DeleteOutlined />}
-            aria-label={`Delete ${source.name}`}
-          />
-        </Popconfirm>
+        <Flex gap={4}>
+          <CreateTableButton source={source} />
+          <Popconfirm
+            title="Delete this data source?"
+            description="Props bound to it will be left empty."
+            okText="Delete"
+            okButtonProps={{ danger: true }}
+            onConfirm={() => removeDataSource(source.id)}
+          >
+            <Button
+              size="small"
+              type="text"
+              danger
+              icon={<DeleteOutlined />}
+              aria-label={`Delete ${source.name}`}
+            />
+          </Popconfirm>
+        </Flex>
       }
     >
       <Form layout="vertical" component="div">

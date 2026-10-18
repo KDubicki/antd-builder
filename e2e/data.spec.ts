@@ -126,3 +126,32 @@ test('the fetch API limits requests per client', async ({ request }) => {
   expect(statuses.slice(0, 30).every((status) => status === 400)).toBe(true);
   expect(statuses[30]).toBe(429);
 });
+
+test('creates a table from a data source in one click', async ({ page }) => {
+  await page.route('**/api/data/fetch', (route) =>
+    route.fulfill({
+      json: {
+        data: {
+          total: 2,
+          items: [
+            { id: 1, title: 'First post', author: 'Ann' },
+            { id: 2, title: 'Second post', author: 'Bob' },
+          ],
+        },
+      },
+    }),
+  );
+  await page.goto('/');
+  await page.getByRole('tab', { name: 'Data' }).click();
+  const panel = page.getByLabel('Mock data');
+  await panel.getByLabel('Import from URL').fill('https://api.example.com/posts');
+  await panel.getByRole('button', { name: /Import$/ }).click();
+
+  await panel.getByRole('button', { name: 'Create a table from posts' }).click();
+  const canvas = page.getByTestId('canvas');
+  await expect(canvas.getByRole('columnheader', { name: 'Author' })).toBeVisible();
+  await expect(canvas.getByRole('cell', { name: 'Second post' })).toBeVisible();
+
+  await page.getByRole('tab', { name: 'Properties' }).click();
+  await expect(page.getByLabel('Inspector').getByText('Table', { exact: true })).toBeVisible();
+});
