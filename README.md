@@ -64,7 +64,8 @@ Mockups can show realistic API data instead of placeholders:
    path picks part of the response: `0.name`, `meta.total` or `length`. Path suggestions list
    only values that fit the prop. A preview shows the value, or explains why it doesn't fit.
 3. The canvas shows the bound data live, and editing a response updates every component bound
-   to it.
+   to it. The table button on a data source adds a table of its rows in one click: columns come
+   from the rows' fields, and the rows can also be a list inside the response (`{ items: [...] }`).
 4. **Export code** declares the data sources the page uses as `const`s and references them,
    for example `dataSource={users}` or `{users[0]?.name}`. Replace them with real data fetching.
 
@@ -72,10 +73,14 @@ Mock data is saved with the project and covered by undo/redo.
 
 ## Sharing and export
 
-- **Share** uploads a read-only snapshot of the project and gives you a link (`/s/<id>`).
-  Viewers see the page in preview, can switch the canvas width, and can **Open in editor** to copy
-  it into their own browser. If they already have a project, they are asked before it's replaced.
-  Snapshots don't change: share again to send later edits. Version history isn't shared.
+- **Share → Create link** uploads a read-only snapshot of the project and gives you a link
+  (`/s/<id>`). Viewers see the page in preview, can switch the canvas width, and can **Open in
+  editor** to copy it into their own browser. If they already have a project, they are asked
+  before it's replaced. Snapshots don't change: create a new link to send later edits. Version
+  history isn't shared. The page title and link preview show the project's name.
+- Links expire after 30 days (`SHARES_TTL_DAYS`). The Share dialog lists the links created in
+  this browser, with their expiry, to copy again or delete. Deleting needs the token the server
+  returned when the link was created, which only this browser has.
 - **Export code → Download Next.js project** downloads a ZIP of a runnable Next.js app: the page,
   its mock data as `data/*.json`, stub API routes serving that data (`GET /api/<name>`), a layout
   with the antd registry, `package.json`, `tsconfig.json` and a README. A unit test type-checks the
@@ -184,11 +189,12 @@ pnpm dev                         # http://localhost:3000
 
 ### Environment variables
 
-| Variable         | Required | Default            | Purpose                               |
-| ---------------- | -------- | ------------------ | ------------------------------------- |
-| `GEMINI_API_KEY` | yes      | —                  | AI component generation. Server-only. |
-| `GEMINI_MODEL`   | no       | `gemini-3.8-flash` | Model used for generation             |
-| `SHARES_DIR`     | no       | `.data/shares`     | Where shared project snapshots live   |
+| Variable          | Required | Default            | Purpose                               |
+| ----------------- | -------- | ------------------ | ------------------------------------- |
+| `GEMINI_API_KEY`  | yes      | —                  | AI component generation. Server-only. |
+| `GEMINI_MODEL`    | no       | `gemini-3.8-flash` | Model used for generation             |
+| `SHARES_DIR`      | no       | `.data/shares`     | Where shared project snapshots live   |
+| `SHARES_TTL_DAYS` | no       | `30`               | Days a shared link works              |
 
 Never prefix secrets with `NEXT_PUBLIC_`. Doing so inlines them into the client bundle.
 
@@ -253,7 +259,8 @@ kept in memory per instance.
 
 ### API protections
 
-- **Rate limits** per client per minute: URL fetching 30, export 20, sharing 10, AI generation 10.
+- **Rate limits** per client per minute: URL fetching 30, deleting shares 30, export 20, sharing
+  10, AI generation 10.
   Beyond them the API answers `429` with `Retry-After`. Clients are told apart by the first
   `X-Forwarded-For` address, so run the app behind a proxy that sets that header.
 - **URL fetching** (`/api/data/fetch`) refuses loopback, private, link-local (cloud metadata) and
@@ -302,9 +309,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). To report security issues, see [SECURITY
 - [x] Version history (named snapshots)
 - [x] Canvas width presets (desktop, tablet, mobile) and preview mode
 - [x] Responsive grid spans and scrolling tables that follow the canvas width
-- [x] Ready-made blocks (page header, sign-in form, stats, user table)
+- [x] Ready-made blocks (page header, sign-in form, stats, user table, pricing, FAQ, contact form,
+      footer)
 - [x] User-defined blocks (Save as block)
-- [ ] More built-in blocks
 - [x] Export a full project scaffold (Next.js app with data stubs)
 - [x] Share links (read-only snapshots)
 - [x] Import mock data from an API URL

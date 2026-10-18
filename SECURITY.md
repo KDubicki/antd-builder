@@ -21,5 +21,7 @@ within 3 business days.
   connect time and after redirects), with size and time limits. See `src/lib/remoteJson`.
 - API routes that cost resources are rate-limited per client (`src/lib/rateLimit`). The limit
   keys on `X-Forwarded-For`, which is only trustworthy behind a proxy that sets it.
-- Shared project snapshots are public to anyone holding the link. Don't share projects that
-  contain confidential mock data.
+- Shared project snapshots are public to anyone holding the link until they expire
+  (`SHARES_TTL_DAYS`) or are deleted. Don't share projects that contain confidential mock data.
+- Share delete tokens are stored on the server only as SHA-256 hashes and compared in constant
+  time.
