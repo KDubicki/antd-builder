@@ -6,9 +6,14 @@ const limiter = routeLimiter('shareDelete');
 /** A shared project snapshot, as a project file. */
 export async function GET(_request: Request, context: RouteContext<'/api/shares/[id]'>) {
   const { id } = await context.params;
-  const json = await loadShare(id);
-  if (json === null) return Response.json({ error: 'Shared project not found' }, { status: 404 });
-  return new Response(json, { headers: { 'content-type': 'application/json' } });
+  const share = await loadShare(id);
+  if (share === null) return Response.json({ error: 'Shared project not found' }, { status: 404 });
+  return new Response(share.json, {
+    headers: {
+      'content-type': 'application/json',
+      ...(share.expiresAt ? { expires: new Date(share.expiresAt).toUTCString() } : {}),
+    },
+  });
 }
 
 /** Deletes a share. Needs the delete token returned when it was created, as a Bearer token. */

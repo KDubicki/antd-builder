@@ -76,12 +76,20 @@ describe('POST /api/shares', () => {
   it('stores a snapshot without the version history and serves it back', async () => {
     const response = await post(JSON.stringify(project()));
     expect(response.status).toBe(201);
-    const { id, deleteToken } = (await response.json()) as { id: string; deleteToken: string };
+    const { id, deleteToken, expiresAt } = (await response.json()) as {
+      id: string;
+      deleteToken: string;
+      expiresAt: string;
+    };
     expect(deleteToken).toMatch(/^[A-Za-z0-9_-]{32}$/);
+    const days = (new Date(expiresAt).getTime() - Date.now()) / 86_400_000;
+    expect(days).toBeGreaterThan(29.9);
+    expect(days).toBeLessThanOrEqual(30);
 
     const shared = await get(id);
     expect(shared.status).toBe(200);
     expect(shared.headers.get('content-type')).toBe('application/json');
+    expect(shared.headers.get('expires')).toBe(new Date(expiresAt).toUTCString());
     const body = (await shared.json()) as ReturnType<typeof project>;
     expect(body.name).toBe('Shop');
     expect(body.versions).toEqual([]);

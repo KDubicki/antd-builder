@@ -26,8 +26,8 @@ describe('saveShare and loadShare', () => {
     expect(isShareId(a.id)).toBe(true);
     expect(a.id).not.toBe(b.id);
     expect(a.deleteToken).not.toBe(b.deleteToken);
-    expect(await loadShare(a.id)).toBe('{"a":1}');
-    expect(await loadShare(b.id)).toBe('{"b":2}');
+    expect((await loadShare(a.id))?.json).toBe('{"a":1}');
+    expect((await loadShare(b.id))?.json).toBe('{"b":2}');
     // A snapshot and its metadata each, no temporary files left behind.
     expect((await readdir(sharesDir())).sort()).toEqual(
       [a, b].flatMap(({ id }) => [`${id}.json`, `${id}.meta.json`]).sort(),
@@ -58,12 +58,35 @@ describe('saveShare and loadShare', () => {
   });
 });
 
+describe('expiry', () => {
+  it('expires shares after SHARES_TTL_DAYS and deletes them on the next read', async () => {
+    vi.stubEnv('SHARES_TTL_DAYS', '7');
+    const created = new Date('2026-10-01T12:00:00.000Z');
+    const { id, expiresAt } = await saveShare('{}', created);
+    expect(expiresAt).toBe('2026-10-08T12:00:00.000Z');
+
+    expect(await loadShare(id, new Date('2026-10-08T11:59:59.000Z'))).toEqual({
+      json: '{}',
+      expiresAt,
+    });
+    expect(await loadShare(id, new Date('2026-10-08T12:00:00.000Z'))).toBeNull();
+    expect(await readdir(sharesDir())).toEqual([]);
+  });
+
+  it('never expires shares saved without metadata', async () => {
+    const id = 'D'.repeat(22);
+    await mkdir(sharesDir(), { recursive: true });
+    await writeFile(path.join(sharesDir(), `${id}.json`), '{}');
+    expect(await loadShare(id, new Date('2100-01-01'))).toEqual({ json: '{}', expiresAt: null });
+  });
+});
+
 describe('deleteShare', () => {
   it('deletes a share with its token, and only with it', async () => {
     const { id, deleteToken } = await saveShare('{}');
     expect(await deleteShare(id, 'wrong')).toBe('forbidden');
     expect(await deleteShare(id, `${deleteToken}x`)).toBe('forbidden');
-    expect(await loadShare(id)).toBe('{}');
+    expect((await loadShare(id))?.json).toBe('{}');
 
     expect(await deleteShare(id, deleteToken)).toBe('deleted');
     expect(await loadShare(id)).toBeNull();

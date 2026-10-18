@@ -13,10 +13,12 @@ describe('getServerEnv', () => {
     vi.stubEnv('GEMINI_API_KEY', 'key');
     vi.stubEnv('GEMINI_MODEL', undefined);
     vi.stubEnv('SHARES_DIR', undefined);
+    vi.stubEnv('SHARES_TTL_DAYS', undefined);
     expect(getServerEnv()).toEqual({
       GEMINI_API_KEY: 'key',
       GEMINI_MODEL: 'gemini-3.8-flash',
       SHARES_DIR: '.data/shares',
+      SHARES_TTL_DAYS: 30,
     });
   });
 });

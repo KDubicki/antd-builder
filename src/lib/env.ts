@@ -6,6 +6,8 @@ const serverEnvSchema = z.object({
   GEMINI_MODEL: z.string().min(1).default('gemini-3.8-flash'),
   /** Where shared project snapshots are stored; mount a volume here in production. */
   SHARES_DIR: z.string().min(1).default('.data/shares'),
+  /** Days a shared link works before it expires. */
+  SHARES_TTL_DAYS: z.coerce.number().int().positive().default(30),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

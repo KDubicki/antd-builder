@@ -7,11 +7,24 @@ import {
   LinkOutlined,
   ShareAltOutlined,
 } from '@ant-design/icons';
-import { App, Button, Empty, Flex, Input, Modal, Popconfirm, Space, Typography, theme } from 'antd';
+import {
+  App,
+  Button,
+  Empty,
+  Flex,
+  Input,
+  Modal,
+  Popconfirm,
+  Space,
+  Tag,
+  Typography,
+  theme,
+} from 'antd';
 import { useState } from 'react';
 import { deleteWithToken, postJson } from '@/lib/apiClient';
 import { useEditorStore } from '@/lib/editor/store';
 import { toProject } from '@/lib/project';
+import { formatDay } from './SharedProject';
 import { type MyShare, addMyShare, loadMyShares, removeMyShare } from './myShares';
 
 /** Path of a shared project's read-only page. */
@@ -37,6 +50,7 @@ function useCopyLink() {
 }
 
 function ShareItem({ share, onDeleted }: { share: MyShare; onDeleted: (id: string) => void }) {
+  const expired = share.expiresAt !== undefined && new Date(share.expiresAt) <= new Date();
   const { token } = theme.useToken();
   const { message } = App.useApp();
   const copy = useCopyLink();
@@ -59,11 +73,20 @@ function ShareItem({ share, onDeleted }: { share: MyShare; onDeleted: (id: strin
       }}
     >
       <Flex vertical style={{ flex: 1, minWidth: 0 }}>
-        <Typography.Text strong ellipsis>
-          {share.name}
-        </Typography.Text>
+        <Flex align="center" gap="small" style={{ minWidth: 0 }}>
+          <Typography.Text strong ellipsis>
+            {share.name}
+          </Typography.Text>
+          {expired && <Tag>Expired</Tag>}
+        </Flex>
         <Typography.Text type="secondary">
           <time dateTime={share.createdAt}>{formatDate(share.createdAt)}</time>
+          {share.expiresAt && !expired && (
+            <>
+              {' · expires '}
+              <time dateTime={share.expiresAt}>{formatDay(share.expiresAt)}</time>
+            </>
+          )}
         </Typography.Text>
       </Flex>
       <Button
@@ -126,16 +149,18 @@ export function ShareButton() {
     const state = useEditorStore.getState();
     // Version history stays private; the server drops it too.
     const project = { ...toProject(state), versions: [] };
-    const result = await postJson<{ id: string; deleteToken: string }>('/api/shares', project);
+    const result = await postJson<{ id: string; deleteToken: string; expiresAt: string }>(
+      '/api/shares',
+      project,
+    );
     setLoading(false);
     if (!result.ok) {
       message.error(result.error);
       return;
     }
-    const { id, deleteToken } = result.value;
-    setShares(
-      addMyShare({ id, deleteToken, name: state.name, createdAt: new Date().toISOString() }),
-    );
+    const { id, deleteToken, expiresAt } = result.value;
+    const createdAt = new Date().toISOString();
+    setShares(addMyShare({ id, deleteToken, expiresAt, name: state.name, createdAt }));
     setLatest(id);
   };
 

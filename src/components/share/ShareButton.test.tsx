@@ -64,7 +64,7 @@ const existing: MyShare = {
 
 describe('ShareButton', () => {
   it('creates a link without the versions, shows it and remembers it', async () => {
-    respond(201, { id: 'abc', deleteToken: 'secret' });
+    respond(201, { id: 'abc', deleteToken: 'secret', expiresAt: '2099-01-02T00:00:00.000Z' });
     renderShare();
     const dialog = openDialog();
     expect(within(dialog).getByText('No links yet')).toBeInTheDocument();
@@ -79,10 +79,16 @@ describe('ShareButton', () => {
     expect(sent).toMatchObject({ name: 'Shop', versions: [] });
 
     expect(loadMyShares()).toEqual([
-      expect.objectContaining({ id: 'abc', deleteToken: 'secret', name: 'Shop' }),
+      expect.objectContaining({
+        id: 'abc',
+        deleteToken: 'secret',
+        name: 'Shop',
+        expiresAt: '2099-01-02T00:00:00.000Z',
+      }),
     ]);
     const list = within(dialog).getByRole('list', { name: 'Your shared links' });
     expect(within(list).getByText('Shop')).toBeInTheDocument();
+    expect(within(list).getByText(/expires/)).toBeInTheDocument();
 
     writeText.mockResolvedValue();
     fireEvent.click(within(dialog).getByRole('button', { name: /^copy Copy link$/ }));
@@ -111,6 +117,14 @@ describe('ShareButton', () => {
     });
     expect(loadMyShares()).toEqual([]);
     expect(screen.getByText('No links yet')).toBeInTheDocument();
+  });
+
+  it('marks expired links', () => {
+    addMyShare({ ...existing, expiresAt: '2020-01-01T00:00:00.000Z' });
+    renderShare();
+    const item = within(openDialog()).getByRole('listitem');
+    expect(within(item).getByText('Expired')).toBeInTheDocument();
+    expect(within(item).queryByText(/expires/)).not.toBeInTheDocument();
   });
 
   const deleteExisting = async () => {

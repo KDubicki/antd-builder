@@ -4,8 +4,10 @@ export interface MyShare {
   deleteToken: string;
   /** Project name at the time of sharing. */
   name: string;
-  /** ISO 8601 timestamp. */
+  /** ISO 8601 timestamps. */
   createdAt: string;
+  /** Missing for links created before links expired. */
+  expiresAt?: string;
 }
 
 export const MY_SHARES_KEY = 'antd-builder:shares';

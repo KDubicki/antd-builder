@@ -5,7 +5,7 @@ import { createRoot, useEditorStore } from '@/lib/editor/store';
 import { toProject } from '@/lib/project';
 import { createNode } from '@/lib/registry';
 import { createTheme } from '@/lib/theme';
-import { SharedProject } from './SharedProject';
+import { SharedProject, formatDay } from './SharedProject';
 
 const push = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
@@ -72,6 +72,15 @@ describe('SharedProject', () => {
     act(() => fireEvent.click(screen.getByRole('button', { name: /Open in editor/ })));
     expect(push).toHaveBeenCalledWith('/');
     vi.restoreAllMocks();
+  });
+
+  it('says when the link expires', () => {
+    render(<SharedProject json={shared()} expiresAt="2026-11-17T12:00:00.000Z" />);
+    expect(screen.getByText(/Link expires/)).toBeInTheDocument();
+    expect(screen.getByText(formatDay('2026-11-17T12:00:00.000Z'))).toHaveAttribute(
+      'datetime',
+      '2026-11-17T12:00:00.000Z',
+    );
   });
 
   it('explains a snapshot that no longer opens', () => {

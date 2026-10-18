@@ -25,6 +25,7 @@ test('shares a read-only copy that others can open in their editor', async ({ pa
   await viewer.goto(link);
   await expect(viewer.getByText('Landing page')).toBeVisible();
   await expect(viewer.getByText('Read-only')).toBeVisible();
+  await expect(viewer.getByText(/Link expires/)).toBeVisible();
   const shared = viewer.getByTestId('canvas');
   await expect(shared).toHaveAttribute('data-preview', 'true');
   await expect(shared.locator('.ant-card')).toBeVisible();

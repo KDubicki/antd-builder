@@ -68,7 +68,18 @@ function OpenInEditorButton({ content }: { content: ProjectContent }) {
   );
 }
 
-function SharedHeader({ content }: { content: ProjectContent }) {
+/** A date for the reader's locale. */
+export function formatDay(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, { dateStyle: 'medium' });
+}
+
+function SharedHeader({
+  content,
+  expiresAt,
+}: {
+  content: ProjectContent;
+  expiresAt: string | null;
+}) {
   const { token } = theme.useToken();
   return (
     <Layout.Header
@@ -87,6 +98,14 @@ function SharedHeader({ content }: { content: ProjectContent }) {
           {content.name}
         </Typography.Text>
         <Tag>Read-only</Tag>
+        {expiresAt && (
+          <Typography.Text type="secondary" style={{ whiteSpace: 'nowrap' }}>
+            Link expires {/* The server's locale and time zone can differ from the browser's. */}
+            <time dateTime={expiresAt} suppressHydrationWarning>
+              {formatDay(expiresAt)}
+            </time>
+          </Typography.Text>
+        )}
       </Flex>
       <ViewportSwitch />
       <OpenInEditorButton content={content} />
@@ -98,7 +117,14 @@ function SharedHeader({ content }: { content: ProjectContent }) {
  * Read-only view of a shared project: the page in preview at a chosen width, plus a way to
  * copy it into the viewer's own editor. It never touches the viewer's saved project otherwise.
  */
-export function SharedProject({ json }: { json: string }) {
+export function SharedProject({
+  json,
+  expiresAt = null,
+}: {
+  json: string;
+  /** When the link stops working; `null` if it doesn't expire. */
+  expiresAt?: string | null;
+}) {
   const dndId = useId();
   const result = useMemo(() => parseProject(json), [json]);
   // The editor store is module state, shared across requests on the server: load it only in
@@ -116,7 +142,7 @@ export function SharedProject({ json }: { json: string }) {
       <AntApp>
         {result.ok ? (
           <Layout style={{ minHeight: '100vh' }}>
-            <SharedHeader content={result.content} />
+            <SharedHeader content={result.content} expiresAt={expiresAt} />
             <Layout.Content style={{ display: 'flex', flexDirection: 'column' }}>
               {loaded ? (
                 <DndContext id={dndId}>

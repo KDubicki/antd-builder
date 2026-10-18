@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function SharedProjectPage({ params }: PageProps<'/s/[id]'>) {
-  const json = await loadShare((await params).id);
-  if (json === null) notFound();
-  return <SharedProject json={json} />;
+  const share = await loadShare((await params).id);
+  if (share === null) notFound();
+  return <SharedProject json={share.json} expiresAt={share.expiresAt} />;
 }
