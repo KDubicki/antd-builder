@@ -58,3 +58,29 @@ test('data blocks fit a mobile screen', async ({ page }) => {
   const scroller = canvas.locator('.ant-table-content');
   expect(await scroller.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
 });
+
+test('pricing and FAQ blocks read their own mock data', async ({ page }) => {
+  await page.goto('/');
+  const palette = page.getByLabel('Component palette');
+  const canvas = page.getByTestId('canvas');
+
+  await dragTo(page, palette.getByRole('button', { name: 'Pricing plans' }), canvas);
+  await expect(canvas.getByText('Business')).toBeVisible();
+  await expect(canvas.getByRole('button', { name: 'Choose plan' })).toHaveCount(3);
+
+  await page.getByRole('tab', { name: 'Data' }).click();
+  const data = page.getByLabel('Mock data');
+  await data.getByLabel('Response (JSON)').fill(
+    JSON.stringify([
+      { name: 'Hobby', price: 0, description: 'Free forever.' },
+      { name: 'Pro', price: 12, description: 'Everything.' },
+      { name: 'Max', price: 99, description: 'And support.' },
+    ]),
+  );
+  await expect(canvas.getByText('Free forever.')).toBeVisible();
+
+  await dragTo(page, palette.getByRole('button', { name: 'FAQ', exact: true }), canvas);
+  await canvas.getByText('Is there a free trial?').click();
+  await expect(canvas.getByText('Every plan starts with 14 days free.')).toBeVisible();
+  await expect(data.getByText('faqs', { exact: true })).toBeVisible();
+});

@@ -27,6 +27,24 @@ const statTile = (title: string, sourceId: string, path: string, props = {}) =>
     node('Card', {}, [node('Statistic', { title, value: { $data: sourceId, path }, ...props })]),
   ]);
 
+const planCard = (index: number, sourceId: string, featured = false) => {
+  const plan = (field: string) => ({ $data: sourceId, path: `${index}.${field}` });
+  return node('Col', { span: 8, xs: 24, sm: 8 }, [
+    node('Card', { title: plan('name') }, [
+      node('Statistic', { value: plan('price'), prefix: '$', suffix: '/ month' }),
+      node('Typography.Paragraph', { children: plan('description'), type: 'secondary' }),
+      node('Button', {
+        children: 'Choose plan',
+        block: true,
+        ...(featured ? { type: 'primary' } : {}),
+      }),
+    ]),
+  ]);
+};
+
+const footerLink = (children: string) =>
+  node('Typography.Link', { children, href: '#', type: 'secondary' });
+
 export const blocks: readonly Block[] = [
   {
     id: 'page-header',
@@ -96,6 +114,96 @@ export const blocks: readonly Block[] = [
           dataSource: { $data: sourceId },
           horizontalScroll: true,
         }),
+      ]),
+  },
+  {
+    id: 'pricing',
+    label: 'Pricing plans',
+    description: 'Three plan cards with prices, bound to a `plans` response.',
+    component: 'Row',
+    data: {
+      name: 'plans',
+      data: [
+        { name: 'Starter', price: 9, description: 'For side projects and trying things out.' },
+        { name: 'Team', price: 29, description: 'For small teams shipping together.' },
+        { name: 'Business', price: 79, description: 'For companies that need more control.' },
+      ],
+    },
+    build: (sourceId) =>
+      node('Row', { gutter: 16, verticalGutter: 16 }, [
+        planCard(0, sourceId),
+        planCard(1, sourceId, true),
+        planCard(2, sourceId),
+      ]),
+  },
+  {
+    id: 'faq',
+    label: 'FAQ',
+    description: 'Heading and accordion of questions from a `faqs` response.',
+    component: 'Flex',
+    data: {
+      name: 'faqs',
+      data: [
+        {
+          key: '1',
+          label: 'Can I change plans later?',
+          children: 'Yes, upgrade or downgrade at any time.',
+        },
+        {
+          key: '2',
+          label: 'Is there a free trial?',
+          children: 'Every plan starts with 14 days free.',
+        },
+        {
+          key: '3',
+          label: 'How do I cancel?',
+          children: 'From the billing page, in one click.',
+        },
+      ],
+    },
+    build: (sourceId) =>
+      node('Flex', { vertical: true, gap: 'middle' }, [
+        node('Typography.Title', { children: 'Frequently asked questions', level: 3 }),
+        node('Collapse', { items: { $data: sourceId }, accordion: true }),
+      ]),
+  },
+  {
+    id: 'contact-form',
+    label: 'Contact form',
+    description: 'Card with name, email and message fields and a send button.',
+    component: 'Card',
+    build: () =>
+      node('Card', { title: 'Contact us' }, [
+        node('Form', { layout: 'vertical' }, [
+          node('Form.Item', { label: 'Name', name: 'name', required: true }, [
+            node('Input', { placeholder: 'Your name' }),
+          ]),
+          node('Form.Item', { label: 'Email', name: 'email', required: true }, [
+            node('Input', { placeholder: 'you@example.com' }),
+          ]),
+          node('Form.Item', { label: 'Message', name: 'message' }, [
+            node('Input.TextArea', { placeholder: 'How can we help?', rows: 4 }),
+          ]),
+          node('Form.Item', {}, [node('Button', { children: 'Send message', type: 'primary' })]),
+        ]),
+      ]),
+  },
+  {
+    id: 'footer',
+    label: 'Footer',
+    description: 'Divider, copyright and links, wrapping on narrow screens.',
+    component: 'Flex',
+    build: () =>
+      node('Flex', { vertical: true }, [
+        node('Divider'),
+        node('Flex', { justify: 'space-between', align: 'center', wrap: true, gap: 'small' }, [
+          node('Typography.Text', { children: '© 2026 Your company', type: 'secondary' }),
+          node('Space', { size: 'middle', wrap: true }, [
+            footerLink('Privacy'),
+            footerLink('Terms'),
+            footerLink('Contact'),
+          ]),
+        ]),
       ]),
   },
 ];
