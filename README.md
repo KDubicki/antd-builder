@@ -57,7 +57,9 @@ theme tokens, and then copy everything into code by hand. antd-builder aims to:
 Mockups can show realistic API data instead of placeholders:
 
 1. In the **Data** tab, add a data source and paste a sample API response as JSON. Each source
-   has a name such as `users`, which must be a valid JavaScript identifier.
+   has a name such as `users`, which must be a valid JavaScript identifier. Or use **Import from
+   URL**: the server fetches a public API's JSON (so CORS doesn't get in the way) and the source is
+   named after the URL. Imported sources remember the URL, and the ↻ button fetches it again.
 2. In **Properties**, the 🔗 button next to any prop binds it to a data source. An optional
    path picks part of the response: `0.name`, `meta.total` or `length`. Path suggestions list
    only values that fit the prop. A preview shows the value, or explains why it doesn't fit.
@@ -67,6 +69,17 @@ Mockups can show realistic API data instead of placeholders:
    for example `dataSource={users}` or `{users[0]?.name}`. Replace them with real data fetching.
 
 Mock data is saved with the project and covered by undo/redo.
+
+## Sharing and export
+
+- **Share** uploads a read-only snapshot of the project and gives you a link (`/s/<id>`).
+  Viewers see the page in preview, can switch the canvas width, and can **Open in editor** to copy
+  it into their own browser. If they already have a project, they are asked before it's replaced.
+  Snapshots don't change: share again to send later edits. Version history isn't shared.
+- **Export code → Download Next.js project** downloads a ZIP of a runnable Next.js app: the page,
+  its mock data as `data/*.json`, stub API routes serving that data (`GET /api/<name>`), a layout
+  with the antd registry, `package.json`, `tsconfig.json` and a README. A unit test type-checks the
+  generated project.
 
 ## Component coverage
 
@@ -102,8 +115,12 @@ antd-builder/
 │   ├── app/                    # Next.js App Router
 │   │   ├── page.tsx            # Editor entry
 │   │   ├── error.tsx, global-error.tsx, not-found.tsx
+│   │   ├── s/[id]/             # Read-only view of a shared project
 │   │   └── api/
 │   │       ├── ai/component/   # POST: generate a custom component with Gemini
+│   │       ├── data/fetch/     # POST: fetch sample JSON from a public URL
+│   │       ├── export/         # POST: project → Next.js app ZIP
+│   │       ├── shares/         # POST: share a snapshot; GET [id]: read it
 │   │       └── health/         # GET: liveness probe
 │   ├── components/             # Editor UI: palette, canvas, inspector (client components)
 │   └── lib/
@@ -113,6 +130,10 @@ antd-builder/
 │       ├── editor/             # Editor state (Zustand) and drag-and-drop planning
 │       ├── codegen/            # Page tree → TSX
 │       ├── ai/                 # Gemini calls (server-only)
+│       ├── remoteJson/         # SSRF-guarded JSON fetching (server-only)
+│       ├── shares/             # Shared snapshot storage on disk (server-only)
+│       ├── scaffold/, zip/     # Next.js project files and the ZIP writer
+│       ├── rateLimit/          # Per-client request limits for API routes
 │       ├── csp.ts              # Content-Security-Policy builder
 │       └── env.ts              # Validated server environment (server-only)
 │   ├── proxy.ts                # Per-request CSP nonce
@@ -167,6 +188,7 @@ pnpm dev                         # http://localhost:3000
 | ---------------- | -------- | ------------------ | ------------------------------------- |
 | `GEMINI_API_KEY` | yes      | —                  | AI component generation. Server-only. |
 | `GEMINI_MODEL`   | no       | `gemini-3.8-flash` | Model used for generation             |
+| `SHARES_DIR`     | no       | `.data/shares`     | Where shared project snapshots live   |
 
 Never prefix secrets with `NEXT_PUBLIC_`. Doing so inlines them into the client bundle.
 
@@ -225,6 +247,21 @@ The image runs as a non-root user, has a `HEALTHCHECK` on `/api/health`, and exi
 required env vars are missing. Pass configuration as runtime env vars rather than baking it into
 the image.
 
+Shared snapshots are files in `/app/.data` (a declared volume). Mount one to keep share links
+working across container restarts, for example `-v antd-builder-data:/app/.data`. Rate limits are
+kept in memory per instance.
+
+### API protections
+
+- **Rate limits** per client per minute: URL fetching 30, export 20, sharing 10, AI generation 10.
+  Beyond them the API answers `429` with `Retry-After`. Clients are told apart by the first
+  `X-Forwarded-For` address, so run the app behind a proxy that sets that header.
+- **URL fetching** (`/api/data/fetch`) refuses loopback, private, link-local (cloud metadata) and
+  other internal addresses. The check runs when the socket connects, so DNS rebinding can't get
+  around it, and it is repeated after each redirect. Responses are capped at 1 MB and 5 s.
+- **Shared projects and exports** are validated like an opened project file and limited to 2 MB.
+  Share ids are 128-bit random, and shared pages are marked `noindex`.
+
 ### Security headers
 
 - **Content-Security-Policy** is set per request in `src/proxy.ts`:
@@ -268,7 +305,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). To report security issues, see [SECURITY
 - [x] Ready-made blocks (page header, sign-in form, stats, user table)
 - [x] User-defined blocks (Save as block)
 - [ ] More built-in blocks
-- [ ] Export a full project scaffold (routing, data-fetching stubs)
+- [x] Export a full project scaffold (Next.js app with data stubs)
+- [x] Share links (read-only snapshots)
+- [x] Import mock data from an API URL
 
 ## License
 

@@ -14,3 +14,12 @@ within 3 business days.
 - Never commit secrets. `.env*` files are git-ignored, except `.env.example`.
 - Server secrets must not use the `NEXT_PUBLIC_` prefix.
 - Rotate any credential that was exposed, even briefly.
+
+## Server-side protections
+
+- `/api/data/fetch` fetches user-supplied URLs. It only reaches public addresses (checked at
+  connect time and after redirects), with size and time limits. See `src/lib/remoteJson`.
+- API routes that cost resources are rate-limited per client (`src/lib/rateLimit`). The limit
+  keys on `X-Forwarded-For`, which is only trustworthy behind a proxy that sets it.
+- Shared project snapshots are public to anyone holding the link. Don't share projects that
+  contain confidential mock data.
