@@ -114,13 +114,13 @@ describe('buildScaffold', () => {
     expect(files['README.md']).not.toContain('Mock data');
   });
 
+  // One compile (they take seconds): a planted error must be the only one reported, which shows
+  // both that the checker sees the files and that everything generated is clean.
   it('produces a project that type-checks', () => {
-    expect(typeErrors(buildScaffold(content()))).toEqual([]);
-  }, 60_000);
-
-  it('type-check catches broken output', () => {
     const files = buildScaffold(content());
-    files['app/api/users/route.ts'] = 'export const x: number = "no";';
-    expect(typeErrors(files)).toHaveLength(1);
+    files['planted.ts'] = 'export const planted: number = "not a number";';
+    const errors = typeErrors(files);
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatch(/planted\.ts: Type 'string' is not assignable to type 'number'/);
   }, 60_000);
 });

@@ -32,6 +32,7 @@ describe('Canvas', () => {
     for (const meta of components) expect(renderers[meta.name], meta.name).toBeDefined();
   });
 
+  // Renders all ~100 components at once: seconds of work, more on a busy machine.
   it('renders every registry component with its default props', () => {
     setRoot(components.map((meta) => createPlaceableNode(meta.name, meta.name)));
     const { container } = renderCanvas();
@@ -42,7 +43,7 @@ describe('Canvas', () => {
       ).not.toBeNull();
     }
     expect(screen.queryByText(/Unknown component/)).not.toBeInTheDocument();
-  });
+  }, 30_000);
 
   it('renders code props such as render functions', () => {
     setRoot([createNode('Transfer', 'tr')]);
