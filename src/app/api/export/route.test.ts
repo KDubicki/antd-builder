@@ -6,8 +6,8 @@ import { LIMITS_PER_MINUTE } from '@/lib/rateLimit';
 import { createTheme } from '@/lib/theme';
 import { POST } from './route';
 
-const post = (body: string) =>
-  POST(new Request('http://localhost/api/export', { method: 'POST', body }));
+const post = (body: string, headers?: Record<string, string>) =>
+  POST(new Request('http://localhost/api/export', { method: 'POST', body, headers }));
 
 /** Entry names in a ZIP's central directory. */
 function entryNames(zip: Buffer): string[] {
@@ -57,6 +57,10 @@ describe('POST /api/export', () => {
   });
 
   it('rejects projects over the size limit', async () => {
-    expect((await post('x'.repeat(MAX_PROJECT_BYTES + 1))).status).toBe(413);
+    const response = await post('x'.repeat(MAX_PROJECT_BYTES + 1));
+    expect(response.status).toBe(413);
+    expect(await response.json()).toEqual({ error: 'The project is larger than 2 MB' });
+    const declared = await post('{}', { 'content-length': String(MAX_PROJECT_BYTES + 1) });
+    expect(declared.status).toBe(413);
   });
 });

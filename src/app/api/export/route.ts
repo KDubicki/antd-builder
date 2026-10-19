@@ -1,4 +1,5 @@
-import { MAX_PROJECT_BYTES, parseProject, projectSlug } from '@/lib/project';
+import { projectSlug } from '@/lib/project';
+import { readProjectRequest } from '@/lib/project/request';
 import { rateLimit, routeLimiter } from '@/lib/rateLimit';
 import { buildScaffold } from '@/lib/scaffold';
 import { createZip } from '@/lib/zip';
@@ -10,16 +11,12 @@ export async function POST(request: Request) {
   const limited = rateLimit(request, limiter);
   if (limited) return limited;
 
-  const body = await request.text();
-  if (Buffer.byteLength(body) > MAX_PROJECT_BYTES) {
-    return Response.json({ error: 'The project is too large to export' }, { status: 413 });
-  }
-  const result = parseProject(body);
-  if (!result.ok) return Response.json({ error: result.error }, { status: 400 });
+  const project = await readProjectRequest(request);
+  if (!project.ok) return project.response;
 
-  const folder = projectSlug(result.content.name);
+  const folder = projectSlug(project.content.name);
   const files = Object.fromEntries(
-    Object.entries(buildScaffold(result.content)).map(([name, text]) => [
+    Object.entries(buildScaffold(project.content)).map(([name, text]) => [
       `${folder}/${name}`,
       text,
     ]),

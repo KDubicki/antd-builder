@@ -92,7 +92,7 @@ describe('ExportCode', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn<typeof fetch>().mockResolvedValue(
-        new Response(JSON.stringify({ error: 'The project is too large to export' }), {
+        new Response(JSON.stringify({ error: 'The project is larger than 2 MB' }), {
           status: 413,
         }),
       ),
@@ -100,7 +100,7 @@ describe('ExportCode', () => {
     renderExport();
     fireEvent.click(screen.getByRole('button', { name: /Export code/ }));
     fireEvent.click(await screen.findByRole('button', { name: /Download Next.js project/ }));
-    expect(await screen.findByText('The project is too large to export')).toBeInTheDocument();
+    expect(await screen.findByText('The project is larger than 2 MB')).toBeInTheDocument();
     vi.unstubAllGlobals();
   });
 

@@ -1,4 +1,5 @@
-import { MAX_PROJECT_BYTES, parseProject, toProject } from '@/lib/project';
+import { toProject } from '@/lib/project';
+import { readProjectRequest } from '@/lib/project/request';
 import { rateLimit, routeLimiter } from '@/lib/rateLimit';
 import { saveShare } from '@/lib/shares';
 
@@ -14,20 +15,11 @@ export async function POST(request: Request) {
   const limited = rateLimit(request, limiter);
   if (limited) return limited;
 
-  const tooLarge = () =>
-    Response.json(
-      { error: `The project is larger than ${MAX_PROJECT_BYTES / 1024 / 1024} MB` },
-      { status: 413 },
-    );
-  if (Number(request.headers.get('content-length')) > MAX_PROJECT_BYTES) return tooLarge();
-  const body = await request.text();
-  if (Buffer.byteLength(body) > MAX_PROJECT_BYTES) return tooLarge();
-
-  const result = parseProject(body);
-  if (!result.ok) return Response.json({ error: result.error }, { status: 400 });
+  const project = await readProjectRequest(request);
+  if (!project.ok) return project.response;
 
   try {
-    const share = await saveShare(JSON.stringify(toProject({ ...result.content, versions: [] })));
+    const share = await saveShare(JSON.stringify(toProject({ ...project.content, versions: [] })));
     return Response.json(share, { status: 201 });
   } catch (error) {
     console.error('Saving a shared project failed', error);
