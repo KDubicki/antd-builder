@@ -112,3 +112,27 @@ test('keeps the project across reloads', async ({ page }) => {
   await expect(page.getByTestId('canvas')).toHaveCSS('background-color', 'rgb(20, 20, 20)');
   expect(errors).toEqual([]);
 });
+
+test('starts a new project, keeping saved blocks', async ({ page }) => {
+  await page.goto('/');
+  await page.getByLabel('Project name').fill('Old site');
+  const palette = page.getByLabel('Component palette');
+  await palette.getByRole('button', { name: 'Card', exact: true }).click();
+  await page.getByLabel('Inspector').getByRole('button', { name: 'Save as block' }).click();
+  await page.getByLabel('Block name').press('Enter');
+  await expect(page.getByText('Saved to My blocks in the palette')).toBeVisible();
+
+  await page.getByRole('button', { name: /\bNew$/ }).click();
+  await page.getByRole('button', { name: 'Start new' }).click();
+  await expect(page.getByLabel('Project name')).toHaveValue('Untitled project');
+  await expect(page.getByTestId('canvas').locator('.ant-card')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeDisabled();
+  await expect(palette.getByText('My blocks')).toBeVisible();
+
+  // The fresh project is what autosave keeps.
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem('antd-builder:project') ?? ''))
+    .toContain('"Untitled project"');
+  await page.reload();
+  await expect(page.getByLabel('Project name')).toHaveValue('Untitled project');
+});

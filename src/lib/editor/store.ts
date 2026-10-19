@@ -163,6 +163,11 @@ export interface EditorState extends History {
     options?: { coalesce?: boolean },
   ) => void;
   removeDataSource: (id: string) => void;
+  /**
+   * Starts over with an empty, untitled project, keeping the saved blocks (they're the user's
+   * own toolbox). Like opening a file, it clears the history and versions.
+   */
+  newProject: () => void;
   loadProject: (content: {
     name: string;
     root: BuilderNode;
@@ -483,6 +488,13 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       if (!block) return state;
       const customBlocks = state.customBlocks.filter((candidate) => candidate !== block);
       return commit(state, `Delete block ${block.name}`, { customBlocks });
+    }),
+  newProject: () =>
+    get().loadProject({
+      name: DEFAULT_PROJECT_NAME,
+      root: createRoot(),
+      theme: createTheme(),
+      customBlocks: get().customBlocks,
     }),
   loadProject: ({ name, root, theme, mockData = [], customBlocks = [], versions = [] }) =>
     set({

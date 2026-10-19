@@ -95,4 +95,36 @@ describe('ProjectActions', () => {
     fireEvent.click(screen.getByRole('button', { name: /Open/ }));
     expect(click).toHaveBeenCalledOnce();
   });
+
+  it('starts a new project after confirming, keeping saved blocks', async () => {
+    useEditorStore.setState({ customBlocks: [], versions: [], mockData: [], past: [] });
+    useEditorStore.getState().saveAsBlock('tag', 'Promo');
+    renderActions();
+    fireEvent.click(screen.getByRole('button', { name: /New/ }));
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toHaveTextContent('"Shop" will be replaced by an empty page');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start new' }));
+    expect(await screen.findByText('Started a new project')).toBeInTheDocument();
+    const state = useEditorStore.getState();
+    expect(state).toMatchObject({ name: DEFAULT_PROJECT_NAME, past: [], versions: [] });
+    expect(state.root).toEqual(createRoot());
+    expect(state.customBlocks.map((block) => block.name)).toEqual(['Promo']);
+  });
+
+  it('keeps the project when starting over is cancelled', async () => {
+    renderActions();
+    fireEvent.click(screen.getByRole('button', { name: /New/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+    expect(useEditorStore.getState().name).toBe('Shop');
+    expect(useEditorStore.getState().root.children).toHaveLength(1);
+  });
+
+  it('starts over without asking when there is nothing to lose', () => {
+    useEditorStore.setState({ root: createRoot(), mockData: [], versions: [], past: [] });
+    renderActions();
+    fireEvent.click(screen.getByRole('button', { name: /New/ }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(useEditorStore.getState().name).toBe(DEFAULT_PROJECT_NAME);
+  });
 });
