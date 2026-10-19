@@ -8,12 +8,17 @@ export interface HistoryEntry {
   customBlocks: CustomBlock[];
 }
 
+/** A history entry plus the edit that was made from it, e.g. "Add Button". */
+export interface HistoryStep extends HistoryEntry {
+  label: string;
+}
+
 /** Undo and redo stacks, plus what's needed to coalesce bursts of the same edit. */
 export interface History {
   /** Undo stack, oldest first. */
-  past: HistoryEntry[];
+  past: HistoryStep[];
   /** Redo stack, most recently undone last. */
-  future: HistoryEntry[];
+  future: HistoryStep[];
   /** Last recorded edit, so bursts of the same edit (typing, color dragging) coalesce. */
   lastEdit: { key: string; at: number } | null;
 }
@@ -43,13 +48,14 @@ export function sameEntry(current: HistoryEntry, next: HistoryEntry): boolean {
 }
 
 /**
- * The history after an edit away from `current`: `current` goes on the undo stack and the redo
- * stack is dropped. An edit with the same `coalesceKey` as the previous one, made within
- * `COALESCE_MS`, extends that undo step instead of adding a new one.
+ * The history after the edit `label` away from `current`: `current` goes on the undo stack and
+ * the redo stack is dropped. An edit with the same `coalesceKey` as the previous one, made within
+ * `COALESCE_MS`, extends that undo step (keeping its label) instead of adding a new one.
  */
 export function record(
   history: History,
   current: HistoryEntry,
+  label: string,
   coalesceKey?: string,
   now = Date.now(),
 ): History {
@@ -60,13 +66,16 @@ export function record(
     now - lastEdit.at < COALESCE_MS &&
     past.length > 0;
   return {
-    past: coalesce ? past : [...past, snapshot(current)].slice(-HISTORY_LIMIT),
+    past: coalesce ? past : [...past, { ...snapshot(current), label }].slice(-HISTORY_LIMIT),
     future: [],
     lastEdit: coalesceKey === undefined ? null : { key: coalesceKey, at: now },
   };
 }
 
-/** Steps back from `current`: the entry to restore and the new history, or `null` at the start. */
+/**
+ * Steps back from `current`: the entry to restore and the new history, or `null` at the start.
+ * The undone edit keeps its label on the redo stack.
+ */
 export function undoStep(
   history: History,
   current: HistoryEntry,
@@ -77,7 +86,7 @@ export function undoStep(
     entry,
     history: {
       past: history.past.slice(0, -1),
-      future: [...history.future, snapshot(current)],
+      future: [...history.future, { ...snapshot(current), label: entry.label }],
       lastEdit: null,
     },
   };
@@ -93,7 +102,7 @@ export function redoStep(
   return {
     entry,
     history: {
-      past: [...history.past, snapshot(current)],
+      past: [...history.past, { ...snapshot(current), label: entry.label }],
       future: history.future.slice(0, -1),
       lastEdit: null,
     },

@@ -162,17 +162,24 @@ export interface EditorState extends History {
 export const DEFAULT_PROJECT_NAME = 'Untitled project';
 
 /**
- * Applies an undoable change: records the current content on the undo stack (see `record`).
- * No-op changes are not recorded.
+ * Applies an undoable change named `label` (shown on the Undo and Redo buttons): records the
+ * current content on the undo stack (see `record`). No-op changes are not recorded.
  */
 function commit(
   state: EditorState,
+  label: string,
   next: Partial<HistoryEntry> & Partial<Pick<EditorState, 'selectedId'>>,
   coalesceKey?: string,
 ): Partial<EditorState> {
   const content = { ...snapshot(state), ...next };
   if (sameEntry(state, content)) return state;
-  return { ...next, ...record(state, state, coalesceKey) };
+  return { ...next, ...record(state, state, label, coalesceKey) };
+}
+
+/** A node's component label, e.g. "Button", for naming edits. */
+function labelOf(root: BuilderNode, id: string): string {
+  const node = findNode(root, id);
+  return node ? (getComponentMeta(node.component)?.label ?? node.component) : 'component';
 }
 
 /** Moves through the history, keeping the selection only if that node still exists. */
@@ -195,8 +202,16 @@ function uniqueBlockName(name: string, names: readonly string[]): string {
 }
 
 /** Inserts `node` at `target` and selects it, as one undo step. */
-function insertAndSelect(state: EditorState, node: BuilderNode, target: DropTarget) {
-  return commit(state, { root: insertNode(state.root, node, target), selectedId: node.id });
+function insertAndSelect(
+  state: EditorState,
+  node: BuilderNode,
+  target: DropTarget,
+  label = `Add ${labelOf(node, node.id)}`,
+) {
+  return commit(state, label, {
+    root: insertNode(state.root, node, target),
+    selectedId: node.id,
+  });
 }
 
 /** Applies a theme change, skipping it when no value actually changes. */
@@ -207,7 +222,7 @@ function commitTheme(
 ): Partial<EditorState> {
   const theme = { ...state.theme, ...patch };
   const unchanged = JSON.stringify(theme) === JSON.stringify(state.theme);
-  return unchanged ? state : commit(state, { theme }, coalesceKey);
+  return unchanged ? state : commit(state, 'Edit theme', { theme }, coalesceKey);
 }
 
 export const useEditorStore = create<EditorState>()((set, get) => ({
@@ -234,7 +249,10 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       if (!version) return state;
       const content = structuredClone(snapshot(version));
       const keepSelection = state.selectedId && findNode(content.root, state.selectedId);
-      return commit(state, { ...content, selectedId: keepSelection ? state.selectedId : null });
+      return commit(state, `Restore "${version.name}"`, {
+        ...content,
+        selectedId: keepSelection ? state.selectedId : null,
+      });
     }),
   removeVersion: (id) =>
     set((state) => {
@@ -265,7 +283,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     const custom = get().customBlocks.find((candidate) => candidate.id === blockId);
     if (custom) {
       const copy = cloneNode(custom.root);
-      set((state) => insertAndSelect(state, copy, target));
+      set((state) => insertAndSelect(state, copy, target, `Add ${custom.name}`));
       return copy.id;
     }
     const block = getBlock(blockId);
@@ -278,7 +296,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         : undefined;
     const node = block.build((existing ?? added)?.id ?? '');
     set((state) =>
-      commit(state, {
+      commit(state, `Add ${block.label}`, {
         root: insertNode(state.root, node, target),
         selectedId: node.id,
         ...(added && { mockData: [...state.mockData, added] }),
@@ -288,14 +306,18 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   },
   moveNode: (id, target) => {
     if (id === ROOT_ID) return;
-    set((state) => commit(state, { root: moveNode(state.root, id, target) }));
+    set((state) =>
+      commit(state, `Move ${labelOf(state.root, id)}`, { root: moveNode(state.root, id, target) }),
+    );
   },
   nudgeNode: (id, delta) =>
-    set((state) => commit(state, { root: nudgeNode(state.root, id, delta) })),
+    set((state) =>
+      commit(state, `Move ${labelOf(state.root, id)}`, { root: nudgeNode(state.root, id, delta) }),
+    ),
   removeNode: (id) => {
     if (id === ROOT_ID) return;
     set((state) =>
-      commit(state, {
+      commit(state, `Delete ${labelOf(state.root, id)}`, {
         root: removeNode(state.root, id),
         selectedId:
           state.selectedId && isWithin(state.root, id, state.selectedId) ? null : state.selectedId,
@@ -305,7 +327,11 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   duplicateNode: (id) =>
     set((state) => {
       const result = duplicateNode(state.root, id);
-      return result ? commit(state, { root: result.root, selectedId: result.id }) : state;
+      if (!result) return state;
+      return commit(state, `Duplicate ${labelOf(state.root, id)}`, {
+        root: result.root,
+        selectedId: result.id,
+      });
     }),
   clipboard: null,
   copyNode: (id) => {
@@ -323,13 +349,14 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     const target = resolveDrop(root, [anchor], clipboard.component);
     if (!target) return null;
     const node = cloneNode(clipboard);
-    set((state) => insertAndSelect(state, node, target));
+    set((state) => insertAndSelect(state, node, target, `Paste ${labelOf(node, node.id)}`));
     return node.id;
   },
   updateProps: (id, patch, options) =>
     set((state) =>
       commit(
         state,
+        `Edit ${labelOf(state.root, id)}`,
         { root: updateNodeProps(state.root, id, patch) },
         options?.coalesce ? `props:${id}:${Object.keys(patch).sort().join(',')}` : undefined,
       ),
@@ -358,7 +385,9 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       ...createDataSource(uniqueSourceName(name, names), init?.data),
       ...(init?.url ? { url: init.url } : {}),
     };
-    set((state) => commit(state, { mockData: [...state.mockData, source] }));
+    set((state) =>
+      commit(state, `Add data source ${source.name}`, { mockData: [...state.mockData, source] }),
+    );
     return source.id;
   },
   updateDataSource: (id, patch, options) =>
@@ -375,12 +404,14 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       const key = options?.coalesce
         ? `data:${id}:${Object.keys(patch).sort().join(',')}`
         : undefined;
-      return commit(state, { mockData }, key);
+      return commit(state, `Edit data source ${next.name}`, { mockData }, key);
     }),
   removeDataSource: (id) =>
     set((state) => {
-      const mockData = state.mockData.filter((source) => source.id !== id);
-      return mockData.length === state.mockData.length ? state : commit(state, { mockData });
+      const source = state.mockData.find((candidate) => candidate.id === id);
+      if (!source) return state;
+      const mockData = state.mockData.filter((candidate) => candidate !== source);
+      return commit(state, `Delete data source ${source.name}`, { mockData });
     }),
   saveAsBlock: (id, name) => {
     const node = id === ROOT_ID ? undefined : findNode(get().root, id);
@@ -392,15 +423,17 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       name: uniqueBlockName(base, names),
       root: structuredClone(node),
     };
-    set((state) => commit(state, { customBlocks: [...state.customBlocks, block] }));
+    set((state) =>
+      commit(state, `Save block ${block.name}`, { customBlocks: [...state.customBlocks, block] }),
+    );
     return block.id;
   },
   removeCustomBlock: (id) =>
     set((state) => {
-      const customBlocks = state.customBlocks.filter((block) => block.id !== id);
-      return customBlocks.length === state.customBlocks.length
-        ? state
-        : commit(state, { customBlocks });
+      const block = state.customBlocks.find((candidate) => candidate.id === id);
+      if (!block) return state;
+      const customBlocks = state.customBlocks.filter((candidate) => candidate !== block);
+      return commit(state, `Delete block ${block.name}`, { customBlocks });
     }),
   loadProject: ({ name, root, theme, mockData = [], customBlocks = [], versions = [] }) =>
     set({

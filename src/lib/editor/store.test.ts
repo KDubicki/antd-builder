@@ -52,6 +52,45 @@ describe('editor store', () => {
     expect(order()).toEqual([a, b]);
   });
 
+  it('names each undo step after its edit', () => {
+    const labels = () => state().past.map((step) => step.label);
+    const card = state().addNode('Card', { parentId: ROOT_ID, index: 0 });
+    const tag = state().addNode('Tag', { parentId: card, index: 0 });
+    state().updateProps(tag, { children: 'New' });
+    state().moveNode(tag, { parentId: ROOT_ID, index: 0 });
+    state().duplicateNode(tag);
+    state().copyNode(tag);
+    state().select(null);
+    state().pasteNode();
+    state().removeNode(card);
+    state().insertBlock('page-header', { parentId: ROOT_ID, index: 0 });
+    state().setThemeMode('dark');
+    const source = state().addDataSource('users');
+    state().updateDataSource(source, { data: [] });
+    state().removeDataSource(source);
+    const block = state().saveAsBlock(tag)!;
+    state().removeCustomBlock(block);
+    state().saveVersion('Draft');
+    state().restoreVersion(state().versions[0]!.id);
+    expect(labels()).toEqual([
+      'Add Card',
+      'Add Tag',
+      'Edit Tag',
+      'Move Tag',
+      'Duplicate Tag',
+      'Paste Tag',
+      'Delete Card',
+      'Add Page header',
+      'Edit theme',
+      'Add data source users',
+      'Edit data source users',
+      'Delete data source users',
+      'Save block Tag',
+      'Delete block Tag',
+      'Restore "Draft"',
+    ]);
+  });
+
   it('removes a node and clears a selection inside it', () => {
     const card = state().addNode('Card', { parentId: ROOT_ID, index: 0 });
     state().addNode('Tag', { parentId: card, index: 0 });

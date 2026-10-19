@@ -38,41 +38,53 @@ describe('history', () => {
 
   it('records edits, dropping the redo stack', () => {
     const a = entry('a');
-    const history = record({ ...emptyHistory(), future: [entry('z')] }, a);
-    expect(history).toEqual({ past: [a], future: [], lastEdit: null });
+    const history = record(
+      { ...emptyHistory(), future: [{ ...entry('z'), label: 'x' }] },
+      a,
+      'Add',
+    );
+    expect(history).toEqual({ past: [{ ...a, label: 'Add' }], future: [], lastEdit: null });
   });
 
   it('coalesces quick edits with the same key', () => {
-    const first = record(emptyHistory(), entry('a'), 'typing', 0);
-    const second = record(first, entry('b'), 'typing', COALESCE_MS - 1);
-    expect(second.past).toHaveLength(1);
+    const first = record(emptyHistory(), entry('a'), 'Edit text', 'typing', 0);
+    const second = record(first, entry('b'), 'Edit again', 'typing', COALESCE_MS - 1);
+    expect(second.past).toEqual([{ ...entry('a'), label: 'Edit text' }]);
     expect(second.lastEdit).toEqual({ key: 'typing', at: COALESCE_MS - 1 });
 
-    const later = record(second, entry('c'), 'typing', 2 * COALESCE_MS);
+    const later = record(second, entry('c'), 'Edit text', 'typing', 2 * COALESCE_MS);
     expect(later.past).toHaveLength(2);
-    expect(record(later, entry('d'), 'other', 2 * COALESCE_MS).past).toHaveLength(3);
+    expect(record(later, entry('d'), 'Edit', 'other', 2 * COALESCE_MS).past).toHaveLength(3);
   });
 
   it('keeps at most HISTORY_LIMIT steps', () => {
     let history = emptyHistory();
-    for (let i = 0; i <= HISTORY_LIMIT; i++) history = record(history, entry(String(i)));
+    for (let i = 0; i <= HISTORY_LIMIT; i++) history = record(history, entry(String(i)), 'Edit');
     expect(history.past).toHaveLength(HISTORY_LIMIT);
     expect(history.past[0]!.root.id).toBe('1');
   });
 
-  it('undoes and redoes', () => {
+  it('undoes and redoes, keeping the step label', () => {
     const a = entry('a');
     const b = entry('b');
-    const history = record(emptyHistory(), a);
+    const history = record(emptyHistory(), a, 'Add Button');
     expect(redoStep(history, b)).toBeNull();
 
     const back = undoStep(history, b)!;
-    expect(back.entry).toEqual(a);
-    expect(back.history).toEqual({ past: [], future: [b], lastEdit: null });
+    expect(snapshot(back.entry)).toEqual(a);
+    expect(back.history).toEqual({
+      past: [],
+      future: [{ ...b, label: 'Add Button' }],
+      lastEdit: null,
+    });
     expect(undoStep(back.history, a)).toBeNull();
 
     const forward = redoStep(back.history, a)!;
-    expect(forward.entry).toEqual(b);
-    expect(forward.history).toEqual({ past: [a], future: [], lastEdit: null });
+    expect(snapshot(forward.entry)).toEqual(b);
+    expect(forward.history).toEqual({
+      past: [{ ...a, label: 'Add Button' }],
+      future: [],
+      lastEdit: null,
+    });
   });
 });

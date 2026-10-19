@@ -130,6 +130,8 @@ describe('Editor', { timeout: 15_000 }, () => {
     });
     const children = () => useEditorStore.getState().root.children;
     expect(undo).toBeEnabled();
+    expect(undo).toHaveAttribute('title', 'Undo Add Tag (Ctrl/⌘+Z)');
+    expect(redo).toHaveAttribute('title', 'Redo (Ctrl/⌘+Shift+Z)');
 
     const event = new KeyboardEvent('keydown', { key: 'z', metaKey: true, cancelable: true });
     act(() => {
@@ -138,6 +140,7 @@ describe('Editor', { timeout: 15_000 }, () => {
     expect(event.defaultPrevented).toBe(true);
     expect(children()).toHaveLength(0);
     expect(redo).toBeEnabled();
+    expect(redo).toHaveAttribute('title', 'Redo Add Tag (Ctrl/⌘+Shift+Z)');
 
     fireEvent.keyDown(window, { key: 'Z', ctrlKey: true, shiftKey: true });
     expect(children()).toHaveLength(1);
