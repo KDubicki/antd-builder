@@ -74,13 +74,14 @@ describe('project files', () => {
         createNode('Col', 'col'),
         createNode('Tag', 'col'),
         createNode('Tag', ROOT_ID),
+        { ...createNode('Tooltip', 'tip'), children: [createNode('Tag'), createNode('Tag')] },
       ],
     };
     const result = parseProject(withRoot(root));
     expect(result.ok).toBe(false);
     expect(!result.ok && result.error).toBe(
       'Invalid page tree: Unknown component "Marquee"; "Col" can\'t be placed inside "Flex"; ' +
-        `Duplicate node id "col"; Duplicate node id "${ROOT_ID}"`,
+        `Duplicate node id "col"; Duplicate node id "${ROOT_ID}"; "Tooltip" holds at most 1 child`,
     );
   });
 });

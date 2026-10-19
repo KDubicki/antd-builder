@@ -51,14 +51,18 @@ export function toProject({
 
 export type ParseResult = { ok: true; content: ProjectContent } | { ok: false; error: string };
 
-/** Problems that the schema can't express: unknown components, broken nesting, duplicate ids. */
+/**
+ * Problems that the schema can't express, i.e. the rules the editor enforces while editing:
+ * unknown components, broken nesting, too many children, duplicate ids.
+ */
 function treeErrors(root: BuilderNode): string[] {
   const errors: string[] = [];
   const seen = new Set<string>();
   const visit = (node: BuilderNode, parent?: BuilderNode) => {
     if (seen.has(node.id)) errors.push(`Duplicate node id "${node.id}"`);
     seen.add(node.id);
-    if (!getComponentMeta(node.component)) {
+    const meta = getComponentMeta(node.component);
+    if (!meta) {
       errors.push(`Unknown component "${node.component}"`);
     } else if (
       parent &&
@@ -66,6 +70,10 @@ function treeErrors(root: BuilderNode): string[] {
       !canContain(parent.component, node.component)
     ) {
       errors.push(`"${node.component}" can't be placed inside "${parent.component}"`);
+    }
+    if (meta?.maxChildren !== undefined && node.children.length > meta.maxChildren) {
+      const children = meta.maxChildren === 1 ? 'child' : 'children';
+      errors.push(`"${node.component}" holds at most ${meta.maxChildren} ${children}`);
     }
     for (const child of node.children) visit(child, node);
   };
