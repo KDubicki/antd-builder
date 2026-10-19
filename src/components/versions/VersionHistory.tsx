@@ -4,11 +4,8 @@ import { DeleteOutlined, HistoryOutlined, RollbackOutlined } from '@ant-design/i
 import { App, Button, Drawer, Empty, Flex, Input, Popconfirm, Typography, theme } from 'antd';
 import { useState } from 'react';
 import { useEditorStore } from '@/lib/editor/store';
+import { formatDateTime } from '@/lib/format';
 import type { ProjectVersion } from '@/lib/schema';
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
-}
 
 function VersionItem({ version }: { version: ProjectVersion }) {
   const { token } = theme.useToken();
@@ -31,7 +28,7 @@ function VersionItem({ version }: { version: ProjectVersion }) {
           {version.name}
         </Typography.Text>
         <Typography.Text type="secondary">
-          <time dateTime={version.createdAt}>{formatDate(version.createdAt)}</time>
+          <time dateTime={version.createdAt}>{formatDateTime(version.createdAt)}</time>
         </Typography.Text>
       </Flex>
       <Popconfirm

@@ -23,18 +23,14 @@ import {
 import { useState } from 'react';
 import { deleteWithToken, postJson } from '@/lib/apiClient';
 import { useEditorStore } from '@/lib/editor/store';
+import { formatDateTime, formatDay } from '@/lib/format';
 import { toProject } from '@/lib/project';
-import { formatDay } from './SharedProject';
 import { type MyShare, addMyShare, loadMyShares, removeMyShare } from './myShares';
 
 /** Path of a shared project's read-only page. */
 export const sharePath = (id: string) => `/s/${id}`;
 
 const shareUrl = (id: string) => new URL(sharePath(id), window.location.origin).href;
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
-}
 
 /** Copies a link, reporting the outcome. */
 function useCopyLink() {
@@ -80,7 +76,7 @@ function ShareItem({ share, onDeleted }: { share: MyShare; onDeleted: (id: strin
           {expired && <Tag>Expired</Tag>}
         </Flex>
         <Typography.Text type="secondary">
-          <time dateTime={share.createdAt}>{formatDate(share.createdAt)}</time>
+          <time dateTime={share.createdAt}>{formatDateTime(share.createdAt)}</time>
           {share.expiresAt && !expired && (
             <>
               {' · expires '}

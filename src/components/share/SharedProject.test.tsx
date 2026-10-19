@@ -5,7 +5,8 @@ import { createRoot, useEditorStore } from '@/lib/editor/store';
 import { toProject } from '@/lib/project';
 import { createNode } from '@/lib/registry';
 import { createTheme } from '@/lib/theme';
-import { SharedProject, formatDay } from './SharedProject';
+import { formatDay } from '@/lib/format';
+import { SharedProject } from './SharedProject';
 
 const push = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));

@@ -19,6 +19,7 @@ import { Canvas } from '@/components/canvas/Canvas';
 import { ViewportSwitch } from '@/components/canvas/CanvasToolbar';
 import { AUTOSAVE_KEY } from '@/components/project/autosave';
 import { useEditorStore } from '@/lib/editor/store';
+import { formatDay } from '@/lib/format';
 import { type ProjectContent, parseProject, toProject } from '@/lib/project';
 
 /** The project saved in this browser's editor, if any. */
@@ -66,11 +67,6 @@ function OpenInEditorButton({ content }: { content: ProjectContent }) {
       Open in editor
     </Button>
   );
-}
-
-/** A date for the reader's locale. */
-export function formatDay(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { dateStyle: 'medium' });
 }
 
 function SharedHeader({
