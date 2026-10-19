@@ -21,7 +21,9 @@ import {
   undoStep,
 } from './history';
 import {
+  ROOT_ID,
   type DropTarget,
+  createRoot,
   cloneNode,
   duplicateNode,
   findNode,
@@ -37,18 +39,7 @@ import {
   wrapNode,
 } from '@/lib/tree';
 
-export const ROOT_ID = 'root';
-
 export type Viewport = 'desktop' | 'tablet' | 'mobile';
-
-export function createRoot(): BuilderNode {
-  return {
-    id: ROOT_ID,
-    component: 'Flex',
-    props: { vertical: true, gap: 'middle' },
-    children: [],
-  };
-}
 
 export { COALESCE_MS, HISTORY_LIMIT, type HistoryEntry } from './history';
 

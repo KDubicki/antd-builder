@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { ROOT_ID, createRoot, useEditorStore } from '@/lib/editor/store';
+import { useEditorStore } from '@/lib/editor/store';
 import { isBinding, resolveBinding } from '@/lib/mockData';
 import { toProject, parseProject } from '@/lib/project';
 import { getComponentMeta } from '@/lib/registry';
 import type { BuilderNode } from '@/lib/schema';
 import { createTheme } from '@/lib/theme';
-import { findNode } from '@/lib/tree';
+import { createRoot, findNode, ROOT_ID } from '@/lib/tree';
 import { blocks, getBlock } from '.';
 
 const state = () => useEditorStore.getState();

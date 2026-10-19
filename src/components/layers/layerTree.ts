@@ -1,8 +1,7 @@
 import type { TreeDataNode } from 'antd';
 import { getComponentMeta } from '@/lib/registry';
 import type { BuilderNode } from '@/lib/schema';
-import { ROOT_ID } from '@/lib/editor/store';
-import { pathTo } from '@/lib/tree';
+import { pathTo, ROOT_ID } from '@/lib/tree';
 
 export interface LayerNode extends TreeDataNode {
   key: string;

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { createRoot } from '@/lib/editor/store';
 import { toProject } from '@/lib/project';
 import { createNode } from '@/lib/registry';
 import { createTheme } from '@/lib/theme';
 import { shareMetadata } from './metadata';
+import { createRoot } from '@/lib/tree';
 
 const project = (children = [createNode('Card', 'c'), createNode('Button', 'b')]) =>
   JSON.stringify(

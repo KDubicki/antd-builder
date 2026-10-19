@@ -1,7 +1,8 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createRoot, useEditorStore } from '@/lib/editor/store';
+import { useEditorStore } from '@/lib/editor/store';
 import { DataPanel, describeData } from './DataPanel';
+import { createRoot } from '@/lib/tree';
 
 const sources = () => useEditorStore.getState().mockData;
 

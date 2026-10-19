@@ -11,9 +11,16 @@ import {
   SnippetsOutlined,
 } from '@ant-design/icons';
 import type { ReactNode } from 'react';
-import { ROOT_ID, type EditorState } from '@/lib/editor/store';
+import { type EditorState } from '@/lib/editor/store';
 import { getComponentMeta } from '@/lib/registry';
-import { findParent, resolveDrop, siblingPosition, unwrapNode, wrapNode } from '@/lib/tree';
+import {
+  findParent,
+  resolveDrop,
+  ROOT_ID,
+  siblingPosition,
+  unwrapNode,
+  wrapNode,
+} from '@/lib/tree';
 
 /** Something to do with one component on the page, shared by buttons, menus and shortcuts. */
 export interface NodeCommand {

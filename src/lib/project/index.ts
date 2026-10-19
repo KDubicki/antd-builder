@@ -1,4 +1,3 @@
-import { ROOT_ID } from '@/lib/editor/store';
 import { canContain, getComponentMeta } from '@/lib/registry';
 import { sourceNameError } from '@/lib/mockData';
 import {
@@ -10,6 +9,7 @@ import {
   type ProjectTheme,
   projectSchema,
 } from '@/lib/schema';
+import { ROOT_ID } from '@/lib/tree';
 
 export const PAGE_ID = 'home';
 

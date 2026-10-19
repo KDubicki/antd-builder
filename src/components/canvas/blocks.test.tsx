@@ -3,9 +3,10 @@ import { render, screen } from '@testing-library/react';
 import { resetWarned } from 'antd/es/_util/warning';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { blocks } from '@/lib/blocks';
-import { ROOT_ID, createRoot, useEditorStore } from '@/lib/editor/store';
+import { useEditorStore } from '@/lib/editor/store';
 import { createTheme } from '@/lib/theme';
 import { Canvas } from './Canvas';
+import { ROOT_ID, createRoot } from '@/lib/tree';
 
 let warnings: string[] = [];
 beforeEach(() => {

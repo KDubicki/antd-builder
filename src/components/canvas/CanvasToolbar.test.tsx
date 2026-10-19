@@ -1,10 +1,11 @@
 import { DndContext } from '@dnd-kit/core';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createRoot, useEditorStore } from '@/lib/editor/store';
+import { useEditorStore } from '@/lib/editor/store';
 import { createNode } from '@/lib/registry';
 import { Canvas } from './Canvas';
 import { CanvasToolbar, viewports } from './CanvasToolbar';
+import { createRoot } from '@/lib/tree';
 
 beforeEach(() =>
   useEditorStore.setState({

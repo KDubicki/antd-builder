@@ -4,10 +4,11 @@ import { App } from 'antd';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { categoryLabels, components, getComponentMeta } from '@/lib/registry';
 import { blocks } from '@/lib/blocks';
-import { createRoot, useEditorStore } from '@/lib/editor/store';
+import { useEditorStore } from '@/lib/editor/store';
 import { createNode } from '@/lib/registry';
 import { matchesQuery } from '@/lib/search';
 import { Palette } from './Palette';
+import { createRoot } from '@/lib/tree';
 
 const renderPalette = () =>
   render(

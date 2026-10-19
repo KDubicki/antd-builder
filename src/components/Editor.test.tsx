@@ -1,8 +1,9 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { ROOT_ID, createRoot, useEditorStore } from '@/lib/editor/store';
+import { useEditorStore } from '@/lib/editor/store';
 import { createNode } from '@/lib/registry';
 import { Editor } from './Editor';
+import { ROOT_ID, createRoot } from '@/lib/tree';
 
 beforeEach(() =>
   useEditorStore.setState({

@@ -1,11 +1,12 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { App } from 'antd';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createRoot, useEditorStore } from '@/lib/editor/store';
+import { useEditorStore } from '@/lib/editor/store';
 import { createNode } from '@/lib/registry';
 import { createTheme } from '@/lib/theme';
 import { ShareButton } from './ShareButton';
 import { type MyShare, loadMyShares, addMyShare } from './myShares';
+import { createRoot } from '@/lib/tree';
 
 const fetchMock = vi.fn<typeof fetch>();
 const writeText = vi.fn<(text: string) => Promise<void>>();

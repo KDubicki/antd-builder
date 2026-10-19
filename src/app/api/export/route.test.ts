@@ -1,10 +1,10 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { createRoot } from '@/lib/editor/store';
 import { MAX_PROJECT_BYTES, toProject } from '@/lib/project';
 import { LIMITS_PER_MINUTE } from '@/lib/rateLimit';
 import { createTheme } from '@/lib/theme';
 import { POST } from './route';
+import { createRoot } from '@/lib/tree';
 
 const post = (body: string, headers?: Record<string, string>) =>
   POST(new Request('http://localhost/api/export', { method: 'POST', body, headers }));

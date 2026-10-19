@@ -2,11 +2,12 @@ import path from 'node:path';
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 import { blocks } from '@/lib/blocks';
-import { ROOT_ID, createRoot, useEditorStore } from '@/lib/editor/store';
+import { useEditorStore } from '@/lib/editor/store';
 import { components, createNode, createPlaceableNode } from '@/lib/registry';
 import type { BuilderNode, DataSource } from '@/lib/schema';
 import { createTheme } from '@/lib/theme';
 import { boundSourceIds, collectImports, generatePage, nodeToJsx, pageComponentName } from '.';
+import { ROOT_ID, createRoot } from '@/lib/tree';
 
 const tree: BuilderNode = {
   id: 'root',

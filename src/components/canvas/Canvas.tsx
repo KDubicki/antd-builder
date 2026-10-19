@@ -4,7 +4,7 @@ import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { ConfigProvider, Typography, theme } from 'antd';
 import { type MouseEvent, useMemo } from 'react';
 import type { DragData } from '@/lib/editor/drop';
-import { ROOT_ID, useEditorStore } from '@/lib/editor/store';
+import { useEditorStore } from '@/lib/editor/store';
 import { resolveProps } from '@/lib/mockData';
 import { antdProps, codePropValues, getComponentMeta } from '@/lib/registry';
 import type { BuilderNode } from '@/lib/schema';
@@ -13,6 +13,7 @@ import { viewports } from './CanvasToolbar';
 import { NodeContextMenu } from './NodeContextMenu';
 import { NODE_ID_ATTR } from './nodeChain';
 import { renderers } from './renderers';
+import { ROOT_ID } from '@/lib/tree';
 
 export const CANVAS_DROPPABLE_ID = 'canvas';
 

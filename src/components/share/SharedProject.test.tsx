@@ -1,12 +1,13 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AUTOSAVE_KEY } from '@/components/project/autosave';
-import { createRoot, useEditorStore } from '@/lib/editor/store';
+import { useEditorStore } from '@/lib/editor/store';
 import { toProject } from '@/lib/project';
 import { createNode } from '@/lib/registry';
 import { createTheme } from '@/lib/theme';
 import { formatDay } from '@/lib/format';
 import { SharedProject } from './SharedProject';
+import { createRoot } from '@/lib/tree';
 
 const push = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));

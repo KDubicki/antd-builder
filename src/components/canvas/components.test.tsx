@@ -5,7 +5,7 @@ import { resetWarned } from 'antd/es/_util/warning';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Inspector } from '@/components/inspector/Inspector';
 import { nodeToJsx } from '@/lib/codegen';
-import { createRoot, useEditorStore } from '@/lib/editor/store';
+import { useEditorStore } from '@/lib/editor/store';
 import {
   type ComponentMeta,
   type PropDefinition,
@@ -16,7 +16,7 @@ import {
 } from '@/lib/registry';
 import type { BuilderNode } from '@/lib/schema';
 import { createTheme } from '@/lib/theme';
-import { findNode, updateNodeProps } from '@/lib/tree';
+import { createRoot, findNode, updateNodeProps } from '@/lib/tree';
 import { Canvas } from './Canvas';
 
 /**

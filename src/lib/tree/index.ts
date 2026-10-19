@@ -1,6 +1,19 @@
 import { canContain, getComponentMeta, hasRoomFor } from '@/lib/registry';
 import type { BuilderNode } from '@/lib/schema';
 
+/** Id of the page root. The root is fixed: it can't be moved, removed or copied. */
+export const ROOT_ID = 'root';
+
+/** An empty page: a vertical Flex. */
+export function createRoot(): BuilderNode {
+  return {
+    id: ROOT_ID,
+    component: 'Flex',
+    props: { vertical: true, gap: 'middle' },
+    children: [],
+  };
+}
+
 /** Where a node goes: the parent's id and the index among its children. */
 export interface DropTarget {
   parentId: string;

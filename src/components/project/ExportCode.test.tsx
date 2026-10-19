@@ -2,10 +2,11 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { App } from 'antd';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { generatePage } from '@/lib/codegen';
-import { createRoot, useEditorStore } from '@/lib/editor/store';
+import { useEditorStore } from '@/lib/editor/store';
 import { createNode } from '@/lib/registry';
 import { createTheme } from '@/lib/theme';
 import { ExportCode } from './ExportCode';
+import { createRoot } from '@/lib/tree';
 
 const renderExport = () =>
   render(

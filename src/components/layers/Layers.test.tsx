@@ -1,9 +1,10 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { ConfigProvider } from 'antd';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createRoot, useEditorStore } from '@/lib/editor/store';
+import { useEditorStore } from '@/lib/editor/store';
 import { createNode } from '@/lib/registry';
 import { Layers } from './Layers';
+import { createRoot } from '@/lib/tree';
 
 const card = { ...createNode('Card', 'card'), children: [createNode('Button', 'btn')] };
 

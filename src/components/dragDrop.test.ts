@@ -1,8 +1,9 @@
 import type { DragEndEvent } from '@dnd-kit/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ROOT_ID, createRoot, useEditorStore } from '@/lib/editor/store';
+import { useEditorStore } from '@/lib/editor/store';
 import { createNode } from '@/lib/registry';
 import { addAtSelection, handleDragEnd } from './dragDrop';
+import { ROOT_ID, createRoot } from '@/lib/tree';
 
 beforeEach(() =>
   useEditorStore.setState({

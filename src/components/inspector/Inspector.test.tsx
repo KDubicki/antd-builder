@@ -1,10 +1,10 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { App } from 'antd';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { ROOT_ID, createRoot, useEditorStore } from '@/lib/editor/store';
+import { useEditorStore } from '@/lib/editor/store';
 import { createNode } from '@/lib/registry';
 import type { BuilderNode } from '@/lib/schema';
-import { findNode } from '@/lib/tree';
+import { createRoot, findNode, ROOT_ID } from '@/lib/tree';
 import { Inspector } from './Inspector';
 
 const select = (node: BuilderNode) =>

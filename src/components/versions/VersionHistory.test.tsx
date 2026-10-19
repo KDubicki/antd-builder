@@ -2,8 +2,9 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { App } from 'antd';
 import { resetWarned } from 'antd/es/_util/warning';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ROOT_ID, createRoot, useEditorStore } from '@/lib/editor/store';
+import { useEditorStore } from '@/lib/editor/store';
 import { VersionHistory } from './VersionHistory';
+import { ROOT_ID, createRoot } from '@/lib/tree';
 
 let warnings: string[] = [];
 beforeEach(() => {

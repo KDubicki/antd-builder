@@ -1,9 +1,9 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createRoot, useEditorStore } from '@/lib/editor/store';
+import { useEditorStore } from '@/lib/editor/store';
 import { createNode } from '@/lib/registry';
 import type { DataSource } from '@/lib/schema';
-import { findNode } from '@/lib/tree';
+import { createRoot, findNode } from '@/lib/tree';
 import { Inspector } from './Inspector';
 
 const users: DataSource = {

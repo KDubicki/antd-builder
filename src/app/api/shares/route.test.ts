@@ -3,13 +3,13 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createRoot } from '@/lib/editor/store';
 import { MAX_PROJECT_BYTES, toProject } from '@/lib/project';
 import { LIMITS_PER_MINUTE } from '@/lib/rateLimit';
 import { saveShare } from '@/lib/shares';
 import { createTheme } from '@/lib/theme';
 import { DELETE, GET } from './[id]/route';
 import { POST } from './route';
+import { createRoot } from '@/lib/tree';
 
 vi.mock('@/lib/shares', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/shares')>();

@@ -1,11 +1,12 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { App } from 'antd';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_PROJECT_NAME, createRoot, useEditorStore } from '@/lib/editor/store';
+import { DEFAULT_PROJECT_NAME, useEditorStore } from '@/lib/editor/store';
 import { toProject } from '@/lib/project';
 import { createNode } from '@/lib/registry';
 import { createTheme } from '@/lib/theme';
 import { ProjectActions } from './ProjectActions';
+import { createRoot } from '@/lib/tree';
 
 const renderActions = () =>
   render(

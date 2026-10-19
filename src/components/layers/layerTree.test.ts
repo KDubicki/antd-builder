@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { createRoot } from '@/lib/editor/store';
 import type { BuilderNode } from '@/lib/schema';
 import { ancestorIds, expandableIds, expandedIds, toLayerTree } from './layerTree';
+import { createRoot } from '@/lib/tree';
 
 const node = (
   id: string,

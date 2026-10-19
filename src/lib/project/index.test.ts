@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { ROOT_ID, createRoot } from '@/lib/editor/store';
 import { createNode } from '@/lib/registry';
 import type { BuilderNode } from '@/lib/schema';
 import { createTheme } from '@/lib/theme';
 import { parseProject, projectFileName, toProject } from '.';
+import { ROOT_ID, createRoot } from '@/lib/tree';
 
 const content = {
   name: 'Shop',

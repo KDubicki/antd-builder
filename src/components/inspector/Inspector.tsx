@@ -27,10 +27,10 @@ import {
 import { useState } from 'react';
 import { BindableField } from './DataBinding';
 import { SaveBlockButton } from './SaveBlockButton';
-import { ROOT_ID, useEditorStore } from '@/lib/editor/store';
+import { useEditorStore } from '@/lib/editor/store';
 import { type PropDefinition, getComponentMeta } from '@/lib/registry';
 import { matchesQuery } from '@/lib/search';
-import { findNode, pathTo, sameProps } from '@/lib/tree';
+import { pathTo, findNode, ROOT_ID, sameProps } from '@/lib/tree';
 import { useShallow } from 'zustand/react/shallow';
 
 interface FieldProps {

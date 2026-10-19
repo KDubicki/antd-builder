@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { ROOT_ID, createRoot, useEditorStore } from '@/lib/editor/store';
+import { useEditorStore } from '@/lib/editor/store';
 import { createNode } from '@/lib/registry';
 import { commandTitle, nodeCommands } from './nodeCommands';
+import { ROOT_ID, createRoot } from '@/lib/tree';
 
 const state = () => useEditorStore.getState();
 const ids = () => state().root.children.map((child) => child.id);

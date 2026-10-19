@@ -1,10 +1,11 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_PROJECT_NAME, createRoot, useEditorStore } from '@/lib/editor/store';
+import { DEFAULT_PROJECT_NAME, useEditorStore } from '@/lib/editor/store';
 import { toProject } from '@/lib/project';
 import { createNode } from '@/lib/registry';
 import { createTheme } from '@/lib/theme';
 import { AUTOSAVE_KEY, useAutosave } from './autosave';
+import { createRoot } from '@/lib/tree';
 
 const savedProject = () => JSON.parse(localStorage.getItem(AUTOSAVE_KEY) ?? 'null');
 

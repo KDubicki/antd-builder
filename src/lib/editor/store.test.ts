@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createTheme } from '@/lib/theme';
-import { findNode } from '@/lib/tree';
-import { COALESCE_MS, HISTORY_LIMIT, ROOT_ID, createRoot, useEditorStore } from './store';
+import { createRoot, findNode, ROOT_ID } from '@/lib/tree';
+import { COALESCE_MS, HISTORY_LIMIT, useEditorStore } from './store';
 
 const state = () => useEditorStore.getState();
 

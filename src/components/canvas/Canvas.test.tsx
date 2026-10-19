@@ -1,12 +1,13 @@
 import { DndContext } from '@dnd-kit/core';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { ROOT_ID, createRoot, useEditorStore } from '@/lib/editor/store';
+import { useEditorStore } from '@/lib/editor/store';
 import { components, createNode, createPlaceableNode } from '@/lib/registry';
 import { createTheme } from '@/lib/theme';
 import type { BuilderNode } from '@/lib/schema';
 import { Canvas } from './Canvas';
 import { renderers } from './renderers';
+import { ROOT_ID, createRoot } from '@/lib/tree';
 
 const renderCanvas = () =>
   render(

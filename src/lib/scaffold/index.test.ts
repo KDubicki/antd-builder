@@ -2,10 +2,10 @@
 import path from 'node:path';
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
-import { createRoot } from '@/lib/editor/store';
 import type { ProjectContent } from '@/lib/project';
 import { createNode } from '@/lib/registry';
 import { buildScaffold } from '.';
+import { createRoot } from '@/lib/tree';
 
 const content = (overrides: Partial<ProjectContent> = {}): ProjectContent => ({
   name: 'My Shop!',
