@@ -125,33 +125,26 @@ export const nodeCommands = {
   },
 } satisfies Record<string, NodeCommand>;
 
-export type NodeCommandId = keyof typeof nodeCommands;
+/** "Wrap in Card": puts the component inside a new `component`, where nesting rules allow. */
+function wrapIn(component: string, keys?: readonly string[]): NodeCommand {
+  const label = `Wrap in ${getComponentMeta(component)?.label ?? component}`;
+  const wrapper = { id: '', component, props: {}, children: [] };
+  return {
+    label,
+    name: label,
+    icon: <BorderOuterOutlined />,
+    keys,
+    enabled: (state, id) => wrapNode(state.root, id, wrapper) !== null,
+    run: (state, id) => {
+      state.wrapNode(id, component);
+    },
+  };
+}
 
-/** Containers offered by "Wrap in", in menu order; the first one has a shortcut. */
-export const WRAPPERS = ['Flex', 'Card', 'Space'] as const;
+export const wrapInFlex = wrapIn('Flex', [MOD, 'G']);
 
-/** Whether node `id` can be wrapped in `component`, without creating the wrapper. */
-const canWrap = (component: string) => (state: EditorState, id: string) =>
-  wrapNode(state.root, id, { id: '', component, props: {}, children: [] }) !== null;
-
-/** "Wrap in Flex", "Wrap in Card"…: puts the component inside a new container. */
-export const wrapCommands: Readonly<Record<(typeof WRAPPERS)[number], NodeCommand>> =
-  Object.fromEntries(
-    WRAPPERS.map((component, i) => {
-      const label = `Wrap in ${getComponentMeta(component)?.label ?? component}`;
-      const command: NodeCommand = {
-        label,
-        name: label,
-        icon: <BorderOuterOutlined />,
-        ...(i === 0 && { keys: [MOD, 'G'] }),
-        enabled: canWrap(component),
-        run: (state, id) => {
-          state.wrapNode(id, component);
-        },
-      };
-      return [component, command];
-    }),
-  ) as Record<(typeof WRAPPERS)[number], NodeCommand>;
+/** The containers offered by "Wrap in", in menu order. */
+export const wrapCommands: readonly NodeCommand[] = [wrapInFlex, wrapIn('Card'), wrapIn('Space')];
 
 /** "Duplicate (Ctrl/⌘+D)": a command's tooltip with its keys. */
 export function commandTitle(command: NodeCommand): string {

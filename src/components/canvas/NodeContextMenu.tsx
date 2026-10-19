@@ -25,7 +25,7 @@ const NODE_ENTRIES: readonly CommandEntry[] = [
   cut,
   paste,
   'divider',
-  ...Object.values(wrapCommands),
+  ...wrapCommands,
   unwrap,
   'divider',
   moveUp,

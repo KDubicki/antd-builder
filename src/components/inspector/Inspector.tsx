@@ -110,7 +110,7 @@ function CommandButton({ command, nodeId }: { command: NodeCommand; nodeId: stri
 
 /** Menu to put the component in a container, or take it out of one. */
 function WrapMenu({ nodeId }: { nodeId: string }) {
-  const menu = useCommandMenu([...Object.values(wrapCommands), nodeCommands.unwrap], nodeId);
+  const menu = useCommandMenu([...wrapCommands, nodeCommands.unwrap], nodeId);
   return (
     <Dropdown trigger={['click']} menu={menu}>
       <Button icon={<BorderOuterOutlined />} aria-label="Wrap or unwrap" title="Wrap or unwrap" />
@@ -120,17 +120,15 @@ function WrapMenu({ nodeId }: { nodeId: string }) {
 
 /** Where the component sits: its ancestors, from the page down, each one a click away. */
 function NodePath({ nodeId }: { nodeId: string }) {
-  const ids = useEditorStore(useShallow((state) => pathTo(state.root, nodeId).map((n) => n.id)));
-  const names = useEditorStore(
-    useShallow((state) => pathTo(state.root, nodeId).map((n) => n.component)),
-  );
+  // Shallow: the path is a new array each time, but its nodes only change when edited.
+  const path = useEditorStore(useShallow((state) => pathTo(state.root, nodeId)));
   const select = useEditorStore((state) => state.select);
-  if (ids.length < 2) return null;
+  if (path.length < 2) return null;
   return (
     <Breadcrumb
       aria-label="Component path"
-      items={ids.map((id, i) => {
-        const label = i === 0 ? 'Page' : (getComponentMeta(names[i]!)?.label ?? names[i]);
+      items={path.map(({ id, component }) => {
+        const label = id === ROOT_ID ? 'Page' : (getComponentMeta(component)?.label ?? component);
         return {
           key: id,
           title:

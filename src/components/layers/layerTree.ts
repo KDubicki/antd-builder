@@ -2,6 +2,7 @@ import type { TreeDataNode } from 'antd';
 import { getComponentMeta } from '@/lib/registry';
 import type { BuilderNode } from '@/lib/schema';
 import { ROOT_ID } from '@/lib/editor/store';
+import { pathTo } from '@/lib/tree';
 
 export interface LayerNode extends TreeDataNode {
   key: string;
@@ -41,13 +42,10 @@ export function toLayerTree(node: BuilderNode): LayerNode {
 }
 
 /** Ids of the nodes on the path from the root down to `id` (excluding `id`), or [] if absent. */
-export function ancestorIds(node: BuilderNode, id: string): string[] {
-  for (const child of node.children) {
-    if (child.id === id) return [node.id];
-    const path = ancestorIds(child, id);
-    if (path.length > 0) return [node.id, ...path];
-  }
-  return [];
+export function ancestorIds(root: BuilderNode, id: string): string[] {
+  return pathTo(root, id)
+    .slice(0, -1)
+    .map((node) => node.id);
 }
 
 /** Ids of every node that has children, i.e. everything the tree can expand. */

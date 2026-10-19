@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { NODE_ID_ATTR } from '@/components/canvas/nodeChain';
-import { MOD, type NodeCommand, nodeCommands, wrapCommands } from '@/components/nodeCommands';
+import { MOD, type NodeCommand, nodeCommands, wrapInFlex } from '@/components/nodeCommands';
 import { type EditorState, useEditorStore } from '@/lib/editor/store';
 import { findNode } from '@/lib/tree';
 
@@ -130,7 +130,7 @@ export const shortcuts: readonly Shortcut[] = [
     keys: [MOD, 'G'],
     description: 'Wrap the selected component in a Flex',
     matches: modKey('g', false),
-    run: onSelection(wrapCommands.Flex),
+    run: onSelection(wrapInFlex),
   },
   {
     keys: [MOD, 'Shift', 'G'],
