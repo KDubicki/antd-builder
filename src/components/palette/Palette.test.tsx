@@ -6,7 +6,8 @@ import { categoryLabels, components, getComponentMeta } from '@/lib/registry';
 import { blocks } from '@/lib/blocks';
 import { createRoot, useEditorStore } from '@/lib/editor/store';
 import { createNode } from '@/lib/registry';
-import { Palette, matchesQuery } from './Palette';
+import { matchesQuery } from '@/lib/search';
+import { Palette } from './Palette';
 
 const renderPalette = () =>
   render(
@@ -19,25 +20,6 @@ const renderPalette = () =>
 
 const listed = () =>
   components.filter((meta) => screen.queryByTitle(meta.description)).map((meta) => meta.name);
-
-describe('matchesQuery', () => {
-  const button = getComponentMeta('Button')!;
-
-  it('matches everything for an empty or blank query', () => {
-    expect(matchesQuery(button, '')).toBe(true);
-    expect(matchesQuery(button, '   ')).toBe(true);
-  });
-
-  it('matches label, name and description terms, ignoring case', () => {
-    expect(matchesQuery(button, 'BUTTON')).toBe(true);
-    expect(matchesQuery(getComponentMeta('Input.Search')!, 'input search')).toBe(true);
-    expect(matchesQuery(button, button.description.split(' ')[0]!)).toBe(true);
-  });
-
-  it('requires every term to match', () => {
-    expect(matchesQuery(button, 'button zzz')).toBe(false);
-  });
-});
 
 describe('Palette', () => {
   it('lists every registry component under its category', () => {

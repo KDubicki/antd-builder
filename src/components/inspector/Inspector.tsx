@@ -1,6 +1,6 @@
 'use client';
 
-import { BorderOuterOutlined } from '@ant-design/icons';
+import { BorderOuterOutlined, ClearOutlined, SearchOutlined } from '@ant-design/icons';
 import {
   Breadcrumb,
   Button,
@@ -24,11 +24,13 @@ import {
   nodeCommands,
   wrapCommands,
 } from '@/components/nodeCommands';
+import { useState } from 'react';
 import { BindableField } from './DataBinding';
 import { SaveBlockButton } from './SaveBlockButton';
 import { ROOT_ID, useEditorStore } from '@/lib/editor/store';
 import { type PropDefinition, getComponentMeta } from '@/lib/registry';
-import { findNode, pathTo } from '@/lib/tree';
+import { matchesQuery } from '@/lib/search';
+import { findNode, pathTo, sameProps } from '@/lib/tree';
 import { useShallow } from 'zustand/react/shallow';
 
 interface FieldProps {
@@ -150,8 +152,13 @@ function NodePath({ nodeId }: { nodeId: string }) {
   );
 }
 
+/** Components with more props than this get a filter above them. */
+export const PROP_FILTER_MIN = 6;
+
 export function Inspector() {
   const { token } = theme.useToken();
+  const [filter, setFilter] = useState({ nodeId: '', query: '' });
+  const resetProps = useEditorStore((state) => state.resetProps);
   const node = useEditorStore((state) =>
     state.selectedId ? findNode(state.root, state.selectedId) : undefined,
   );
@@ -169,6 +176,14 @@ export function Inspector() {
   }
 
   const isRoot = node.id === ROOT_ID;
+  // The filter belongs to the component it was typed for; selecting another clears it.
+  const query = filter.nodeId === node.id ? filter.query : '';
+  const propEntries = Object.entries(meta.props);
+  const showFilter = propEntries.length > PROP_FILTER_MIN;
+  const shownEntries = propEntries.filter(([key, def]) =>
+    matchesQuery({ label: def.label, name: key, description: '' }, query),
+  );
+  const isDefault = sameProps(node.props, meta.defaultProps);
 
   return (
     <Flex vertical gap="middle" style={{ padding: token.padding }} aria-label="Inspector">
@@ -194,9 +209,40 @@ export function Inspector() {
         </Flex>
         <Typography.Text type="secondary">{meta.description}</Typography.Text>
       </div>
+      {(showFilter || !isRoot) && (
+        <Flex gap="small">
+          {showFilter && (
+            <Input
+              allowClear
+              size="small"
+              prefix={<SearchOutlined />}
+              placeholder="Filter props"
+              aria-label="Filter props"
+              value={query}
+              onChange={(event) => setFilter({ nodeId: node.id, query: event.target.value })}
+              onKeyDown={(event) => event.key === 'Escape' && setFilter({ nodeId: '', query: '' })}
+            />
+          )}
+          {!isRoot && (
+            <Button
+              size="small"
+              icon={<ClearOutlined />}
+              disabled={isDefault}
+              title="Put every prop back to its default"
+              onClick={() => resetProps(node.id)}
+              style={{ marginInlineStart: 'auto' }}
+            >
+              Reset props
+            </Button>
+          )}
+        </Flex>
+      )}
+      {shownEntries.length === 0 && (
+        <Typography.Text type="secondary">No props match &ldquo;{query}&rdquo;</Typography.Text>
+      )}
       {/* Keyed by node so uncontrolled internals (e.g. number drafts) reset on selection change. */}
       <Form key={node.id} layout="vertical" component="div">
-        {Object.entries(meta.props).map(([key, def]) => {
+        {shownEntries.map(([key, def]) => {
           const id = `prop-${key}`;
           const onChange = (value: unknown, coalesce?: boolean) =>
             updateProps(node.id, { [key]: value }, { coalesce });

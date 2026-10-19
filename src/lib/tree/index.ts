@@ -89,6 +89,18 @@ export function updateNodeProps(
   });
 }
 
+/** Whether two prop objects hold the same values, whatever order their keys are in. */
+export function sameProps(
+  a: Readonly<Record<string, unknown>>,
+  b: Readonly<Record<string, unknown>>,
+): boolean {
+  const keys = Object.keys(a);
+  return (
+    keys.length === Object.keys(b).length &&
+    keys.every((key) => key in b && JSON.stringify(a[key]) === JSON.stringify(b[key]))
+  );
+}
+
 /** Deep copy of a subtree in which every node gets a fresh id from `newId`. */
 export function cloneNode(
   node: BuilderNode,

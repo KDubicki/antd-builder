@@ -331,3 +331,24 @@ test('walks the component path from the inspector and the keyboard', async ({ pa
   await page.keyboard.press('Shift+Enter');
   await expect(inspector.getByRole('heading', { name: 'Card' })).toBeVisible();
 });
+
+test('filters props and resets them to the defaults', async ({ page }) => {
+  await page.goto('/');
+  const canvas = page.getByTestId('canvas');
+  const inspector = page.getByLabel('Inspector');
+  await page
+    .getByLabel('Component palette')
+    .getByRole('button', { name: 'Table', exact: true })
+    .click();
+  await inspector.getByLabel('Filter props').fill('bordered');
+  await expect(inspector.getByLabel('Size')).toHaveCount(0);
+  await inspector.getByLabel('Bordered').click();
+  await expect(canvas.locator('.ant-table-bordered')).toBeVisible();
+
+  await inspector.getByRole('button', { name: /Reset props/ }).click();
+  await expect(canvas.locator('.ant-table-bordered')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Undo' })).toHaveAttribute(
+    'title',
+    /^Undo Reset Table/,
+  );
+});

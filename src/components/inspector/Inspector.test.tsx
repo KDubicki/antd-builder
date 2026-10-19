@@ -220,6 +220,37 @@ describe('Inspector', () => {
     expect(screen.queryByRole('navigation', { name: 'Component path' })).not.toBeInTheDocument();
   });
 
+  it('filters a long list of props', () => {
+    select(createNode('Table', 'table'));
+    render(<Inspector />);
+    const filter = screen.getByLabelText('Filter props');
+    fireEvent.change(filter, { target: { value: 'row key' } });
+    expect(screen.getByLabelText('Row key field')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Size')).not.toBeInTheDocument();
+    fireEvent.change(filter, { target: { value: 'zzz' } });
+    expect(screen.getByText(/No props match/)).toBeInTheDocument();
+    fireEvent.keyDown(filter, { key: 'Escape' });
+    expect(screen.getByLabelText('Size')).toBeInTheDocument();
+
+    // Short lists don't need a filter.
+    act(() => select(createNode('Divider', 'd')));
+    expect(screen.queryByLabelText('Filter props')).not.toBeInTheDocument();
+  });
+
+  it('resets props to their defaults', () => {
+    select(createNode('Button', 'btn'));
+    render(<Inspector />);
+    const reset = screen.getByRole('button', { name: /Reset props/ });
+    expect(reset).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Label'), { target: { value: 'Save' } });
+    fireEvent.click(screen.getByLabelText('Danger'));
+    expect(reset).toBeEnabled();
+    fireEvent.click(reset);
+    expect(propsOf('btn')).toEqual(createNode('Button').props);
+    expect(reset).toBeDisabled();
+    expect(useEditorStore.getState().past.at(-1)?.label).toBe('Reset Button');
+  });
+
   it('saves the selected component as a named block', async () => {
     select(createNode('Card', 'card'));
     render(
@@ -246,6 +277,7 @@ describe('Inspector', () => {
     expect(screen.queryByRole('button', { name: 'Duplicate component' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Move up' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Save as block' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Reset props/ })).not.toBeInTheDocument();
     fireEvent.click(screen.getByLabelText('Wrap'));
     expect(propsOf(ROOT_ID)?.wrap).toBe(true);
   });

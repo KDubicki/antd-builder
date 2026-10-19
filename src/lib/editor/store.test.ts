@@ -113,6 +113,18 @@ describe('editor store', () => {
     expect(state().root.children.map((c) => c.id)).toEqual([card]);
   });
 
+  it('resets props to the defaults, except on the page', () => {
+    const btn = state().addNode('Button', { parentId: ROOT_ID, index: 0 });
+    state().updateProps(btn, { children: 'Save', type: undefined, danger: true });
+    state().resetProps(btn);
+    expect(findNode(state().root, btn)?.props).toEqual({ type: 'primary', children: 'Button' });
+    const steps = state().past.length;
+    state().resetProps(btn); // already default
+    state().resetProps(ROOT_ID);
+    state().resetProps('nope');
+    expect(state().past).toHaveLength(steps);
+  });
+
   it('removes a node and clears a selection inside it', () => {
     const card = state().addNode('Card', { parentId: ROOT_ID, index: 0 });
     state().addNode('Tag', { parentId: card, index: 0 });

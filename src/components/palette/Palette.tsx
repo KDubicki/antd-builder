@@ -5,6 +5,7 @@ import { DeleteOutlined, SearchOutlined } from '@ant-design/icons';
 import { App, Button, Empty, Flex, Input, Popconfirm, Typography, theme } from 'antd';
 import { type KeyboardEvent, useState } from 'react';
 import { addAtSelection } from '@/components/dragDrop';
+import { matchesQuery } from '@/lib/search';
 import { blocks } from '@/lib/blocks';
 import type { DragData } from '@/lib/editor/drop';
 import { useEditorStore } from '@/lib/editor/store';
@@ -71,26 +72,6 @@ function PaletteItem({ id, label, description, data }: PaletteItemProps) {
       {label}
     </div>
   );
-}
-
-/** What palette search looks at: a component's or a block's label, name and description. */
-interface Searchable {
-  label: string;
-  name?: string;
-  description: string;
-}
-
-/**
- * Whether an item matches a palette search: every whitespace-separated term must appear in its
- * label, name or description, ignoring case. An empty query matches everything.
- */
-export function matchesQuery(item: Searchable, query: string): boolean {
-  const haystack = `${item.label} ${item.name ?? ''} ${item.description}`.toLowerCase();
-  return query
-    .toLowerCase()
-    .split(/\s+/)
-    .filter(Boolean)
-    .every((term) => haystack.includes(term));
 }
 
 /** Components grouped by category, in display order, skipping categories left empty. */

@@ -12,6 +12,7 @@ import {
   pathTo,
   removeNode,
   resolveDrop,
+  sameProps,
   siblingPosition,
   unwrapNode,
   updateNodeProps,
@@ -292,5 +293,14 @@ describe('unwrapNode', () => {
       node('tip', 'Tooltip', [node('box', 'Flex', [node('a', 'Tag'), node('b', 'Tag')])]),
     ]);
     expect(unwrapNode(full, 'box')).toBeNull(); // a Tooltip holds one child
+  });
+});
+
+describe('sameProps', () => {
+  it('compares values whatever the key order', () => {
+    expect(sameProps({ a: 1, b: [2] }, { b: [2], a: 1 })).toBe(true);
+    expect(sameProps({ a: 1 }, { a: 2 })).toBe(false);
+    expect(sameProps({ a: 1 }, { a: 1, b: 2 })).toBe(false);
+    expect(sameProps({ a: undefined }, { b: undefined })).toBe(false);
   });
 });

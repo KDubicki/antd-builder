@@ -31,6 +31,7 @@ import {
   nudgeNode,
   removeNode,
   resolveDrop,
+  sameProps,
   unwrapNode,
   updateNodeProps,
   wrapNode,
@@ -126,6 +127,8 @@ export interface EditorState extends History {
     patch: Readonly<Record<string, unknown>>,
     options?: { coalesce?: boolean },
   ) => void;
+  /** Puts a node's props back to its component's defaults, as one undo step. Not the root. */
+  resetProps: (id: string) => void;
   setThemeMode: (mode: ProjectTheme['mode']) => void;
   setCompact: (compact: boolean) => void;
   /** Overrides a seed token; `undefined` restores antd's default. */
@@ -392,6 +395,17 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         options?.coalesce ? `props:${id}:${Object.keys(patch).sort().join(',')}` : undefined,
       ),
     ),
+  resetProps: (id) =>
+    set((state) => {
+      const node = id === ROOT_ID ? undefined : findNode(state.root, id);
+      const meta = node && getComponentMeta(node.component);
+      if (!node || !meta || sameProps(node.props, meta.defaultProps)) return state;
+      const defaults = structuredClone(meta.defaultProps);
+      const cleared = Object.fromEntries(Object.keys(node.props).map((key) => [key, undefined]));
+      return commit(state, `Reset ${meta.label}`, {
+        root: updateNodeProps(state.root, id, { ...cleared, ...defaults }),
+      });
+    }),
   setThemeMode: (mode) => set((state) => commitTheme(state, { mode })),
   setCompact: (compact) => set((state) => commitTheme(state, { compact })),
   setThemeToken: (key, value) =>
