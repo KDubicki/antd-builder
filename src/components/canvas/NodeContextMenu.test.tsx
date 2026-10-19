@@ -61,6 +61,12 @@ describe('NodeContextMenu', () => {
     expect(ids()).toHaveLength(3);
   });
 
+  it('selects the parent', () => {
+    render(<Canvas />);
+    fireEvent.click(item(openMenu(screen.getByText('First')), /Select parent/));
+    expect(state().selectedId).toBe(ROOT_ID);
+  });
+
   it('deletes the component', () => {
     render(<Canvas />);
     fireEvent.click(item(openMenu(screen.getByText('First')), /Delete/));

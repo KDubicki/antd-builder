@@ -4,6 +4,7 @@ import {
   CopyOutlined,
   BlockOutlined,
   BorderOuterOutlined,
+  VerticalAlignTopOutlined,
   DeleteOutlined,
   ExpandOutlined,
   ScissorOutlined,
@@ -12,7 +13,7 @@ import {
 import type { ReactNode } from 'react';
 import { ROOT_ID, type EditorState } from '@/lib/editor/store';
 import { getComponentMeta } from '@/lib/registry';
-import { resolveDrop, siblingPosition, unwrapNode, wrapNode } from '@/lib/tree';
+import { findParent, resolveDrop, siblingPosition, unwrapNode, wrapNode } from '@/lib/tree';
 
 /** Something to do with one component on the page, shared by buttons, menus and shortcuts. */
 export interface NodeCommand {
@@ -101,6 +102,17 @@ export const nodeCommands = {
     danger: true,
     enabled: notRoot,
     run: (state, id) => state.removeNode(id),
+  },
+  selectParent: {
+    label: 'Select parent',
+    name: 'Select parent',
+    icon: <VerticalAlignTopOutlined />,
+    keys: ['Shift', 'Enter'],
+    enabled: notRoot,
+    run: (state, id) => {
+      const parent = findParent(state.root, id);
+      if (parent) state.select(parent.id);
+    },
   },
   /** Removes a container, keeping what's inside it. */
   unwrap: {

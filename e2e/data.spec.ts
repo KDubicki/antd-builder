@@ -153,5 +153,5 @@ test('creates a table from a data source in one click', async ({ page }) => {
   await expect(canvas.getByRole('cell', { name: 'Second post' })).toBeVisible();
 
   await page.getByRole('tab', { name: 'Properties' }).click();
-  await expect(page.getByLabel('Inspector').getByText('Table', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('Inspector').getByRole('heading', { name: 'Table' })).toBeVisible();
 });

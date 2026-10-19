@@ -7,7 +7,17 @@ import { nodeCommands, wrapCommands } from '@/components/nodeCommands';
 import { ROOT_ID, useEditorStore } from '@/lib/editor/store';
 import { NODE_ID_ATTR } from './nodeChain';
 
-const { duplicate, copy, cut, paste, moveUp, moveDown, unwrap, delete: remove } = nodeCommands;
+const {
+  duplicate,
+  copy,
+  cut,
+  paste,
+  moveUp,
+  moveDown,
+  unwrap,
+  selectParent,
+  delete: remove,
+} = nodeCommands;
 
 const NODE_ENTRIES: readonly CommandEntry[] = [
   duplicate,
@@ -20,6 +30,7 @@ const NODE_ENTRIES: readonly CommandEntry[] = [
   'divider',
   moveUp,
   moveDown,
+  selectParent,
   'divider',
   remove,
 ];

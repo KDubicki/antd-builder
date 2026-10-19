@@ -25,6 +25,16 @@ export function findParent(root: BuilderNode, id: string): BuilderNode | undefin
   return undefined;
 }
 
+/** The nodes from the root down to node `id`, both included; empty when `id` isn't in the tree. */
+export function pathTo(root: BuilderNode, id: string): BuilderNode[] {
+  if (root.id === id) return [root];
+  for (const child of root.children) {
+    const path = pathTo(child, id);
+    if (path.length > 0) return [root, ...path];
+  }
+  return [];
+}
+
 /** Whether `id` is `ancestorId` itself or lies somewhere below it. */
 export function isWithin(root: BuilderNode, ancestorId: string, id: string): boolean {
   const ancestor = findNode(root, ancestorId);

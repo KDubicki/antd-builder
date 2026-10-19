@@ -18,6 +18,8 @@ const examples: Record<string, KeyboardEvent[]> = {
   'Unwrap the selected container': [key({ key: 'G', metaKey: true, shiftKey: true })],
   'Move the selected component up': [key({ key: 'ArrowUp', altKey: true })],
   'Move the selected component down': [key({ key: 'ArrowDown', altKey: true })],
+  'Select the parent of the selected component': [key({ key: 'Enter', shiftKey: true })],
+  'Select the first component inside the selected one': [key({ key: 'Enter' })],
   'Delete the selected component (also Backspace)': [
     key({ key: 'Delete' }),
     key({ key: 'Backspace' }),

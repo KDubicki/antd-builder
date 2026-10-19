@@ -153,6 +153,33 @@ describe('Editor', { timeout: 15_000 }, () => {
     expect(children()).toHaveLength(1);
   });
 
+  it('walks up and down the page with Shift+Enter and Enter', () => {
+    useEditorStore.setState({
+      root: {
+        ...createRoot(),
+        children: [{ ...createNode('Card', 'card'), children: [createNode('Tag', 't')] }],
+      },
+      selectedId: 't',
+    });
+    render(<Editor />);
+    const selected = () => useEditorStore.getState().selectedId;
+    fireEvent.keyDown(document.body, { key: 'Enter', shiftKey: true });
+    expect(selected()).toBe('card');
+    fireEvent.keyDown(document.body, { key: 'Enter', shiftKey: true });
+    expect(selected()).toBe(ROOT_ID);
+    fireEvent.keyDown(document.body, { key: 'Enter' });
+    expect(selected()).toBe('card');
+    fireEvent.keyDown(document.body, { key: 'Enter' });
+    expect(selected()).toBe('t');
+    fireEvent.keyDown(document.body, { key: 'Enter' }); // a leaf: nothing inside
+    expect(selected()).toBe('t');
+
+    // Enter on a focused button presses the button instead.
+    const undo = screen.getByRole('button', { name: 'Undo' });
+    fireEvent.keyDown(undo, { key: 'Enter', shiftKey: true });
+    expect(selected()).toBe('t');
+  });
+
   it('copies, cuts and pastes nodes with keyboard shortcuts', () => {
     useEditorStore.setState({
       root: { ...createRoot(), children: [createNode('Tag', 't1')] },

@@ -9,6 +9,7 @@ import {
   isWithin,
   moveNode,
   nudgeNode,
+  pathTo,
   removeNode,
   resolveDrop,
   siblingPosition,
@@ -39,6 +40,12 @@ describe('lookup', () => {
     expect(findNode(tree, 'nope')).toBeUndefined();
     expect(findParent(tree, 'btn')?.id).toBe('card');
     expect(findParent(tree, 'root')).toBeUndefined();
+  });
+
+  it('finds the path from the root', () => {
+    expect(pathTo(tree, 'btn').map((n) => n.id)).toEqual(['root', 'card', 'btn']);
+    expect(pathTo(tree, 'root').map((n) => n.id)).toEqual(['root']);
+    expect(pathTo(tree, 'nope')).toEqual([]);
   });
 
   it('checks subtree membership', () => {

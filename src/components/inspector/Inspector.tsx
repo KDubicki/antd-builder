@@ -2,6 +2,7 @@
 
 import { BorderOuterOutlined } from '@ant-design/icons';
 import {
+  Breadcrumb,
   Button,
   Dropdown,
   Empty,
@@ -27,7 +28,8 @@ import { BindableField } from './DataBinding';
 import { SaveBlockButton } from './SaveBlockButton';
 import { ROOT_ID, useEditorStore } from '@/lib/editor/store';
 import { type PropDefinition, getComponentMeta } from '@/lib/registry';
-import { findNode } from '@/lib/tree';
+import { findNode, pathTo } from '@/lib/tree';
+import { useShallow } from 'zustand/react/shallow';
 
 interface FieldProps {
   id: string;
@@ -114,6 +116,40 @@ function WrapMenu({ nodeId }: { nodeId: string }) {
   );
 }
 
+/** Where the component sits: its ancestors, from the page down, each one a click away. */
+function NodePath({ nodeId }: { nodeId: string }) {
+  const ids = useEditorStore(useShallow((state) => pathTo(state.root, nodeId).map((n) => n.id)));
+  const names = useEditorStore(
+    useShallow((state) => pathTo(state.root, nodeId).map((n) => n.component)),
+  );
+  const select = useEditorStore((state) => state.select);
+  if (ids.length < 2) return null;
+  return (
+    <Breadcrumb
+      aria-label="Component path"
+      items={ids.map((id, i) => {
+        const label = i === 0 ? 'Page' : (getComponentMeta(names[i]!)?.label ?? names[i]);
+        return {
+          key: id,
+          title:
+            id === nodeId ? (
+              label
+            ) : (
+              <Button
+                type="link"
+                size="small"
+                style={{ padding: 0, height: 'auto' }}
+                onClick={() => select(id)}
+              >
+                {label}
+              </Button>
+            ),
+        };
+      })}
+    />
+  );
+}
+
 export function Inspector() {
   const { token } = theme.useToken();
   const node = useEditorStore((state) =>
@@ -138,6 +174,7 @@ export function Inspector() {
     <Flex vertical gap="middle" style={{ padding: token.padding }} aria-label="Inspector">
       {/* The description sits below the actions so it can use the panel's full width. */}
       <div>
+        <NodePath nodeId={node.id} />
         <Flex justify="space-between" align="center" gap="small">
           <Typography.Title level={5} style={{ margin: 0 }}>
             {isRoot ? 'Page' : meta.label}

@@ -204,6 +204,22 @@ describe('Inspector', () => {
     expect(useEditorStore.getState().root.children.map((c) => c.id)).toEqual(['tag']);
   });
 
+  it('shows where the component sits and selects its ancestors', () => {
+    const tag = createNode('Tag', 'tag');
+    select({ ...createNode('Card', 'card'), children: [tag] });
+    useEditorStore.setState({ selectedId: 'tag' });
+    render(<Inspector />);
+    const path = screen.getByRole('navigation', { name: 'Component path' });
+    expect(path).toHaveTextContent('Page/Card/Tag');
+    expect(within(path).queryByRole('button', { name: 'Tag' })).not.toBeInTheDocument();
+
+    fireEvent.click(within(path).getByRole('button', { name: 'Card' }));
+    expect(useEditorStore.getState().selectedId).toBe('card');
+    fireEvent.click(within(path).getByRole('button', { name: 'Page' }));
+    expect(useEditorStore.getState().selectedId).toBe(ROOT_ID);
+    expect(screen.queryByRole('navigation', { name: 'Component path' })).not.toBeInTheDocument();
+  });
+
   it('saves the selected component as a named block', async () => {
     select(createNode('Card', 'card'));
     render(

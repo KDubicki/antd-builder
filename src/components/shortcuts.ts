@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { NODE_ID_ATTR } from '@/components/canvas/nodeChain';
 import { MOD, type NodeCommand, nodeCommands, wrapCommands } from '@/components/nodeCommands';
 import { type EditorState, useEditorStore } from '@/lib/editor/store';
+import { findNode } from '@/lib/tree';
 
 export interface Shortcut {
   /** Keys as shown to the user, e.g. `['Ctrl/⌘', 'Z']`. */
@@ -32,6 +33,14 @@ export const SIDE_PANEL_ATTR = 'data-side-panel';
 /** Side-panel controls (switches, selects) keep focus after edits; Delete must not hit the node. */
 function isSidePanelTarget(target: EventTarget | null): boolean {
   return target instanceof HTMLElement && !!target.closest(`[${SIDE_PANEL_ATTR}]`);
+}
+
+/**
+ * Whether nothing in particular has focus (it's on the page body, as after clicking the canvas),
+ * so Enter doesn't belong to a focused button or link.
+ */
+function isPageTarget(target: EventTarget | null): boolean {
+  return target === document.body || target === document.documentElement;
 }
 
 /** Whether the user has highlighted page text, which Ctrl/Cmd+C should copy natively. */
@@ -140,6 +149,23 @@ export const shortcuts: readonly Shortcut[] = [
     description: 'Move the selected component down',
     matches: (event) => event.altKey && event.key === 'ArrowDown',
     run: onSelection(nodeCommands.moveDown),
+  },
+  {
+    keys: ['Shift', 'Enter'],
+    description: 'Select the parent of the selected component',
+    matches: (event) => event.key === 'Enter' && event.shiftKey && !isMod(event),
+    run: onSelection(nodeCommands.selectParent, (event) => !isPageTarget(event.target)),
+  },
+  {
+    keys: ['Enter'],
+    description: 'Select the first component inside the selected one',
+    matches: (event) => event.key === 'Enter' && !event.shiftKey && !isMod(event),
+    run: ({ selectedId, root, select }, event) => {
+      const child = selectedId && findNode(root, selectedId)?.children[0];
+      if (!child || !isPageTarget(event.target)) return false;
+      select(child.id);
+      return true;
+    },
   },
   {
     keys: ['Delete'],

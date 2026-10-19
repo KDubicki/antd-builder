@@ -306,3 +306,28 @@ test('right-clicking a component opens its menu', async ({ page }) => {
   await page.getByRole('menu').getByRole('menuitem', { name: /Paste/ }).click();
   await expect(card.getByRole('button', { name: 'Button' })).toBeVisible();
 });
+
+test('walks the component path from the inspector and the keyboard', async ({ page }) => {
+  await page.goto('/');
+  const canvas = page.getByTestId('canvas');
+  const inspector = page.getByLabel('Inspector');
+  const palette = page.getByLabel('Component palette');
+  await dragTo(page, palette.getByRole('button', { name: 'Card', exact: true }), canvas);
+  await dragTo(
+    page,
+    palette.getByRole('button', { name: 'Button', exact: true }),
+    canvas.getByText('Drop components here'),
+  );
+  const path = inspector.getByRole('navigation', { name: 'Component path' });
+  await expect(path).toHaveText('Page/Card/Button');
+
+  await path.getByRole('button', { name: 'Card' }).click();
+  await expect(inspector.getByRole('heading', { name: 'Card' })).toBeVisible();
+
+  // Back down with Enter once focus leaves the inspector, then up with Shift+Enter.
+  await canvas.locator('.ant-card-head').click();
+  await page.keyboard.press('Enter');
+  await expect(inspector.getByRole('heading', { name: 'Button' })).toBeVisible();
+  await page.keyboard.press('Shift+Enter');
+  await expect(inspector.getByRole('heading', { name: 'Card' })).toBeVisible();
+});
