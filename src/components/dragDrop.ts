@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react';
 import { nodeChainAt } from '@/components/canvas/nodeChain';
 import { type DragData, planDrop } from '@/lib/editor/drop';
 import { useEditorStore } from '@/lib/editor/store';
+import { pathTo } from '@/lib/tree';
 
 export interface Point {
   x: number;
@@ -35,6 +36,24 @@ export function handleDragEnd(event: DragEndEvent, pointer?: Point | null) {
   if (action?.type === 'add') addNode(action.component, action.target);
   if (action?.type === 'block') insertBlock(action.block, action.target);
   if (action?.type === 'move') moveNode(action.nodeId, action.target);
+}
+
+/**
+ * Adds a palette component or block as if it were dropped on the selected component: inside it
+ * when it accepts it, otherwise after it or one of its ancestors. With nothing selected it goes at
+ * the end of the page. Returns whether there was a place for it.
+ */
+export function addAtSelection(data: DragData): boolean {
+  const { root, selectedId, addNode, insertBlock } = useEditorStore.getState();
+  const chain = selectedId
+    ? pathTo(root, selectedId)
+        .map((node) => node.id)
+        .reverse()
+    : [];
+  const action = planDrop(root, data, chain);
+  if (action?.type === 'add') addNode(action.component, action.target);
+  if (action?.type === 'block') insertBlock(action.block, action.target);
+  return action !== null;
 }
 
 /** Tracks the pointer's viewport position, so drops resolve where the pointer really is. */

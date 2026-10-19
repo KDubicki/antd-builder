@@ -1,5 +1,6 @@
 import { DndContext } from '@dnd-kit/core';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { App } from 'antd';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { categoryLabels, components, getComponentMeta } from '@/lib/registry';
 import { blocks } from '@/lib/blocks';
@@ -9,9 +10,11 @@ import { Palette, matchesQuery } from './Palette';
 
 const renderPalette = () =>
   render(
-    <DndContext>
-      <Palette />
-    </DndContext>,
+    <App>
+      <DndContext>
+        <Palette />
+      </DndContext>
+    </App>,
   );
 
 const listed = () =>
@@ -125,5 +128,24 @@ describe('My blocks', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Delete' }));
     await waitFor(() => expect(useEditorStore.getState().customBlocks).toEqual([]));
     expect(screen.queryByText('My blocks')).not.toBeInTheDocument();
+  });
+
+  it('adds components and blocks by click or keyboard', async () => {
+    useEditorStore.setState({ root: createRoot(), selectedId: null, past: [], future: [] });
+    renderPalette();
+    const kids = () => useEditorStore.getState().root.children.map((c) => c.component);
+    fireEvent.click(screen.getByTitle(getComponentMeta('Button')!.description));
+    expect(kids()).toEqual(['Button']);
+    fireEvent.keyDown(screen.getByTitle(getComponentMeta('Tag')!.description), { key: 'Enter' });
+    fireEvent.keyDown(screen.getByTitle(getComponentMeta('Tag')!.description), { key: ' ' });
+    fireEvent.keyDown(screen.getByTitle(getComponentMeta('Tag')!.description), { key: 'a' });
+    expect(kids()).toEqual(['Button', 'Tag', 'Tag']);
+    fireEvent.click(screen.getByText('Page header'));
+    expect(kids()).toHaveLength(4);
+
+    fireEvent.click(screen.getByTitle(getComponentMeta('Col')!.description));
+    expect(
+      await screen.findByText('Grid column goes inside Grid row: select one first'),
+    ).toBeInTheDocument();
   });
 });

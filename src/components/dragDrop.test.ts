@@ -2,7 +2,7 @@ import type { DragEndEvent } from '@dnd-kit/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ROOT_ID, createRoot, useEditorStore } from '@/lib/editor/store';
 import { createNode } from '@/lib/registry';
-import { handleDragEnd } from './dragDrop';
+import { addAtSelection, handleDragEnd } from './dragDrop';
 
 beforeEach(() =>
   useEditorStore.setState({
@@ -65,5 +65,36 @@ describe('handleDragEnd', () => {
     handleDragEnd(dragEnd({ type: 'palette', component: 'Button' }, false));
     expect(useEditorStore.getState().root.children).toEqual([]);
     expect(useEditorStore.getState().root.id).toBe(ROOT_ID);
+  });
+});
+
+describe('addAtSelection', () => {
+  const children = () => useEditorStore.getState().root.children;
+
+  it('adds at the end of the page with nothing selected', () => {
+    expect(addAtSelection({ type: 'palette', component: 'Tag' })).toBe(true);
+    expect(children().map((c) => c.component)).toEqual(['Tag']);
+  });
+
+  it('adds inside a selected container, or after a selected leaf', () => {
+    useEditorStore.setState({
+      root: {
+        ...createRoot(),
+        children: [{ ...createNode('Card', 'card'), children: [createNode('Tag', 't')] }],
+      },
+      selectedId: 'card',
+    });
+    addAtSelection({ type: 'palette', component: 'Button' });
+    expect(children()[0]!.children.map((c) => c.component)).toEqual(['Tag', 'Button']);
+
+    useEditorStore.setState({ selectedId: 't' });
+    addAtSelection({ type: 'block', block: 'stats', component: 'Row' });
+    expect(children()[0]!.children.map((c) => c.component)).toEqual(['Tag', 'Row', 'Button']);
+    expect(useEditorStore.getState().selectedId).toBe(children()[0]!.children[1]!.id);
+  });
+
+  it('reports when there is no place for the component', () => {
+    expect(addAtSelection({ type: 'palette', component: 'Col' })).toBe(false);
+    expect(children()).toEqual([]);
   });
 });

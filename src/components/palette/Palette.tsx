@@ -2,8 +2,9 @@
 
 import { useDraggable } from '@dnd-kit/core';
 import { DeleteOutlined, SearchOutlined } from '@ant-design/icons';
-import { Button, Empty, Flex, Input, Popconfirm, Typography, theme } from 'antd';
-import { useState } from 'react';
+import { App, Button, Empty, Flex, Input, Popconfirm, Typography, theme } from 'antd';
+import { type KeyboardEvent, useState } from 'react';
+import { addAtSelection } from '@/components/dragDrop';
 import { blocks } from '@/lib/blocks';
 import type { DragData } from '@/lib/editor/drop';
 import { useEditorStore } from '@/lib/editor/store';
@@ -12,6 +13,7 @@ import {
   type ComponentMeta,
   categoryLabels,
   components,
+  getComponentMeta,
 } from '@/lib/registry';
 
 const CUSTOM_BLOCK_DESCRIPTION = 'Your saved block';
@@ -23,15 +25,35 @@ interface PaletteItemProps {
   data: DragData;
 }
 
+/** Why a component has no place near the selection, e.g. "A Column goes inside a Row". */
+function noPlaceMessage(label: string, component: string): string {
+  const parents = getComponentMeta(component)?.parents;
+  if (!parents) return `There's no place for ${label} here`;
+  const names = parents.map((name) => getComponentMeta(name)?.label ?? name);
+  return `${label} goes inside ${names.join(' or ')}: select one first`;
+}
+
 function PaletteItem({ id, label, description, data }: PaletteItemProps) {
   const { token } = theme.useToken();
+  const { message } = App.useApp();
   const { setNodeRef, listeners, attributes, isDragging } = useDraggable({ id, data });
+
+  const add = () => {
+    if (!addAtSelection(data)) message.warning(noPlaceMessage(label, data.component));
+  };
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault(); // Space would scroll the palette
+    add();
+  };
 
   return (
     <div
       ref={setNodeRef}
       {...listeners}
       {...attributes}
+      onClick={add}
+      onKeyDown={onKeyDown}
       title={description}
       style={{
         flex: 1,
@@ -100,6 +122,9 @@ export function Palette() {
         onChange={(event) => setQuery(event.target.value)}
         onKeyDown={(event) => event.key === 'Escape' && setQuery('')}
       />
+      <Typography.Text type="secondary" style={{ fontSize: token.fontSizeSM }}>
+        Drag onto the canvas, or click to add next to the selection.
+      </Typography.Text>
       {groups.length === 0 && matchingBlocks.length === 0 && matchingCustom.length === 0 && (
         <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No components match" />
       )}
