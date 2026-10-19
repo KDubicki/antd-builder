@@ -352,3 +352,26 @@ test('filters props and resets them to the defaults', async ({ page }) => {
     /^Undo Reset Table/,
   );
 });
+
+test('applies a theme preset to the canvas', async ({ page }) => {
+  await page.goto('/');
+  const canvas = page.getByTestId('canvas');
+  await page
+    .getByLabel('Component palette')
+    .getByRole('button', { name: 'Button', exact: true })
+    .click();
+  await page.getByRole('tab', { name: 'Theme' }).click();
+  const presets = page.getByRole('group', { name: 'Theme presets' });
+
+  await presets.getByRole('button', { name: /Midnight/ }).click();
+  await expect(canvas).toHaveCSS('background-color', 'rgb(20, 20, 20)');
+  // The dark algorithm adjusts the primary color, so check the preset's radius instead.
+  await expect(canvas.getByRole('button', { name: 'Button' })).toHaveCSS('border-radius', '8px');
+  await expect(presets.getByRole('button', { name: /Midnight/ })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+
+  await page.getByRole('button', { name: 'Undo' }).click();
+  await expect(canvas).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+});

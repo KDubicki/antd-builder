@@ -5,6 +5,47 @@ export function createTheme(): ProjectTheme {
   return { mode: 'light', compact: false, token: {} };
 }
 
+export interface ThemePreset {
+  id: string;
+  label: string;
+  theme: ProjectTheme;
+}
+
+const preset = (
+  id: string,
+  label: string,
+  token: ProjectTheme['token'],
+  options: Partial<Omit<ProjectTheme, 'token'>> = {},
+): ThemePreset => ({ id, label, theme: { ...createTheme(), ...options, token } });
+
+/** Starting points for a project theme, applied as a whole and then fine-tuned. */
+export const themePresets: readonly ThemePreset[] = [
+  preset('default', 'antd default', {}),
+  preset('ocean', 'Ocean', { colorPrimary: '#0e7490', colorInfo: '#0e7490', borderRadius: 8 }),
+  preset('forest', 'Forest', { colorPrimary: '#2f7d32', colorInfo: '#2f7d32', borderRadius: 4 }),
+  preset('sunset', 'Sunset', { colorPrimary: '#e8590c', colorInfo: '#e8590c', borderRadius: 12 }),
+  preset('grape', 'Grape', { colorPrimary: '#7048e8', colorInfo: '#7048e8', borderRadius: 10 }),
+  preset(
+    'midnight',
+    'Midnight',
+    { colorPrimary: '#4c6ef5', colorInfo: '#4c6ef5', borderRadius: 8 },
+    { mode: 'dark' },
+  ),
+  preset(
+    'slate',
+    'Slate compact',
+    { colorPrimary: '#475569', colorInfo: '#475569', borderRadius: 2 },
+    { compact: true },
+  ),
+];
+
+/** The preset `projectTheme` matches exactly, if any. */
+export function matchingPreset(projectTheme: ProjectTheme): ThemePreset | undefined {
+  const key = (t: ProjectTheme) =>
+    JSON.stringify([t.mode, t.compact, Object.entries(t.token).sort()]);
+  return themePresets.find((candidate) => key(candidate.theme) === key(projectTheme));
+}
+
 export type ThemeTokenDefinition =
   | { key: string; label: string; type: 'color' }
   | { key: string; label: string; type: 'number'; min: number; max: number };

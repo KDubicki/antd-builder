@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useEditorStore } from '@/lib/editor/store';
 import { createTheme } from '@/lib/theme';
@@ -6,7 +6,7 @@ import { ThemeEditor } from './ThemeEditor';
 
 const themeState = () => useEditorStore.getState().theme;
 
-beforeEach(() => useEditorStore.setState({ theme: createTheme() }));
+beforeEach(() => useEditorStore.setState({ theme: createTheme(), past: [], future: [] }));
 
 describe('ThemeEditor', () => {
   it('switches between light and dark mode', () => {
@@ -45,5 +45,25 @@ describe('ThemeEditor', () => {
     render(<ThemeEditor />);
     fireEvent.click(screen.getByRole('button', { name: 'Reset theme' }));
     expect(themeState()).toEqual(createTheme());
+  });
+
+  it('applies presets and shows which one is active', () => {
+    render(<ThemeEditor />);
+    const presets = screen.getByRole('group', { name: 'Theme presets' });
+    const pressed = () =>
+      within(presets)
+        .getAllByRole('button')
+        .filter((button) => button.getAttribute('aria-pressed') === 'true')
+        .map((button) => button.textContent);
+    expect(pressed()).toEqual(['antd default']);
+
+    fireEvent.click(within(presets).getByRole('button', { name: /Midnight/ }));
+    expect(themeState()).toMatchObject({ mode: 'dark', token: { colorPrimary: '#4c6ef5' } });
+    expect(pressed()).toEqual(['Midnight']);
+    expect(useEditorStore.getState().past.at(-1)?.label).toBe('Apply Midnight theme');
+
+    // Fine-tuning leaves the preset behind.
+    fireEvent.change(screen.getByLabelText('Font size'), { target: { value: '16' } });
+    expect(pressed()).toEqual([]);
   });
 });

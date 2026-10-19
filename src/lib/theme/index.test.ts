@@ -1,7 +1,15 @@
 import { theme } from 'antd';
 import { describe, expect, it } from 'vitest';
 import { projectThemeSchema } from '@/lib/schema';
-import { algorithmNames, createTheme, defaultTokenValue, themeTokens, toThemeConfig } from '.';
+import {
+  algorithmNames,
+  createTheme,
+  defaultTokenValue,
+  matchingPreset,
+  themePresets,
+  themeTokens,
+  toThemeConfig,
+} from '.';
 
 describe('theme', () => {
   it('creates a valid default theme', () => {
@@ -38,5 +46,23 @@ describe('theme', () => {
       expect(typeof value, def.key).toBe(def.type === 'color' ? 'string' : 'number');
     }
     expect(defaultTokenValue('nope')).toBeUndefined();
+  });
+
+  it('offers distinct, valid presets and recognises them', () => {
+    const ids = themePresets.map((preset) => preset.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const preset of themePresets) {
+      expect(projectThemeSchema.parse(preset.theme)).toEqual(preset.theme);
+      expect(matchingPreset(structuredClone(preset.theme))?.id).toBe(preset.id);
+    }
+    expect(matchingPreset(createTheme())?.id).toBe('default');
+    // Token order doesn't matter; any other value does.
+    const ocean = themePresets.find((preset) => preset.id === 'ocean')!.theme;
+    const reordered = {
+      ...ocean,
+      token: Object.fromEntries(Object.entries(ocean.token).reverse()),
+    };
+    expect(matchingPreset(reordered)?.id).toBe('ocean');
+    expect(matchingPreset({ ...ocean, compact: true })).toBeUndefined();
   });
 });

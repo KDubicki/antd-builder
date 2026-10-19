@@ -134,6 +134,8 @@ export interface EditorState extends History {
   /** Overrides a seed token; `undefined` restores antd's default. */
   setThemeToken: (key: string, value: string | number | undefined) => void;
   resetTheme: () => void;
+  /** Replaces the whole theme, e.g. with a preset, as one undo step named `label`. */
+  applyTheme: (theme: ProjectTheme, label: string) => void;
   setName: (name: string) => void;
   /** Whether the keyboard shortcut reference is open. */
   shortcutHelpOpen: boolean;
@@ -230,11 +232,11 @@ function insertAndSelect(
 function commitTheme(
   state: EditorState,
   patch: Partial<ProjectTheme>,
-  coalesceKey?: string,
+  { label = 'Edit theme', coalesceKey }: { label?: string; coalesceKey?: string } = {},
 ): Partial<EditorState> {
   const theme = { ...state.theme, ...patch };
   const unchanged = JSON.stringify(theme) === JSON.stringify(state.theme);
-  return unchanged ? state : commit(state, 'Edit theme', { theme }, coalesceKey);
+  return unchanged ? state : commit(state, label, { theme }, coalesceKey);
 }
 
 export const useEditorStore = create<EditorState>()((set, get) => ({
@@ -413,9 +415,11 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       const token = { ...state.theme.token };
       if (value === undefined) delete token[key];
       else token[key] = value;
-      return commitTheme(state, { token }, `token:${key}`);
+      return commitTheme(state, { token }, { coalesceKey: `token:${key}` });
     }),
-  resetTheme: () => set((state) => commitTheme(state, createTheme())),
+  resetTheme: () => set((state) => commitTheme(state, createTheme(), { label: 'Reset theme' })),
+  applyTheme: (theme, label) =>
+    set((state) => commitTheme(state, structuredClone(theme), { label })),
   setName: (name) => set({ name }),
   shortcutHelpOpen: false,
   viewport: 'desktop',
