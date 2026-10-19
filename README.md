@@ -143,15 +143,17 @@ antd-builder/
 │   └── lib/
 │       ├── schema/             # Project / page / node types + Zod validation
 │       ├── registry/           # antd component metadata: props, defaults, nesting rules
-│       ├── tree/               # Immutable page-tree operations and drop resolution
+│       ├── tree/               # Page root, immutable page-tree operations, drop resolution
 │       ├── editor/             # Editor state (Zustand), undo history, drag-and-drop planning
 │       ├── search/             # Search matching for the palette and inspector
+│       ├── project/            # Project file: build, validate, read from API requests
 │       ├── codegen/            # Page tree → TSX
 │       ├── ai/                 # Gemini calls (server-only)
 │       ├── remoteJson/         # SSRF-guarded JSON fetching (server-only)
 │       ├── shares/             # Shared snapshot storage on disk (server-only)
 │       ├── scaffold/, zip/     # Next.js project files and the ZIP writer
 │       ├── rateLimit/          # Per-client request limits for API routes
+│       ├── format.ts           # Date formatting for the reader's locale
 │       ├── csp.ts              # Content-Security-Policy builder
 │       └── env.ts              # Validated server environment (server-only)
 │   ├── proxy.ts                # Per-request CSP nonce
