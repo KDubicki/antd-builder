@@ -33,14 +33,26 @@ theme tokens, and then copy everything into code by hand. antd-builder aims to:
 
 ## Editing
 
-- Drag components from the palette, or search it by name or description. The **Blocks** group
-  at the top adds ready-made fragments: a page header, a sign-in form, a stats row and a user
-  table. The data blocks bring their own mock data, already bound, and fit a phone screen.
+- Drag components from the palette, or search it by name or description. Clicking an item (or
+  <kbd>Enter</kbd> on it) adds it next to the selection instead: inside it when it fits, otherwise
+  after it. The **Blocks** group at the top adds ready-made fragments: a page header, a sign-in
+  form, a stats row, a user table, pricing plans, an FAQ, a contact form and a footer. The data
+  blocks bring their own mock data, already bound, and fit a phone screen.
 - **Save as block** in the inspector keeps the selected component and its children as your own
   block, under **My blocks** in the palette.
 - Select components on the canvas or in the **Layers** outline, then edit them in the inspector.
-- Duplicate, copy/cut/paste, reorder (Alt+↑/↓) and delete the selection. Undo/redo covers page,
-  theme, mock data and block edits.
+  The inspector shows the component's path (Page / Card / Button) for selecting an ancestor, and
+  <kbd>Shift</kbd>+<kbd>Enter</kbd> / <kbd>Enter</kbd> move the selection to the parent or the
+  first child. Components with many props get a filter, and **Reset props** restores the
+  defaults.
+- Duplicate, copy/cut/paste, reorder (Alt+↑/↓) and delete the selection, from the inspector, the
+  keyboard or the canvas's right-click menu. **Wrap in** Flex, Card or Space puts a component in a
+  new container (<kbd>Ctrl/⌘</kbd>+<kbd>G</kbd> for Flex); **Unwrap** replaces a container with its
+  contents. These commands live in `src/components/nodeCommands.tsx`.
+- Undo/redo covers page, theme, mock data and block edits. The buttons name the step they take
+  ("Undo Add Button").
+- The **Theme** tab starts from presets (Ocean, Forest, Midnight…) that you can fine-tune.
+- **New** (header) starts an empty project after a confirmation. Your saved blocks carry over.
 - **Version history** (header) saves named snapshots of the project and restores them. Restoring
   can be undone.
 - The toolbar above the canvas sets its width: Desktop (full width), Tablet (768px) or Mobile
@@ -132,7 +144,8 @@ antd-builder/
 │       ├── schema/             # Project / page / node types + Zod validation
 │       ├── registry/           # antd component metadata: props, defaults, nesting rules
 │       ├── tree/               # Immutable page-tree operations and drop resolution
-│       ├── editor/             # Editor state (Zustand) and drag-and-drop planning
+│       ├── editor/             # Editor state (Zustand), undo history, drag-and-drop planning
+│       ├── search/             # Search matching for the palette and inspector
 │       ├── codegen/            # Page tree → TSX
 │       ├── ai/                 # Gemini calls (server-only)
 │       ├── remoteJson/         # SSRF-guarded JSON fetching (server-only)
@@ -315,6 +328,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). To report security issues, see [SECURITY
 - [x] Export a full project scaffold (Next.js app with data stubs)
 - [x] Share links (read-only snapshots)
 - [x] Import mock data from an API URL
+- [x] Right-click menu, wrap/unwrap, theme presets and click-to-add from the palette
 
 ## License
 
