@@ -22,7 +22,8 @@ export function ImportFromUrl() {
 
   const submit = async () => {
     const input = url.trim();
-    if (!input) return;
+    // Enter while the request runs would import the same URL twice.
+    if (!input || loading) return;
     setLoading(true);
     const result = await fetchSample(input);
     setLoading(false);

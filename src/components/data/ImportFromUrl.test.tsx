@@ -58,6 +58,18 @@ describe('Import from URL', () => {
     expect(screen.getByText('Fetches a sample response from a public API.')).toBeInTheDocument();
   });
 
+  it('imports once when Enter is pressed again while fetching', async () => {
+    respond(200, { data: [] });
+    render(<DataPanel />);
+    fireEvent.change(urlField(), { target: { value: 'https://api.example.com/posts' } });
+    for (let i = 0; i < 2; i++) {
+      fireEvent.keyDown(urlField(), { key: 'Enter' });
+      fireEvent.keyUp(urlField(), { key: 'Enter' });
+    }
+    await waitFor(() => expect(sources()).toHaveLength(1));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('ignores a blank URL', () => {
     render(<DataPanel />);
     fireEvent.change(urlField(), { target: { value: '   ' } });
