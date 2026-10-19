@@ -11,6 +11,16 @@ import type {
 } from '@/lib/schema';
 import { createTheme } from '@/lib/theme';
 import {
+  type History,
+  type HistoryEntry,
+  emptyHistory,
+  record,
+  redoStep,
+  sameEntry,
+  snapshot,
+  undoStep,
+} from './history';
+import {
   type DropTarget,
   cloneNode,
   duplicateNode,
@@ -37,26 +47,9 @@ export function createRoot(): BuilderNode {
   };
 }
 
-/** The undoable part of the editor state. */
-export interface HistoryEntry {
-  root: BuilderNode;
-  theme: ProjectTheme;
-  mockData: DataSource[];
-  customBlocks: CustomBlock[];
-}
+export { COALESCE_MS, HISTORY_LIMIT, type HistoryEntry } from './history';
 
-const snapshot = ({ root, theme, mockData, customBlocks }: HistoryEntry): HistoryEntry => ({
-  root,
-  theme,
-  mockData,
-  customBlocks,
-});
-
-export const HISTORY_LIMIT = 100;
-/** Edits with the same coalesce key closer together than this become one undo step. */
-export const COALESCE_MS = 1000;
-
-export interface EditorState {
+export interface EditorState extends History {
   name: string;
   /** Root of the page being edited. It is fixed: it can't be moved or removed. */
   root: BuilderNode;
@@ -82,12 +75,6 @@ export interface EditorState {
   restoreVersion: (id: string) => void;
   removeVersion: (id: string) => void;
   selectedId: string | null;
-  /** Undo stack, oldest first. */
-  past: HistoryEntry[];
-  /** Redo stack, most recently undone last. */
-  future: HistoryEntry[];
-  /** Last recorded edit, so bursts of the same edit (typing, color dragging) coalesce. */
-  lastEdit: { key: string; at: number } | null;
   undo: () => void;
   redo: () => void;
   select: (id: string | null) => void;
@@ -175,49 +162,28 @@ export interface EditorState {
 export const DEFAULT_PROJECT_NAME = 'Untitled project';
 
 /**
- * Applies an undoable change: records the current root and theme on the undo stack and drops the
- * redo stack. No-op changes are not recorded; an edit with the same `coalesceKey` as the previous
- * one, made within `COALESCE_MS`, extends that undo step instead of adding a new one.
+ * Applies an undoable change: records the current content on the undo stack (see `record`).
+ * No-op changes are not recorded.
  */
 function commit(
   state: EditorState,
   next: Partial<HistoryEntry> & Partial<Pick<EditorState, 'selectedId'>>,
   coalesceKey?: string,
 ): Partial<EditorState> {
-  const root = next.root ?? state.root;
-  const theme = next.theme ?? state.theme;
-  const mockData = next.mockData ?? state.mockData;
-  const customBlocks = next.customBlocks ?? state.customBlocks;
-  const unchanged =
-    root === state.root &&
-    theme === state.theme &&
-    mockData === state.mockData &&
-    customBlocks === state.customBlocks;
-  if (unchanged) return state;
-
-  const now = Date.now();
-  const { lastEdit } = state;
-  const coalesce =
-    coalesceKey !== undefined &&
-    lastEdit?.key === coalesceKey &&
-    now - lastEdit.at < COALESCE_MS &&
-    state.past.length > 0;
-  return {
-    ...next,
-    past: coalesce ? state.past : [...state.past, snapshot(state)].slice(-HISTORY_LIMIT),
-    future: [],
-    lastEdit: coalesceKey === undefined ? null : { key: coalesceKey, at: now },
-  };
+  const content = { ...snapshot(state), ...next };
+  if (sameEntry(state, content)) return state;
+  return { ...next, ...record(state, state, coalesceKey) };
 }
 
-/** Restores a history entry, keeping the selection only if that node still exists. */
-function restore(state: EditorState, entry: HistoryEntry): Partial<EditorState> {
+/** Moves through the history, keeping the selection only if that node still exists. */
+function travel(
+  state: EditorState,
+  step: { entry: HistoryEntry; history: History } | null,
+): Partial<EditorState> {
+  if (!step) return state;
+  const { entry, history } = step;
   const keepSelection = state.selectedId && findNode(entry.root, state.selectedId);
-  return {
-    ...snapshot(entry),
-    selectedId: keepSelection ? state.selectedId : null,
-    lastEdit: null,
-  };
+  return { ...snapshot(entry), ...history, selectedId: keepSelection ? state.selectedId : null };
 }
 
 /** `name`, or `name 2`, `name 3`… whichever no other block uses. */
@@ -276,29 +242,9 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       return versions.length === state.versions.length ? state : { versions };
     }),
   selectedId: null,
-  past: [],
-  future: [],
-  lastEdit: null,
-  undo: () =>
-    set((state) => {
-      const entry = state.past.at(-1);
-      if (!entry) return state;
-      return {
-        ...restore(state, entry),
-        past: state.past.slice(0, -1),
-        future: [...state.future, snapshot(state)],
-      };
-    }),
-  redo: () =>
-    set((state) => {
-      const entry = state.future.at(-1);
-      if (!entry) return state;
-      return {
-        ...restore(state, entry),
-        past: [...state.past, snapshot(state)],
-        future: state.future.slice(0, -1),
-      };
-    }),
+  ...emptyHistory(),
+  undo: () => set((state) => travel(state, undoStep(state, state))),
+  redo: () => set((state) => travel(state, redoStep(state, state))),
   select: (id) => set({ selectedId: id }),
   addNode: (component, target) => {
     const node = createNode(component);
@@ -465,8 +411,6 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       customBlocks,
       versions,
       selectedId: null,
-      past: [],
-      future: [],
-      lastEdit: null,
+      ...emptyHistory(),
     }),
 }));
