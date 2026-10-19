@@ -1,4 +1,4 @@
-import { canContain, hasRoomFor } from '@/lib/registry';
+import { canContain, getComponentMeta, hasRoomFor } from '@/lib/registry';
 import type { BuilderNode } from '@/lib/schema';
 
 /** Where a node goes: the parent's id and the index among its children. */
@@ -177,4 +177,39 @@ export function resolveDrop(
     }
   }
   return null;
+}
+
+/**
+ * Puts node `id` inside `wrapper` (an empty node), in the node's place. Returns `null` for the
+ * root or when the wrapper can't hold the node or can't stand where the node is.
+ */
+export function wrapNode(root: BuilderNode, id: string, wrapper: BuilderNode): BuilderNode | null {
+  const node = findNode(root, id);
+  const parent = findParent(root, id);
+  if (!node || !parent) return null;
+  if (!canContain(wrapper.component, node.component) || !hasRoomFor(wrapper)) return null;
+  if (!canContain(parent.component, wrapper.component)) return null;
+  return mapNode(root, parent.id, (p) => ({
+    ...p,
+    children: p.children.map((child) =>
+      child.id === id ? { ...wrapper, children: [...wrapper.children, node] } : child,
+    ),
+  }));
+}
+
+/**
+ * Replaces node `id` with its children. Returns `null` for the root, a node without children,
+ * or when its parent can't take all of them.
+ */
+export function unwrapNode(root: BuilderNode, id: string): BuilderNode | null {
+  const node = findNode(root, id);
+  const parent = findParent(root, id);
+  if (!node || !parent || node.children.length === 0) return null;
+  if (!node.children.every((child) => canContain(parent.component, child.component))) return null;
+  const max = getComponentMeta(parent.component)?.maxChildren;
+  if (max !== undefined && parent.children.length - 1 + node.children.length > max) return null;
+  return mapNode(root, parent.id, (p) => ({
+    ...p,
+    children: p.children.flatMap((child) => (child.id === id ? node.children : [child])),
+  }));
 }

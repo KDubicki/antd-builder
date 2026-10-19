@@ -14,6 +14,8 @@ const examples: Record<string, KeyboardEvent[]> = {
   'Cut the selected component': [key({ key: 'x', ctrlKey: true })],
   'Paste into or after the selected component': [key({ key: 'v', ctrlKey: true })],
   'Duplicate the selected component': [key({ key: 'D', metaKey: true })],
+  'Wrap the selected component in a Flex': [key({ key: 'g', ctrlKey: true })],
+  'Unwrap the selected container': [key({ key: 'G', metaKey: true, shiftKey: true })],
   'Move the selected component up': [key({ key: 'ArrowUp', altKey: true })],
   'Move the selected component down': [key({ key: 'ArrowDown', altKey: true })],
   'Delete the selected component (also Backspace)': [
@@ -37,7 +39,7 @@ describe('shortcuts', () => {
   });
 
   it('ignores plain letters and arrows without modifiers', () => {
-    for (const letter of ['z', 'y', 'c', 'x', 'v', 'd', 'ArrowUp', 'ArrowDown']) {
+    for (const letter of ['z', 'y', 'c', 'x', 'v', 'd', 'g', 'ArrowUp', 'ArrowDown']) {
       expect(shortcuts.some((s) => s.matches(key({ key: letter })))).toBe(false);
     }
   });

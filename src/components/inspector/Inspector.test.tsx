@@ -184,6 +184,26 @@ describe('Inspector', () => {
     expect(order()).toEqual(['a', 'b']);
   });
 
+  it('wraps the selected component in a container and unwraps it', async () => {
+    select(createNode('Tag', 'tag'));
+    render(<Inspector />);
+    fireEvent.click(screen.getByRole('button', { name: 'Wrap or unwrap' }));
+    expect(await screen.findByRole('menuitem', { name: /Unwrap/ })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
+    fireEvent.click(screen.getByRole('menuitem', { name: /Wrap in Card/ }));
+    const [card] = useEditorStore.getState().root.children;
+    expect(card).toMatchObject({ component: 'Card', children: [{ id: 'tag' }] });
+    expect(screen.getByRole('heading', { name: 'Card' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Wrap or unwrap' }));
+    const unwrap = (await screen.findAllByRole('menuitem', { name: /Unwrap/ })).at(-1)!;
+    expect(unwrap).not.toHaveAttribute('aria-disabled', 'true');
+    fireEvent.click(unwrap);
+    expect(useEditorStore.getState().root.children.map((c) => c.id)).toEqual(['tag']);
+  });
+
   it('saves the selected component as a named block', async () => {
     select(createNode('Card', 'card'));
     render(

@@ -12,7 +12,9 @@ import {
   removeNode,
   resolveDrop,
   siblingPosition,
+  unwrapNode,
   updateNodeProps,
+  wrapNode,
 } from '.';
 
 const node = (id: string, component: string, children: BuilderNode[] = []): BuilderNode => ({
@@ -249,5 +251,39 @@ describe('resolveDrop', () => {
   it('ignores ids that are not in the tree', () => {
     expect(resolveDrop(tree, ['ghost', 'root'], 'Tag')).toEqual({ parentId: 'root', index: 3 });
     expect(resolveDrop(tree, [], 'Tag')).toBeNull();
+  });
+});
+
+describe('wrapNode', () => {
+  it('puts a node inside a wrapper in its place', () => {
+    const result = wrapNode(tree, 'tag', node('box', 'Card'))!;
+    expect(ids(result)).toEqual(['card', 'row', 'box']);
+    expect(ids(findNode(result, 'box')!)).toEqual(['tag']);
+    expect(result.children[0]).toBe(tree.children[0]); // structural sharing
+  });
+
+  it('refuses wraps that break nesting rules', () => {
+    expect(wrapNode(tree, 'root', node('box', 'Card'))).toBeNull();
+    expect(wrapNode(tree, 'nope', node('box', 'Card'))).toBeNull();
+    expect(wrapNode(tree, 'col', node('box', 'Card'))).toBeNull(); // a Col must stay in a Row
+    expect(wrapNode(tree, 'tag', node('box', 'Divider'))).toBeNull(); // a leaf holds nothing
+    expect(wrapNode(tree, 'tag', node('t', 'Tooltip', [node('x', 'Tag')]))).toBeNull(); // full
+  });
+});
+
+describe('unwrapNode', () => {
+  it('replaces a node with its children', () => {
+    const result = unwrapNode(tree, 'card')!;
+    expect(ids(result)).toEqual(['btn', 'row', 'tag']);
+  });
+
+  it('refuses unwraps that break nesting rules', () => {
+    expect(unwrapNode(tree, 'root')).toBeNull();
+    expect(unwrapNode(tree, 'tag')).toBeNull(); // nothing inside
+    expect(unwrapNode(tree, 'row')).toBeNull(); // a Col can't stand in a Flex
+    const full = node('root', 'Flex', [
+      node('tip', 'Tooltip', [node('box', 'Flex', [node('a', 'Tag'), node('b', 'Tag')])]),
+    ]);
+    expect(unwrapNode(full, 'box')).toBeNull(); // a Tooltip holds one child
   });
 });

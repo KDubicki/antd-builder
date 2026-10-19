@@ -2,13 +2,16 @@ import {
   ArrowDownOutlined,
   ArrowUpOutlined,
   CopyOutlined,
+  BorderOuterOutlined,
   DeleteOutlined,
+  ExpandOutlined,
   ScissorOutlined,
   SnippetsOutlined,
 } from '@ant-design/icons';
 import type { ReactNode } from 'react';
 import { ROOT_ID, type EditorState } from '@/lib/editor/store';
-import { siblingPosition } from '@/lib/tree';
+import { getComponentMeta } from '@/lib/registry';
+import { siblingPosition, unwrapNode, wrapNode } from '@/lib/tree';
 
 /** Something to do with one component on the page, shared by buttons, menus and shortcuts. */
 export interface NodeCommand {
@@ -86,9 +89,44 @@ export const nodeCommands = {
     enabled: notRoot,
     run: (state, id) => state.removeNode(id),
   },
+  /** Removes a container, keeping what's inside it. */
+  unwrap: {
+    label: 'Unwrap',
+    name: 'Unwrap component',
+    icon: <ExpandOutlined />,
+    keys: [MOD, 'Shift', 'G'],
+    enabled: (state, id) => unwrapNode(state.root, id) !== null,
+    run: (state, id) => state.unwrapNode(id),
+  },
 } satisfies Record<string, NodeCommand>;
 
 export type NodeCommandId = keyof typeof nodeCommands;
+
+/** Containers offered by "Wrap in", in menu order; the first one has a shortcut. */
+export const WRAPPERS = ['Flex', 'Card', 'Space'] as const;
+
+/** Whether node `id` can be wrapped in `component`, without creating the wrapper. */
+const canWrap = (component: string) => (state: EditorState, id: string) =>
+  wrapNode(state.root, id, { id: '', component, props: {}, children: [] }) !== null;
+
+/** "Wrap in Flex", "Wrap in Card"…: puts the component inside a new container. */
+export const wrapCommands: Readonly<Record<(typeof WRAPPERS)[number], NodeCommand>> =
+  Object.fromEntries(
+    WRAPPERS.map((component, i) => {
+      const label = `Wrap in ${getComponentMeta(component)?.label ?? component}`;
+      const command: NodeCommand = {
+        label,
+        name: label,
+        icon: <BorderOuterOutlined />,
+        ...(i === 0 && { keys: [MOD, 'G'] }),
+        enabled: canWrap(component),
+        run: (state, id) => {
+          state.wrapNode(id, component);
+        },
+      };
+      return [component, command];
+    }),
+  ) as Record<(typeof WRAPPERS)[number], NodeCommand>;
 
 /** "Duplicate (Ctrl/⌘+D)": a command's tooltip with its keys. */
 export function commandTitle(command: NodeCommand): string {

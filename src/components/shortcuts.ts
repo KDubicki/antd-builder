@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { NODE_ID_ATTR } from '@/components/canvas/nodeChain';
-import { MOD, type NodeCommand, nodeCommands } from '@/components/nodeCommands';
+import { MOD, type NodeCommand, nodeCommands, wrapCommands } from '@/components/nodeCommands';
 import { type EditorState, useEditorStore } from '@/lib/editor/store';
 
 export interface Shortcut {
@@ -116,6 +116,18 @@ export const shortcuts: readonly Shortcut[] = [
     description: 'Duplicate the selected component',
     matches: modKey('d'),
     run: onSelection(nodeCommands.duplicate),
+  },
+  {
+    keys: [MOD, 'G'],
+    description: 'Wrap the selected component in a Flex',
+    matches: modKey('g', false),
+    run: onSelection(wrapCommands.Flex),
+  },
+  {
+    keys: [MOD, 'Shift', 'G'],
+    description: 'Unwrap the selected container',
+    matches: modKey('g', true),
+    run: onSelection(nodeCommands.unwrap),
   },
   {
     keys: ['Alt', '↑'],

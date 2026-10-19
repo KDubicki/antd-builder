@@ -1,7 +1,9 @@
 'use client';
 
+import { BorderOuterOutlined } from '@ant-design/icons';
 import {
   Button,
+  Dropdown,
   Empty,
   Flex,
   Form,
@@ -14,7 +16,12 @@ import {
   theme,
 } from 'antd';
 import { JsonEditor } from '@/components/JsonEditor';
-import { type NodeCommand, commandTitle, nodeCommands } from '@/components/nodeCommands';
+import {
+  type NodeCommand,
+  commandTitle,
+  nodeCommands,
+  wrapCommands,
+} from '@/components/nodeCommands';
 import { BindableField } from './DataBinding';
 import { SaveBlockButton } from './SaveBlockButton';
 import { ROOT_ID, useEditorStore } from '@/lib/editor/store';
@@ -96,6 +103,33 @@ function CommandButton({ command, nodeId }: { command: NodeCommand; nodeId: stri
   );
 }
 
+/** Menu to put the component in a container, or take it out of one. */
+function WrapMenu({ nodeId }: { nodeId: string }) {
+  const commands = [...Object.values(wrapCommands), nodeCommands.unwrap];
+  // Re-evaluated when the page changes, so the menu reflects what's allowed now.
+  const enabled = useEditorStore((state) =>
+    commands.map((command) => command.enabled(state, nodeId)).join(),
+  ).split(',');
+  return (
+    <Dropdown
+      trigger={['click']}
+      menu={{
+        items: commands.map((command, i) => ({
+          key: command.label,
+          label: command.label,
+          icon: command.icon,
+          extra: command.keys?.join('+'),
+          disabled: enabled[i] !== 'true',
+        })),
+        onClick: ({ key }) =>
+          commands.find((command) => command.label === key)?.run(useEditorStore.getState(), nodeId),
+      }}
+    >
+      <Button icon={<BorderOuterOutlined />} aria-label="Wrap or unwrap" title="Wrap or unwrap" />
+    </Dropdown>
+  );
+}
+
 export function Inspector() {
   const { token } = theme.useToken();
   const node = useEditorStore((state) =>
@@ -130,6 +164,7 @@ export function Inspector() {
                 <CommandButton command={nodeCommands.moveUp} nodeId={node.id} />
                 <CommandButton command={nodeCommands.moveDown} nodeId={node.id} />
               </Space.Compact>
+              <WrapMenu nodeId={node.id} />
               <SaveBlockButton nodeId={node.id} defaultName={meta.label} />
               <CommandButton command={nodeCommands.duplicate} nodeId={node.id} />
               <CommandButton command={nodeCommands.delete} nodeId={node.id} />

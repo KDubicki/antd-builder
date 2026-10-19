@@ -91,6 +91,28 @@ describe('editor store', () => {
     ]);
   });
 
+  it('wraps a node in a container and unwraps it, as undo steps', () => {
+    const tag = state().addNode('Tag', { parentId: ROOT_ID, index: 0 });
+    const card = state().wrapNode(tag, 'Card')!;
+    expect(state().root.children.map((c) => c.component)).toEqual(['Card']);
+    expect(findNode(state().root, card)?.children.map((c) => c.id)).toEqual([tag]);
+    expect(state().selectedId).toBe(card);
+    expect(state().past.at(-1)?.label).toBe('Wrap Tag in Card');
+
+    state().unwrapNode(card);
+    expect(state().root.children.map((c) => c.id)).toEqual([tag]);
+    expect(state().selectedId).toBe(tag);
+    expect(state().past.at(-1)?.label).toBe('Unwrap Card');
+
+    // Not allowed: the page itself, or unwrapping a leaf.
+    const steps = state().past.length;
+    expect(state().wrapNode(ROOT_ID, 'Card')).toBeNull();
+    state().unwrapNode(tag);
+    expect(state().past).toHaveLength(steps);
+    state().undo();
+    expect(state().root.children.map((c) => c.id)).toEqual([card]);
+  });
+
   it('removes a node and clears a selection inside it', () => {
     const card = state().addNode('Card', { parentId: ROOT_ID, index: 0 });
     state().addNode('Tag', { parentId: card, index: 0 });

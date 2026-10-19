@@ -31,7 +31,9 @@ import {
   nudgeNode,
   removeNode,
   resolveDrop,
+  unwrapNode,
   updateNodeProps,
+  wrapNode,
 } from '@/lib/tree';
 
 export const ROOT_ID = 'root';
@@ -96,6 +98,13 @@ export interface EditorState extends History {
   nudgeNode: (id: string, delta: -1 | 1) => void;
   /** Copies a node (and its subtree) right after itself and selects the copy. */
   duplicateNode: (id: string) => void;
+  /**
+   * Puts node `id` inside a new `component` in its place and selects the wrapper. Returns the
+   * wrapper's id, or `null` when nesting rules don't allow it.
+   */
+  wrapNode: (id: string, component: string) => string | null;
+  /** Replaces node `id` with its children and selects the first, when nesting rules allow it. */
+  unwrapNode: (id: string) => void;
   /** Copied subtree, a snapshot taken at copy time. Not part of the project or the history. */
   clipboard: BuilderNode | null;
   /** Puts a copy of node `id` on the clipboard. The root can't be copied. */
@@ -331,6 +340,28 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       return commit(state, `Duplicate ${labelOf(state.root, id)}`, {
         root: result.root,
         selectedId: result.id,
+      });
+    }),
+  wrapNode: (id, component) => {
+    const wrapper = createNode(component);
+    const root = wrapNode(get().root, id, wrapper);
+    if (!root) return null;
+    set((state) =>
+      commit(state, `Wrap ${labelOf(state.root, id)} in ${labelOf(wrapper, wrapper.id)}`, {
+        root,
+        selectedId: wrapper.id,
+      }),
+    );
+    return wrapper.id;
+  },
+  unwrapNode: (id) =>
+    set((state) => {
+      const node = findNode(state.root, id);
+      const root = node && unwrapNode(state.root, id);
+      if (!node || !root) return state;
+      return commit(state, `Unwrap ${labelOf(state.root, id)}`, {
+        root,
+        selectedId: node.children[0]!.id,
       });
     }),
   clipboard: null,
