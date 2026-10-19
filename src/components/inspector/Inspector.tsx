@@ -1,12 +1,6 @@
 'use client';
 
 import {
-  ArrowDownOutlined,
-  ArrowUpOutlined,
-  CopyOutlined,
-  DeleteOutlined,
-} from '@ant-design/icons';
-import {
   Button,
   Empty,
   Flex,
@@ -20,11 +14,12 @@ import {
   theme,
 } from 'antd';
 import { JsonEditor } from '@/components/JsonEditor';
+import { type NodeCommand, commandTitle, nodeCommands } from '@/components/nodeCommands';
 import { BindableField } from './DataBinding';
 import { SaveBlockButton } from './SaveBlockButton';
 import { ROOT_ID, useEditorStore } from '@/lib/editor/store';
 import { type PropDefinition, getComponentMeta } from '@/lib/registry';
-import { findNode, siblingPosition } from '@/lib/tree';
+import { findNode } from '@/lib/tree';
 
 interface FieldProps {
   id: string;
@@ -86,22 +81,27 @@ function PropField({ id, def, value, onChange }: FieldProps) {
   }
 }
 
+/** Icon button running a node command, disabled while it can't run. */
+function CommandButton({ command, nodeId }: { command: NodeCommand; nodeId: string }) {
+  const enabled = useEditorStore((state) => command.enabled(state, nodeId));
+  return (
+    <Button
+      danger={command.danger}
+      icon={command.icon}
+      aria-label={command.name}
+      title={commandTitle(command)}
+      disabled={!enabled}
+      onClick={() => command.run(useEditorStore.getState(), nodeId)}
+    />
+  );
+}
+
 export function Inspector() {
   const { token } = theme.useToken();
   const node = useEditorStore((state) =>
     state.selectedId ? findNode(state.root, state.selectedId) : undefined,
   );
   const updateProps = useEditorStore((state) => state.updateProps);
-  const removeNode = useEditorStore((state) => state.removeNode);
-  const duplicateNode = useEditorStore((state) => state.duplicateNode);
-  const nudgeNode = useEditorStore((state) => state.nudgeNode);
-  // Primitives, so the selectors stay stable between renders.
-  const index = useEditorStore((state) =>
-    state.selectedId ? (siblingPosition(state.root, state.selectedId)?.index ?? -1) : -1,
-  );
-  const siblings = useEditorStore((state) =>
-    state.selectedId ? (siblingPosition(state.root, state.selectedId)?.count ?? 0) : 0,
-  );
   const meta = node && getComponentMeta(node.component);
 
   if (!node || !meta) {
@@ -127,34 +127,12 @@ export function Inspector() {
           {!isRoot && (
             <Flex gap="small">
               <Space.Compact>
-                <Button
-                  icon={<ArrowUpOutlined />}
-                  aria-label="Move up"
-                  title="Move up (Alt+↑)"
-                  disabled={index <= 0}
-                  onClick={() => nudgeNode(node.id, -1)}
-                />
-                <Button
-                  icon={<ArrowDownOutlined />}
-                  aria-label="Move down"
-                  title="Move down (Alt+↓)"
-                  disabled={index < 0 || index >= siblings - 1}
-                  onClick={() => nudgeNode(node.id, 1)}
-                />
+                <CommandButton command={nodeCommands.moveUp} nodeId={node.id} />
+                <CommandButton command={nodeCommands.moveDown} nodeId={node.id} />
               </Space.Compact>
               <SaveBlockButton nodeId={node.id} defaultName={meta.label} />
-              <Button
-                icon={<CopyOutlined />}
-                aria-label="Duplicate component"
-                title="Duplicate (Ctrl/⌘+D)"
-                onClick={() => duplicateNode(node.id)}
-              />
-              <Button
-                danger
-                icon={<DeleteOutlined />}
-                aria-label="Delete component"
-                onClick={() => removeNode(node.id)}
-              />
+              <CommandButton command={nodeCommands.duplicate} nodeId={node.id} />
+              <CommandButton command={nodeCommands.delete} nodeId={node.id} />
             </Flex>
           )}
         </Flex>

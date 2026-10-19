@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { NODE_ID_ATTR } from '@/components/canvas/nodeChain';
+import { MOD, type NodeCommand, nodeCommands } from '@/components/nodeCommands';
 import { type EditorState, useEditorStore } from '@/lib/editor/store';
 
 export interface Shortcut {
@@ -15,8 +16,6 @@ export interface Shortcut {
    */
   run: (state: EditorState, event: KeyboardEvent) => boolean;
 }
-
-const MOD = 'Ctrl/⌘';
 
 const isMod = (event: KeyboardEvent) => event.metaKey || event.ctrlKey;
 
@@ -60,6 +59,20 @@ function isEditorDialogTarget(target: EventTarget | null): boolean {
   );
 }
 
+/**
+ * Runs `command` on the selected component, unless `skip` says the key belongs to something else.
+ * The key counts as consumed whenever a component is selected, even if the command can't run
+ * (e.g. moving the first component up).
+ */
+const onSelection =
+  (command: NodeCommand, skip?: (event: KeyboardEvent) => boolean) =>
+  (state: EditorState, event: KeyboardEvent): boolean => {
+    const { selectedId } = state;
+    if (!selectedId || skip?.(event)) return false;
+    if (command.enabled(state, selectedId)) command.run(state, selectedId);
+    return true;
+  };
+
 /** Editor shortcuts, in the order they are matched and listed. */
 export const shortcuts: readonly Shortcut[] = [
   {
@@ -84,21 +97,13 @@ export const shortcuts: readonly Shortcut[] = [
     keys: [MOD, 'C'],
     description: 'Copy the selected component',
     matches: modKey('c'),
-    run: ({ selectedId, copyNode }) => {
-      if (!selectedId || hasTextSelection()) return false;
-      copyNode(selectedId);
-      return true;
-    },
+    run: onSelection(nodeCommands.copy, hasTextSelection),
   },
   {
     keys: [MOD, 'X'],
     description: 'Cut the selected component',
     matches: modKey('x'),
-    run: ({ selectedId, cutNode }) => {
-      if (!selectedId || hasTextSelection()) return false;
-      cutNode(selectedId);
-      return true;
-    },
+    run: onSelection(nodeCommands.cut, hasTextSelection),
   },
   {
     keys: [MOD, 'V'],
@@ -110,41 +115,25 @@ export const shortcuts: readonly Shortcut[] = [
     keys: [MOD, 'D'],
     description: 'Duplicate the selected component',
     matches: modKey('d'),
-    run: ({ selectedId, duplicateNode }) => {
-      if (!selectedId) return false;
-      duplicateNode(selectedId);
-      return true;
-    },
+    run: onSelection(nodeCommands.duplicate),
   },
   {
     keys: ['Alt', '↑'],
     description: 'Move the selected component up',
     matches: (event) => event.altKey && event.key === 'ArrowUp',
-    run: ({ selectedId, nudgeNode }) => {
-      if (!selectedId) return false;
-      nudgeNode(selectedId, -1);
-      return true;
-    },
+    run: onSelection(nodeCommands.moveUp),
   },
   {
     keys: ['Alt', '↓'],
     description: 'Move the selected component down',
     matches: (event) => event.altKey && event.key === 'ArrowDown',
-    run: ({ selectedId, nudgeNode }) => {
-      if (!selectedId) return false;
-      nudgeNode(selectedId, 1);
-      return true;
-    },
+    run: onSelection(nodeCommands.moveDown),
   },
   {
     keys: ['Delete'],
     description: 'Delete the selected component (also Backspace)',
     matches: (event) => event.key === 'Delete' || event.key === 'Backspace',
-    run: ({ selectedId, removeNode }, event) => {
-      if (!selectedId || isSidePanelTarget(event.target)) return false;
-      removeNode(selectedId);
-      return true;
-    },
+    run: onSelection(nodeCommands.delete, (event) => isSidePanelTarget(event.target)),
   },
   {
     keys: ['Esc'],
