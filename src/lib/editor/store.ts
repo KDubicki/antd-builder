@@ -138,7 +138,6 @@ export interface EditorState extends History {
   /** Entering preview clears the selection. */
   setPreviewMode: (on: boolean) => void;
   setShortcutHelpOpen: (open: boolean) => void;
-  /** Replaces the whole project (e.g. after opening a file); clears the selection and history. */
   /**
    * Adds a data source with a free name based on `name`, holding `init` (e.g. an imported API
    * response) or else sample data. Returns its id.
@@ -159,6 +158,7 @@ export interface EditorState extends History {
    * own toolbox). Like opening a file, it clears the history and versions.
    */
   newProject: () => void;
+  /** Replaces the whole project (e.g. after opening a file); clears the selection and history. */
   loadProject: (content: {
     name: string;
     root: BuilderNode;
@@ -184,6 +184,11 @@ function commit(
   const content = { ...snapshot(state), ...next };
   if (sameEntry(state, content)) return state;
   return { ...next, ...record(state, state, label, coalesceKey) };
+}
+
+/** Node `id`, unless it is the page root (which can't be copied, saved or reset). */
+function findNonRoot(root: BuilderNode, id: string): BuilderNode | undefined {
+  return id === ROOT_ID ? undefined : findNode(root, id);
 }
 
 /** A node's component label, e.g. "Button", for naming edits. */
@@ -367,7 +372,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     }),
   clipboard: null,
   copyNode: (id) => {
-    const node = id === ROOT_ID ? undefined : findNode(get().root, id);
+    const node = findNonRoot(get().root, id);
     if (node) set({ clipboard: structuredClone(node) });
   },
   cutNode: (id) => {
@@ -395,7 +400,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     ),
   resetProps: (id) =>
     set((state) => {
-      const node = id === ROOT_ID ? undefined : findNode(state.root, id);
+      const node = findNonRoot(state.root, id);
       const meta = node && getComponentMeta(node.component);
       if (!node || !meta || sameProps(node.props, meta.defaultProps)) return state;
       const defaults = structuredClone(meta.defaultProps);
@@ -459,7 +464,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       return commit(state, `Delete data source ${source.name}`, { mockData });
     }),
   saveAsBlock: (id, name) => {
-    const node = id === ROOT_ID ? undefined : findNode(get().root, id);
+    const node = findNonRoot(get().root, id);
     if (!node) return null;
     const base = name?.trim() || (getComponentMeta(node.component)?.label ?? node.component);
     const names = get().customBlocks.map((block) => block.name);
