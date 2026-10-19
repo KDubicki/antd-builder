@@ -10,6 +10,7 @@ import { antdProps, codePropValues, getComponentMeta } from '@/lib/registry';
 import type { BuilderNode } from '@/lib/schema';
 import { toThemeConfig } from '@/lib/theme';
 import { viewports } from './CanvasToolbar';
+import { NodeContextMenu } from './NodeContextMenu';
 import { NODE_ID_ATTR } from './nodeChain';
 import { renderers } from './renderers';
 
@@ -120,34 +121,36 @@ function CanvasSurface() {
   const width = viewports[viewport].width;
 
   return (
-    <div
-      ref={setNodeRef}
-      data-testid="canvas"
-      data-viewport={viewport}
-      data-preview={preview || undefined}
-      onClick={preview ? undefined : () => select(null)}
-      style={{
-        // Fills the editor's scroll area (a flex column) and grows with the page.
-        flex: '1 0 auto',
-        // Device presets get a fixed-width page centred on the editor background.
-        width: width ?? undefined,
-        marginInline: width ? 'auto' : undefined,
-        boxShadow: width ? token.boxShadowTertiary : undefined,
-        padding: token.paddingLG,
-        // Fixed-position components (FloatButton…) are placed relative to the canvas, not the editor.
-        contain: 'layout',
-        background: isOver ? token.colorPrimaryBg : token.colorBgContainer,
-        transition: `background ${token.motionDurationFast}`,
-      }}
-    >
-      {selectedId && (
-        <style>{`[${NODE_ID_ATTR}="${CSS.escape(selectedId)}"] > * {
+    <NodeContextMenu>
+      <div
+        ref={setNodeRef}
+        data-testid="canvas"
+        data-viewport={viewport}
+        data-preview={preview || undefined}
+        onClick={preview ? undefined : () => select(null)}
+        style={{
+          // Fills the editor's scroll area (a flex column) and grows with the page.
+          flex: '1 0 auto',
+          // Device presets get a fixed-width page centred on the editor background.
+          width: width ?? undefined,
+          marginInline: width ? 'auto' : undefined,
+          boxShadow: width ? token.boxShadowTertiary : undefined,
+          padding: token.paddingLG,
+          // Fixed-position components (FloatButton…) are placed relative to the canvas, not the editor.
+          contain: 'layout',
+          background: isOver ? token.colorPrimaryBg : token.colorBgContainer,
+          transition: `background ${token.motionDurationFast}`,
+        }}
+      >
+        {selectedId && (
+          <style>{`[${NODE_ID_ATTR}="${CSS.escape(selectedId)}"] > * {
           outline: 2px solid ${token.colorPrimary};
           outline-offset: 2px;
         }`}</style>
-      )}
-      <CanvasNode node={root} />
-    </div>
+        )}
+        <CanvasNode node={root} />
+      </div>
+    </NodeContextMenu>
   );
 }
 

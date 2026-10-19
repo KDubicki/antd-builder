@@ -16,6 +16,7 @@ import {
   theme,
 } from 'antd';
 import { JsonEditor } from '@/components/JsonEditor';
+import { useCommandMenu } from '@/components/commandMenu';
 import {
   type NodeCommand,
   commandTitle,
@@ -105,26 +106,9 @@ function CommandButton({ command, nodeId }: { command: NodeCommand; nodeId: stri
 
 /** Menu to put the component in a container, or take it out of one. */
 function WrapMenu({ nodeId }: { nodeId: string }) {
-  const commands = [...Object.values(wrapCommands), nodeCommands.unwrap];
-  // Re-evaluated when the page changes, so the menu reflects what's allowed now.
-  const enabled = useEditorStore((state) =>
-    commands.map((command) => command.enabled(state, nodeId)).join(),
-  ).split(',');
+  const menu = useCommandMenu([...Object.values(wrapCommands), nodeCommands.unwrap], nodeId);
   return (
-    <Dropdown
-      trigger={['click']}
-      menu={{
-        items: commands.map((command, i) => ({
-          key: command.label,
-          label: command.label,
-          icon: command.icon,
-          extra: command.keys?.join('+'),
-          disabled: enabled[i] !== 'true',
-        })),
-        onClick: ({ key }) =>
-          commands.find((command) => command.label === key)?.run(useEditorStore.getState(), nodeId),
-      }}
-    >
+    <Dropdown trigger={['click']} menu={menu}>
       <Button icon={<BorderOuterOutlined />} aria-label="Wrap or unwrap" title="Wrap or unwrap" />
     </Dropdown>
   );

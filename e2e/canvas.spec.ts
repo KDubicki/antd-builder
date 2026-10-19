@@ -286,3 +286,23 @@ test('stacks responsive grid columns in the mobile view', async ({ page }) => {
   await page.getByText('Tablet', { exact: true }).click();
   await expect.poll(async () => (await top('right')) === (await top('left'))).toBe(true);
 });
+
+test('right-clicking a component opens its menu', async ({ page }) => {
+  await page.goto('/');
+  const canvas = page.getByTestId('canvas');
+  const palette = page.getByLabel('Component palette');
+  await dragTo(page, palette.getByRole('button', { name: 'Card', exact: true }), canvas);
+  await dragTo(page, palette.getByRole('button', { name: 'Button', exact: true }), canvas);
+  const card = canvas.locator('.ant-card');
+
+  await canvas.getByRole('button', { name: 'Button' }).click({ button: 'right' });
+  const menu = page.getByRole('menu');
+  await expect(page.getByLabel('Inspector').getByRole('heading', { name: 'Button' })).toBeVisible();
+  await menu.getByRole('menuitem', { name: /Cut/ }).click();
+  await expect(canvas.getByRole('button', { name: 'Button' })).toHaveCount(0);
+
+  // Paste into the card.
+  await card.getByText('Drop components here').click({ button: 'right' });
+  await page.getByRole('menu').getByRole('menuitem', { name: /Paste/ }).click();
+  await expect(card.getByRole('button', { name: 'Button' })).toBeVisible();
+});

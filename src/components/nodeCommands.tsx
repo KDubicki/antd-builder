@@ -2,6 +2,7 @@ import {
   ArrowDownOutlined,
   ArrowUpOutlined,
   CopyOutlined,
+  BlockOutlined,
   BorderOuterOutlined,
   DeleteOutlined,
   ExpandOutlined,
@@ -11,7 +12,7 @@ import {
 import type { ReactNode } from 'react';
 import { ROOT_ID, type EditorState } from '@/lib/editor/store';
 import { getComponentMeta } from '@/lib/registry';
-import { siblingPosition, unwrapNode, wrapNode } from '@/lib/tree';
+import { resolveDrop, siblingPosition, unwrapNode, wrapNode } from '@/lib/tree';
 
 /** Something to do with one component on the page, shared by buttons, menus and shortcuts. */
 export interface NodeCommand {
@@ -60,7 +61,7 @@ export const nodeCommands = {
   duplicate: {
     label: 'Duplicate',
     name: 'Duplicate component',
-    icon: <CopyOutlined />,
+    icon: <BlockOutlined />,
     keys: [MOD, 'D'],
     enabled: notRoot,
     run: (state, id) => state.duplicateNode(id),
@@ -68,7 +69,7 @@ export const nodeCommands = {
   copy: {
     label: 'Copy',
     name: 'Copy component',
-    icon: <SnippetsOutlined />,
+    icon: <CopyOutlined />,
     keys: [MOD, 'C'],
     enabled: notRoot,
     run: (state, id) => state.copyNode(id),
@@ -80,6 +81,18 @@ export const nodeCommands = {
     keys: [MOD, 'X'],
     enabled: notRoot,
     run: (state, id) => state.cutNode(id),
+  },
+  paste: {
+    label: 'Paste',
+    name: 'Paste into or after the component',
+    icon: <SnippetsOutlined />,
+    keys: [MOD, 'V'],
+    enabled: ({ clipboard, root }, id) =>
+      !!clipboard && resolveDrop(root, [id], clipboard.component) !== null,
+    run: (state, id) => {
+      state.select(id);
+      state.pasteNode();
+    },
   },
   delete: {
     label: 'Delete',
