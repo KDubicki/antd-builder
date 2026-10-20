@@ -38,3 +38,20 @@ test('selects nested components from the layers panel', async ({ page }) => {
   await inspector.getByLabel('Label').fill('Submit');
   await expect(layers.getByText('Submit')).toBeVisible();
 });
+
+test('right-clicking a layer opens its commands', async ({ page }) => {
+  await page.goto('/');
+  const palette = page.getByLabel('Component palette');
+  const canvas = page.getByTestId('canvas');
+  await dragTo(page, palette.getByText('Tag', { exact: true }), canvas);
+
+  await page.getByRole('tab', { name: 'Layers' }).click();
+  const layers = page.getByLabel('Layers');
+  await layers.getByText('Tag', { exact: true }).click({ button: 'right' });
+  await page
+    .getByRole('menu')
+    .getByRole('menuitem', { name: /Duplicate/ })
+    .click();
+  await expect(layers.getByText('Tag', { exact: true })).toHaveCount(2);
+  await expect(canvas.locator('.ant-tag')).toHaveCount(2);
+});

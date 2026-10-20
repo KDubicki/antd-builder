@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { ConfigProvider } from 'antd';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useEditorStore } from '@/lib/editor/store';
@@ -40,6 +40,24 @@ describe('Layers', () => {
     act(() => useEditorStore.getState().select('btn'));
     expect(layer('Button')).toHaveClass('ant-tree-treenode-selected');
     expect(layer('Tag')).not.toHaveClass('ant-tree-treenode-selected');
+  });
+
+  it('opens the component commands on right-click', () => {
+    render(<Layers />);
+    fireEvent.contextMenu(screen.getByText('Tag'));
+    expect(useEditorStore.getState().selectedId).toBe('tag');
+    fireEvent.click(within(screen.getByRole('menu')).getByRole('menuitem', { name: /Move up/ }));
+    expect(useEditorStore.getState().root.children.map((child) => child.id)).toEqual([
+      'tag',
+      'card',
+    ]);
+  });
+
+  it('offers only Paste on the page', () => {
+    render(<Layers />);
+    fireEvent.contextMenu(screen.getByText('Page'));
+    const items = within(screen.getByRole('menu')).getAllByRole('menuitem');
+    expect(items.map((item) => item.textContent)).toEqual(['PasteCtrl/⌘+V']);
   });
 
   describe('expansion', () => {
