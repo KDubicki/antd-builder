@@ -29,14 +29,6 @@ export function sourceNameError(name: string, otherNames: readonly string[]): st
   return null;
 }
 
-/** `base`, or `base2`, `base3`… whichever is free. */
-export function uniqueSourceName(base: string, names: readonly string[]): string {
-  if (!names.includes(base)) return base;
-  let n = 2;
-  while (names.includes(`${base}${n}`)) n += 1;
-  return `${base}${n}`;
-}
-
 /**
  * Sample response for a new data source: a small list, the most common API shape. `key` comes
  * last so text props bind to a name first; antd tables use it as the row key.

@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { getBlock } from '@/lib/blocks';
 import { createNode, getComponentMeta } from '@/lib/registry';
-import { createDataSource, planTable, sourceNameError, uniqueSourceName } from '@/lib/mockData';
+import { uniqueName } from '@/lib/format';
+import { createDataSource, planTable, sourceNameError } from '@/lib/mockData';
 import type {
   BuilderNode,
   CustomBlock,
@@ -28,7 +29,6 @@ import {
   duplicateNode,
   findNode,
   insertNode,
-  isWithin,
   moveNode,
   nudgeNode,
   removeNode,
@@ -197,6 +197,11 @@ function labelOf(root: BuilderNode, id: string): string {
   return node ? (getComponentMeta(node.component)?.label ?? node.component) : 'component';
 }
 
+/** `selectedId` if that node is in `root`, else `null` (e.g. after it was deleted or undone). */
+function keptSelection(root: BuilderNode, selectedId: string | null): string | null {
+  return selectedId && findNode(root, selectedId) ? selectedId : null;
+}
+
 /** Moves through the history, keeping the selection only if that node still exists. */
 function travel(
   state: EditorState,
@@ -204,16 +209,11 @@ function travel(
 ): Partial<EditorState> {
   if (!step) return state;
   const { entry, history } = step;
-  const keepSelection = state.selectedId && findNode(entry.root, state.selectedId);
-  return { ...snapshot(entry), ...history, selectedId: keepSelection ? state.selectedId : null };
-}
-
-/** `name`, or `name 2`, `name 3`… whichever no other block uses. */
-function uniqueBlockName(name: string, names: readonly string[]): string {
-  if (!names.includes(name)) return name;
-  let n = 2;
-  while (names.includes(`${name} ${n}`)) n += 1;
-  return `${name} ${n}`;
+  return {
+    ...snapshot(entry),
+    ...history,
+    selectedId: keptSelection(entry.root, state.selectedId),
+  };
 }
 
 /** Inserts `node` at `target` and selects it, as one undo step. */
@@ -263,10 +263,9 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       const version = state.versions.find((candidate) => candidate.id === id);
       if (!version) return state;
       const content = structuredClone(snapshot(version));
-      const keepSelection = state.selectedId && findNode(content.root, state.selectedId);
       return commit(state, `Restore "${version.name}"`, {
         ...content,
-        selectedId: keepSelection ? state.selectedId : null,
+        selectedId: keptSelection(content.root, state.selectedId),
       });
     }),
   removeVersion: (id) =>
@@ -331,13 +330,13 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     ),
   removeNode: (id) => {
     if (id === ROOT_ID) return;
-    set((state) =>
-      commit(state, `Delete ${labelOf(state.root, id)}`, {
-        root: removeNode(state.root, id),
-        selectedId:
-          state.selectedId && isWithin(state.root, id, state.selectedId) ? null : state.selectedId,
-      }),
-    );
+    set((state) => {
+      const root = removeNode(state.root, id);
+      return commit(state, `Delete ${labelOf(state.root, id)}`, {
+        root,
+        selectedId: keptSelection(root, state.selectedId),
+      });
+    });
   },
   duplicateNode: (id) =>
     set((state) => {
@@ -432,7 +431,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
   addDataSource: (name = 'data', init) => {
     const names = get().mockData.map((source) => source.name);
     const source = {
-      ...createDataSource(uniqueSourceName(name, names), init?.data),
+      ...createDataSource(uniqueName(name, names, ''), init?.data),
       ...(init?.url ? { url: init.url } : {}),
     };
     set((state) =>
@@ -470,7 +469,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     const names = get().customBlocks.map((block) => block.name);
     const block: CustomBlock = {
       id: crypto.randomUUID(),
-      name: uniqueBlockName(base, names),
+      name: uniqueName(base, names),
       root: structuredClone(node),
     };
     set((state) =>

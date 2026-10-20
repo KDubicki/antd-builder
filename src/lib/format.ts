@@ -7,3 +7,14 @@ export function formatDateTime(iso: string): string {
 export function formatDay(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { dateStyle: 'medium' });
 }
+
+/**
+ * `base`, or `base 2`, `base 3`… whichever isn't in `names`. Code identifiers pass `''` as the
+ * separator (`data2`).
+ */
+export function uniqueName(base: string, names: readonly string[], separator = ' '): string {
+  if (!names.includes(base)) return base;
+  let n = 2;
+  while (names.includes(`${base}${separator}${n}`)) n += 1;
+  return `${base}${separator}${n}`;
+}

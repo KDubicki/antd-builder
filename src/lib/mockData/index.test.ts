@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  SAMPLE_DATA,
-  createDataSource,
-  sourceNameError,
-  sourceNameFromUrl,
-  uniqueSourceName,
-} from '.';
+import { SAMPLE_DATA, createDataSource, sourceNameError, sourceNameFromUrl } from '.';
 
 describe('sourceNameError', () => {
   it('accepts lowercase-first identifiers', () => {
@@ -25,13 +19,6 @@ describe('sourceNameError', () => {
     expect(sourceNameError('class', [])).toBe('"class" is reserved');
     expect(sourceNameError('themeConfig', [])).toBe('"themeConfig" is reserved');
     expect(sourceNameError('users', ['users'])).toBe('"users" is already used');
-  });
-});
-
-describe('uniqueSourceName', () => {
-  it('numbers taken names', () => {
-    expect(uniqueSourceName('data', [])).toBe('data');
-    expect(uniqueSourceName('data', ['data', 'data2'])).toBe('data3');
   });
 });
 
