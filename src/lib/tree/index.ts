@@ -185,6 +185,14 @@ export function nudgeNode(root: BuilderNode, id: string, delta: -1 | 1): Builder
   return moveNode(root, id, { parentId: parent.id, index: delta < 0 ? to : to + 1 });
 }
 
+/** The id of the sibling `delta` places away from node `id`, or `null` past either end. */
+export function siblingId(root: BuilderNode, id: string, delta: -1 | 1): string | null {
+  const parent = findParent(root, id);
+  if (!parent) return null;
+  const index = parent.children.findIndex((child) => child.id === id);
+  return parent.children[index + delta]?.id ?? null;
+}
+
 /**
  * Picks where a dropped component lands, given the canvas nodes under the pointer
  * (innermost first). The innermost node that accepts the component gets it appended;

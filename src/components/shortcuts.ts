@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { NODE_ID_ATTR } from '@/components/canvas/nodeChain';
 import { MOD, type NodeCommand, nodeCommands, wrapInFlex } from '@/components/nodeCommands';
 import { type EditorState, useEditorStore } from '@/lib/editor/store';
-import { findNode } from '@/lib/tree';
+import { findNode, siblingId } from '@/lib/tree';
 
 export interface Shortcut {
   /** Keys as shown to the user, e.g. `['Ctrl/⌘', 'Z']`. */
@@ -81,6 +81,20 @@ const onSelection =
     if (command.enabled(state, selectedId)) command.run(state, selectedId);
     return true;
   };
+
+/** Selects the sibling `delta` places away, while focus is on the page (not in a list or menu). */
+const selectSibling =
+  (delta: -1 | 1) =>
+  ({ selectedId, root, select }: EditorState, event: KeyboardEvent): boolean => {
+    if (!selectedId || !isPageTarget(event.target)) return false;
+    const id = siblingId(root, selectedId, delta);
+    if (id) select(id);
+    return true;
+  };
+
+/** Whether `event` is the bare `key`, without Alt, Shift or Ctrl/Cmd. */
+const plainKey = (key: string) => (event: KeyboardEvent) =>
+  event.key === key && !event.altKey && !event.shiftKey && !isMod(event);
 
 /** Editor shortcuts, in the order they are matched and listed. */
 export const shortcuts: readonly Shortcut[] = [
@@ -166,6 +180,18 @@ export const shortcuts: readonly Shortcut[] = [
       select(child.id);
       return true;
     },
+  },
+  {
+    keys: ['↑'],
+    description: 'Select the previous component',
+    matches: plainKey('ArrowUp'),
+    run: selectSibling(-1),
+  },
+  {
+    keys: ['↓'],
+    description: 'Select the next component',
+    matches: plainKey('ArrowDown'),
+    run: selectSibling(1),
   },
   {
     keys: ['Delete'],

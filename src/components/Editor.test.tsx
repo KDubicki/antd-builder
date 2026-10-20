@@ -181,6 +181,25 @@ describe('Editor', { timeout: 15_000 }, () => {
     expect(selected()).toBe('t');
   });
 
+  it('selects the previous and next sibling with the arrow keys', () => {
+    useEditorStore.setState({
+      root: { ...createRoot(), children: [createNode('Tag', 'a'), createNode('Tag', 'b')] },
+      selectedId: 'a',
+    });
+    render(<Editor />);
+    const selected = () => useEditorStore.getState().selectedId;
+    fireEvent.keyDown(document.body, { key: 'ArrowDown' });
+    expect(selected()).toBe('b');
+    fireEvent.keyDown(document.body, { key: 'ArrowDown' }); // the last one stays selected
+    expect(selected()).toBe('b');
+    fireEvent.keyDown(document.body, { key: 'ArrowUp' });
+    expect(selected()).toBe('a');
+
+    // Arrows in a focused control (a menu, a list) stay with it.
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Undo' }), { key: 'ArrowDown' });
+    expect(selected()).toBe('a');
+  });
+
   it('copies, cuts and pastes nodes with keyboard shortcuts', () => {
     useEditorStore.setState({
       root: { ...createRoot(), children: [createNode('Tag', 't1')] },

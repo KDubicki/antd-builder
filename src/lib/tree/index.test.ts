@@ -13,6 +13,7 @@ import {
   removeNode,
   resolveDrop,
   sameProps,
+  siblingId,
   siblingPosition,
   unwrapNode,
   updateNodeProps,
@@ -185,6 +186,15 @@ describe('nudgeNode', () => {
     expect(siblingPosition(tree, 'btn')).toEqual({ index: 0, count: 1 });
     expect(siblingPosition(tree, 'root')).toBeNull();
     expect(siblingPosition(tree, 'nope')).toBeNull();
+  });
+
+  it('finds the previous and next sibling', () => {
+    expect(siblingId(tree, 'card', 1)).toBe('row');
+    expect(siblingId(tree, 'tag', -1)).toBe('row');
+    expect(siblingId(tree, 'card', -1)).toBeNull();
+    expect(siblingId(tree, 'tag', 1)).toBeNull();
+    expect(siblingId(tree, 'root', 1)).toBeNull();
+    expect(siblingId(tree, 'nope', 1)).toBeNull();
   });
 
   it('moves a node one place up or down', () => {

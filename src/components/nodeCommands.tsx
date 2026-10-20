@@ -13,14 +13,7 @@ import {
 import type { ReactNode } from 'react';
 import { type EditorState } from '@/lib/editor/store';
 import { getComponentMeta } from '@/lib/registry';
-import {
-  findParent,
-  resolveDrop,
-  ROOT_ID,
-  siblingPosition,
-  unwrapNode,
-  wrapNode,
-} from '@/lib/tree';
+import { findParent, resolveDrop, ROOT_ID, siblingId, unwrapNode, wrapNode } from '@/lib/tree';
 
 /** Something to do with one component on the page, shared by buttons, menus and shortcuts. */
 export interface NodeCommand {
@@ -42,12 +35,8 @@ export const MOD = 'Ctrl/⌘';
 const notRoot = (_state: EditorState, id: string) => id !== ROOT_ID;
 
 /** Whether the node can move one place by `delta` among its siblings. */
-const canNudge = (delta: -1 | 1) => (state: EditorState, id: string) => {
-  const position = siblingPosition(state.root, id);
-  if (!position) return false;
-  const to = position.index + delta;
-  return to >= 0 && to < position.count;
-};
+const canNudge = (delta: -1 | 1) => (state: EditorState, id: string) =>
+  siblingId(state.root, id, delta) !== null;
 
 export const nodeCommands = {
   moveUp: {

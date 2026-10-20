@@ -20,6 +20,8 @@ const examples: Record<string, KeyboardEvent[]> = {
   'Move the selected component down': [key({ key: 'ArrowDown', altKey: true })],
   'Select the parent of the selected component': [key({ key: 'Enter', shiftKey: true })],
   'Select the first component inside the selected one': [key({ key: 'Enter' })],
+  'Select the previous component': [key({ key: 'ArrowUp' })],
+  'Select the next component': [key({ key: 'ArrowDown' })],
   'Delete the selected component (also Backspace)': [
     key({ key: 'Delete' }),
     key({ key: 'Backspace' }),
@@ -40,8 +42,8 @@ describe('shortcuts', () => {
     }
   });
 
-  it('ignores plain letters and arrows without modifiers', () => {
-    for (const letter of ['z', 'y', 'c', 'x', 'v', 'd', 'g', 'ArrowUp', 'ArrowDown']) {
+  it('ignores plain letters', () => {
+    for (const letter of ['z', 'y', 'c', 'x', 'v', 'd', 'g']) {
       expect(shortcuts.some((s) => s.matches(key({ key: letter })))).toBe(false);
     }
   });
