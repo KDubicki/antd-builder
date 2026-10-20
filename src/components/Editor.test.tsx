@@ -17,8 +17,7 @@ beforeEach(() =>
   }),
 );
 
-// Each test renders the whole editor; under a loaded parallel run that can pass the 5 s default.
-describe('Editor', { timeout: 15_000 }, () => {
+describe('Editor', () => {
   it('renders the app shell with palette and canvas', () => {
     render(<Editor />);
     expect(screen.getByText('antd-builder')).toBeInTheDocument();
