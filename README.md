@@ -41,9 +41,11 @@ theme tokens, and then copy everything into code by hand. antd-builder aims to:
 - **Save as block** in the inspector keeps the selected component and its children as your own
   block, under **My blocks** in the palette.
 - Select components on the canvas or in the **Layers** outline, then edit them in the inspector.
-  The inspector shows the component's path (Page / Card / Button) for selecting an ancestor, and
-  <kbd>Shift</kbd>+<kbd>Enter</kbd> / <kbd>Enter</kbd> move the selection to the parent or the
-  first child. Components with many props get a filter, and **Reset props** restores the
+  The outline can be filtered by component or text, and its layers have the same right-click
+  menu as the canvas. The inspector shows the component's path (Page / Card / Button) for
+  selecting an ancestor; <kbd>Shift</kbd>+<kbd>Enter</kbd> / <kbd>Enter</kbd> move the selection
+  to the parent or the first child, and <kbd>↑</kbd> / <kbd>↓</kbd> to the previous or next
+  sibling. Components with many props get a filter, and **Reset props** restores the
   defaults.
 - Duplicate, copy/cut/paste, reorder (Alt+↑/↓) and delete the selection, from the inspector, the
   keyboard or the canvas's right-click menu. **Wrap in** Flex, Card or Space puts a component in a
@@ -54,7 +56,7 @@ theme tokens, and then copy everything into code by hand. antd-builder aims to:
 - The **Theme** tab starts from presets (Ocean, Forest, Midnight…) that you can fine-tune.
 - **New** (header) starts an empty project after a confirmation. Your saved blocks carry over.
 - **Version history** (header) saves named snapshots of the project and restores them. Restoring
-  can be undone.
+  can be undone. <kbd>Ctrl/⌘</kbd>+<kbd>S</kbd> saves a version from anywhere in the editor.
 - The toolbar above the canvas sets its width: Desktop (full width), Tablet (768px) or Mobile
   (375px). Grid columns have per-breakpoint spans (`xs`–`xl`), and the canvas applies the span
   antd would use at that width. Other antd features based on breakpoints
