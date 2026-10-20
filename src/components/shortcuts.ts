@@ -12,11 +12,15 @@ export interface Shortcut {
   description: string;
   matches: (event: KeyboardEvent) => boolean;
   /**
-   * Runs the command. Returns whether the key was consumed, which keeps the browser's own
-   * action (bookmarking, native copy) from running too.
+   * Runs the command, telling the user about the outcome with `notify` where nothing on the
+   * page shows it. Returns whether the key was consumed, which keeps the browser's own action
+   * (bookmarking, native copy) from running too.
    */
-  run: (state: EditorState, event: KeyboardEvent) => boolean;
+  run: (state: EditorState, event: KeyboardEvent, notify: Notify) => boolean;
 }
+
+/** Shows a short confirmation, e.g. "Saved Version 2". */
+export type Notify = (text: string) => void;
 
 const isMod = (event: KeyboardEvent) => event.metaKey || event.ctrlKey;
 
@@ -113,6 +117,16 @@ export const shortcuts: readonly Shortcut[] = [
     matches: (event) => modKey('z', true)(event) || modKey('y')(event),
     run: (state) => {
       state.redo();
+      return true;
+    },
+  },
+  {
+    keys: [MOD, 'S'],
+    description: 'Save a version of the project',
+    matches: modKey('s'),
+    run: (state, _event, notify) => {
+      state.saveVersion();
+      notify(`Saved "${useEditorStore.getState().versions[0]!.name}"`);
       return true;
     },
   },
@@ -224,16 +238,16 @@ export const shortcuts: readonly Shortcut[] = [
  * Runs the first shortcut matching `event`. Text fields keep their own native shortcuts, and
  * editor dialogs their own keys.
  */
-export function handleShortcut(event: KeyboardEvent) {
+export function handleShortcut(event: KeyboardEvent, notify: Notify = () => {}) {
   if (isEditableTarget(event.target) || isEditorDialogTarget(event.target)) return;
   const shortcut = shortcuts.find((candidate) => candidate.matches(event));
-  if (shortcut?.run(useEditorStore.getState(), event)) event.preventDefault();
+  if (shortcut?.run(useEditorStore.getState(), event, notify)) event.preventDefault();
 }
 
-export function useEditorShortcuts() {
+export function useEditorShortcuts(notify: Notify) {
   useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => handleShortcut(event);
+    const onKeyDown = (event: KeyboardEvent) => handleShortcut(event, notify);
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+  }, [notify]);
 }

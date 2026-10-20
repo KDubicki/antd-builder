@@ -39,3 +39,12 @@ test('saves a version and restores it, undoably', async ({ page }) => {
   await page.getByRole('button', { name: 'Version history' }).click();
   await expect(panel.getByText('Just a card')).toBeVisible();
 });
+
+test('saves a version with the keyboard', async ({ page }) => {
+  await page.goto('/');
+  await page.getByTestId('canvas').click();
+  await page.keyboard.press('ControlOrMeta+s');
+  await expect(page.getByText('Saved "Version 1"')).toBeVisible();
+  await page.getByRole('button', { name: 'Version history' }).click();
+  await expect(page.getByLabel('Saved versions').getByText('Version 1')).toBeVisible();
+});

@@ -10,6 +10,7 @@ const examples: Record<string, KeyboardEvent[]> = {
     key({ key: 'Z', metaKey: true, shiftKey: true }),
     key({ key: 'y', ctrlKey: true }),
   ],
+  'Save a version of the project': [key({ key: 's', ctrlKey: true })],
   'Copy the selected component': [key({ key: 'c', metaKey: true })],
   'Cut the selected component': [key({ key: 'x', ctrlKey: true })],
   'Paste into or after the selected component': [key({ key: 'v', ctrlKey: true })],
@@ -43,7 +44,7 @@ describe('shortcuts', () => {
   });
 
   it('ignores plain letters', () => {
-    for (const letter of ['z', 'y', 'c', 'x', 'v', 'd', 'g']) {
+    for (const letter of ['z', 'y', 'c', 'x', 'v', 'd', 'g', 's']) {
       expect(shortcuts.some((s) => s.matches(key({ key: letter })))).toBe(false);
     }
   });

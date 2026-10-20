@@ -86,7 +86,8 @@ export function VersionHistory() {
         <Flex vertical gap="middle">
           <Typography.Text type="secondary">
             Save named snapshots of the page, theme, mock data and blocks, and go back to them
-            later. Versions are saved with the project.
+            later. Versions are saved with the project. Ctrl/⌘+S saves one from anywhere in the
+            editor.
           </Typography.Text>
           <Flex gap="small">
             <Input

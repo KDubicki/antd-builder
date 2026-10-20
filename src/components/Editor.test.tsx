@@ -14,6 +14,7 @@ beforeEach(() =>
     clipboard: null,
     shortcutHelpOpen: false,
     previewMode: false,
+    versions: [],
   }),
 );
 
@@ -197,6 +198,15 @@ describe('Editor', () => {
     // Arrows in a focused control (a menu, a list) stay with it.
     fireEvent.keyDown(screen.getByRole('button', { name: 'Undo' }), { key: 'ArrowDown' });
     expect(selected()).toBe('a');
+  });
+
+  it('saves a version with Ctrl/Cmd+S and says so', async () => {
+    render(<Editor />);
+    fireEvent.keyDown(window, { key: 's', metaKey: true });
+    expect(useEditorStore.getState().versions.map((version) => version.name)).toEqual([
+      'Version 1',
+    ]);
+    expect(await screen.findByText('Saved "Version 1"')).toBeInTheDocument();
   });
 
   it('copies, cuts and pastes nodes with keyboard shortcuts', () => {

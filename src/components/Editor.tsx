@@ -9,7 +9,7 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import { App as AntApp, ConfigProvider, Flex, Layout, Tabs, Tag, Typography, theme } from 'antd';
-import { useId, useState } from 'react';
+import { useCallback, useId, useState } from 'react';
 import { Canvas } from '@/components/canvas/Canvas';
 import { CanvasToolbar } from '@/components/canvas/CanvasToolbar';
 import { DataPanel } from '@/components/data/DataPanel';
@@ -62,6 +62,13 @@ function AppHeader() {
   );
 }
 
+/** Keyboard shortcuts, inside antd's App so they can show confirmations. */
+function EditorShortcuts() {
+  const { message } = AntApp.useApp();
+  useEditorShortcuts(useCallback((text: string) => void message.success(text), [message]));
+  return null;
+}
+
 export function Editor() {
   const dndId = useId();
   const [dragging, setDragging] = useState<DragData | null>(null);
@@ -71,12 +78,12 @@ export function Editor() {
   const preview = useEditorStore((state) => state.previewMode);
   const customBlocks = useEditorStore((state) => state.customBlocks);
   const panelVisibility = preview ? { display: 'none' } : {};
-  useEditorShortcuts();
   useAutosave();
 
   return (
     <ConfigProvider>
       <AntApp>
+        <EditorShortcuts />
         <DndContext
           id={dndId}
           sensors={sensors}
