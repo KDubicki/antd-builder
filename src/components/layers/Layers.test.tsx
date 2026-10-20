@@ -60,6 +60,23 @@ describe('Layers', () => {
     expect(items.map((item) => item.textContent)).toEqual(['PasteCtrl/⌘+V']);
   });
 
+  it('filters the outline, keeping the way to each match', () => {
+    render(<Layers />);
+    const filter = screen.getByLabelText('Filter layers');
+    fireEvent.change(filter, { target: { value: 'button' } });
+    expect(screen.getByText('Page')).toBeInTheDocument();
+    expect(screen.getByText('Card')).toBeInTheDocument();
+    expect(screen.getByText('Button')).toBeInTheDocument();
+    expect(screen.queryByText('Tag')).not.toBeInTheDocument();
+
+    fireEvent.change(filter, { target: { value: 'zzz' } });
+    expect(screen.getByText('No layers match')).toBeInTheDocument();
+
+    fireEvent.keyDown(filter, { key: 'Escape' });
+    expect(filter).toHaveValue('');
+    expect(screen.getByText('Tag')).toBeInTheDocument();
+  });
+
   describe('expansion', () => {
     // Without motion, collapsed layers leave the DOM right away (jsdom never ends transitions).
     const renderLayers = () =>

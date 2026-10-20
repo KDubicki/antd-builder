@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { BuilderNode } from '@/lib/schema';
-import { ancestorIds, expandableIds, expandedIds, toLayerTree } from './layerTree';
+import { ancestorIds, expandableIds, expandedIds, filterLayers, toLayerTree } from './layerTree';
 import { createRoot } from '@/lib/tree';
 
 const node = (
@@ -42,6 +42,24 @@ describe('toLayerTree', () => {
       label: 'Mystery',
       hint: undefined,
     });
+  });
+});
+
+describe('filterLayers', () => {
+  const keys = (layer: ReturnType<typeof filterLayers>): unknown =>
+    layer && [layer.key, ...layer.children.map(keys)];
+
+  it('keeps matching layers and the layers leading to them', () => {
+    const tree = toLayerTree(root);
+    expect(keys(filterLayers(tree, ''))).toEqual(keys(tree));
+    expect(keys(filterLayers(tree, 'save'))).toEqual(['root', ['card', ['btn']]]);
+    expect(keys(filterLayers(tree, 'grid'))).toEqual(['root', ['row', ['col']]]);
+    expect(keys(filterLayers(tree, 'grid column'))).toEqual(['root', ['row', ['col']]]);
+    expect(keys(filterLayers(tree, 'profile'))).toEqual(['root', ['card']]);
+  });
+
+  it('is null when nothing matches', () => {
+    expect(filterLayers(toLayerTree(root), 'zzz')).toBeNull();
   });
 });
 

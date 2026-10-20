@@ -37,6 +37,13 @@ test('selects nested components from the layers panel', async ({ page }) => {
   // Edits show up in the outline.
   await inspector.getByLabel('Label').fill('Submit');
   await expect(layers.getByText('Submit')).toBeVisible();
+
+  // The filter keeps matches and the layers leading to them.
+  await layers.getByLabel('Filter layers').fill('submit');
+  await expect(layers.getByText('Card', { exact: true })).toBeVisible();
+  await expect(layers.getByText('Submit')).toBeVisible();
+  await layers.getByLabel('Filter layers').fill('nothing like this');
+  await expect(layers.getByText('No layers match')).toBeVisible();
 });
 
 test('right-clicking a layer opens its commands', async ({ page }) => {

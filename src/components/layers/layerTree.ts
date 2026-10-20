@@ -1,6 +1,7 @@
 import type { TreeDataNode } from 'antd';
 import { getComponentMeta } from '@/lib/registry';
 import type { BuilderNode } from '@/lib/schema';
+import { matchesQuery } from '@/lib/search';
 import { pathTo, ROOT_ID } from '@/lib/tree';
 
 export interface LayerNode extends TreeDataNode {
@@ -38,6 +39,16 @@ export function toLayerTree(node: BuilderNode): LayerNode {
     hint: hint === label ? undefined : hint,
     children: node.children.map(toLayerTree),
   };
+}
+
+/**
+ * The layers whose label or hint matches `query`, plus the layers leading to them, or `null`
+ * when none match. An empty query keeps everything.
+ */
+export function filterLayers(layer: LayerNode, query: string): LayerNode | null {
+  const children = layer.children.flatMap((child) => filterLayers(child, query) ?? []);
+  const matches = matchesQuery({ label: layer.label, description: layer.hint ?? '' }, query);
+  return matches || children.length > 0 ? { ...layer, children } : null;
 }
 
 /** Ids of the nodes on the path from the root down to `id` (excluding `id`), or [] if absent. */
