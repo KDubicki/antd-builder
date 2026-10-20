@@ -29,7 +29,7 @@ describe('Editor', () => {
   it('puts the header controls on a light background, like their default styling', () => {
     render(<Editor />);
     const header = screen.getByText('antd-builder').closest('header')!;
-    expect(header).toHaveStyle({ background: '#ffffff' });
+    expect(header).toHaveStyle({ backgroundColor: '#ffffff' });
     expect(header).toContainElement(screen.getByLabelText('Project name'));
   });
 

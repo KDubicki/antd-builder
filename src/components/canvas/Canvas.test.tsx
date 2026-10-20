@@ -95,7 +95,7 @@ describe('Canvas', () => {
     useEditorStore.setState({ theme: { mode: 'dark', compact: false, token: {} } });
     renderCanvas();
     // Dark algorithm: colorBgContainer is #141414.
-    expect(screen.getByTestId('canvas')).toHaveStyle({ background: 'rgb(20, 20, 20)' });
+    expect(screen.getByTestId('canvas')).toHaveStyle({ backgroundColor: 'rgb(20, 20, 20)' });
   });
 });
 
