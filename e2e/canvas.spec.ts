@@ -291,8 +291,10 @@ test('right-clicking a component opens its menu', async ({ page }) => {
   await page.goto('/');
   const canvas = page.getByTestId('canvas');
   const palette = page.getByLabel('Component palette');
-  await dragTo(page, palette.getByRole('button', { name: 'Card', exact: true }), canvas);
+  // The button goes first, at the top: lower down, the long menu overflows the 720px viewport,
+  // the page scrolls when clicking an item, and antd closes context menus on scroll.
   await dragTo(page, palette.getByRole('button', { name: 'Button', exact: true }), canvas);
+  await dragTo(page, palette.getByRole('button', { name: 'Card', exact: true }), canvas);
   const card = canvas.locator('.ant-card');
 
   await canvas.getByRole('button', { name: 'Button' }).click({ button: 'right' });
