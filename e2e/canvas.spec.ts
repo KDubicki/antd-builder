@@ -310,11 +310,14 @@ test('right-clicking a component opens its menu', async ({ page }) => {
 
   // Wrap commands sit in a submenu.
   await card.getByRole('button', { name: 'Button' }).click({ button: 'right' });
-  await page
-    .getByRole('menu')
-    .getByRole('menuitem', { name: /Wrap in/ })
-    .hover();
-  await page.getByRole('menuitem', { name: /^border-outer Space$/ }).click();
+  const wrapIn = page.getByRole('menu').getByRole('menuitem', { name: /Wrap in/ });
+  const space = page.getByRole('menuitem', { name: /^border-outer Space$/ });
+  // On a busy machine the submenu can close while its menu still animates in, so open it and
+  // click its item again until the click lands.
+  await expect(async () => {
+    await wrapIn.hover();
+    await space.click({ timeout: 2000 });
+  }).toPass();
   await expect(card.locator('.ant-space').getByRole('button', { name: 'Button' })).toBeVisible();
 });
 
