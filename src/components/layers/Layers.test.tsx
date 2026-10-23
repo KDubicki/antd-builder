@@ -53,6 +53,14 @@ describe('Layers', () => {
     ]);
   });
 
+  it('reports the layer under the pointer, for the canvas to outline', () => {
+    render(<Layers />);
+    fireEvent.mouseEnter(screen.getByText('Tag'));
+    expect(useEditorStore.getState().hoveredId).toBe('tag');
+    fireEvent.mouseLeave(screen.getByText('Tag'));
+    expect(useEditorStore.getState().hoveredId).toBeNull();
+  });
+
   it('offers only Paste on the page', () => {
     render(<Layers />);
     fireEvent.contextMenu(screen.getByText('Page'));

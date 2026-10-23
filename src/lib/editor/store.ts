@@ -130,6 +130,9 @@ export interface EditorState extends History {
   setName: (name: string) => void;
   /** Whether the keyboard shortcut reference is open. */
   shortcutHelpOpen: boolean;
+  /** Node under the pointer in the layers outline, outlined on the canvas. Editor UI state. */
+  hoveredId: string | null;
+  hover: (id: string | null) => void;
   /** Canvas width preset. Editor UI state: not part of the project or the history. */
   viewport: Viewport;
   setViewport: (viewport: Viewport) => void;
@@ -422,6 +425,8 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     set((state) => commitTheme(state, structuredClone(theme), { label })),
   setName: (name) => set({ name }),
   shortcutHelpOpen: false,
+  hoveredId: null,
+  hover: (id) => set({ hoveredId: id }),
   viewport: 'desktop',
   setViewport: (viewport) => set({ viewport }),
   previewMode: false,

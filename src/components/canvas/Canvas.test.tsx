@@ -124,6 +124,22 @@ describe('Canvas selection', () => {
     return scrolled;
   };
 
+  it('outlines the selected component, and the one pointed at in the layers', () => {
+    setRoot([createNode('Tag', 'a'), createNode('Tag', 'b')]);
+    const { container } = renderCanvas();
+    const rules = () => [...container.querySelectorAll('style')].map((el) => el.textContent);
+    act(() => useEditorStore.setState({ selectedId: 'a', hoveredId: 'b' }));
+    expect(rules()).toEqual([
+      expect.stringMatching(/"a"\] > \* \{ outline: 2px solid/),
+      expect.stringMatching(/"b"\] > \* \{ outline: 1px dashed/),
+    ]);
+    // The selection's outline wins over the hover one.
+    act(() => useEditorStore.setState({ hoveredId: 'a' }));
+    expect(rules()).toHaveLength(1);
+    act(() => useEditorStore.setState({ selectedId: null, hoveredId: null }));
+    expect(rules()).toEqual([]);
+  });
+
   it('scrolls a selected component into view only when it is out of sight', () => {
     setRoot([createNode('Tag', 'near'), createNode('Tag', 'far')]);
     const scrolled = layOut({ near: 100, far: 2000 });

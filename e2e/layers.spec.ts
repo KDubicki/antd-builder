@@ -46,7 +46,7 @@ test('selects nested components from the layers panel', async ({ page }) => {
   await expect(layers.getByText('No layers match')).toBeVisible();
 });
 
-test('right-clicking a layer opens its commands', async ({ page }) => {
+test('pointing at a layer outlines it, right-clicking opens its commands', async ({ page }) => {
   await page.goto('/');
   const palette = page.getByLabel('Component palette');
   const canvas = page.getByTestId('canvas');
@@ -54,6 +54,13 @@ test('right-clicking a layer opens its commands', async ({ page }) => {
 
   await page.getByRole('tab', { name: 'Layers' }).click();
   const layers = page.getByLabel('Layers');
+  // Pointing at a layer outlines its component (when it isn't the selection, outlined anyway).
+  await page.keyboard.press('Escape');
+  await layers.getByText('Tag', { exact: true }).hover();
+  await expect(canvas.locator('.ant-tag')).toHaveCSS('outline-style', 'dashed');
+  await page.getByRole('tab', { name: 'Layers' }).hover();
+  await expect(canvas.locator('.ant-tag')).toHaveCSS('outline-style', 'none');
+
   await layers.getByText('Tag', { exact: true }).click({ button: 'right' });
   await page
     .getByRole('menu')

@@ -111,6 +111,11 @@ function CanvasNode({ node }: { node: BuilderNode }) {
   );
 }
 
+/** CSS outlining node `id` on the canvas, e.g. the selection. */
+function outlineRule(id: string, outline: string): string {
+  return `[${NODE_ID_ATTR}="${CSS.escape(id)}"] > * { outline: ${outline}; outline-offset: 2px; }`;
+}
+
 /**
  * Scrolls the selected node into view when it is entirely outside the editor's scroll area (the
  * canvas's parent), as after picking it in the layers or with the keyboard. A partly visible
@@ -137,6 +142,7 @@ function CanvasSurface() {
   const { token } = theme.useToken();
   const root = useEditorStore((state) => state.root);
   const selectedId = useEditorStore((state) => state.selectedId);
+  const hoveredId = useEditorStore((state) => state.hoveredId);
   const select = useEditorStore((state) => state.select);
   const viewport = useEditorStore((state) => state.viewport);
   const preview = useEditorStore((state) => state.previewMode);
@@ -170,11 +176,9 @@ function CanvasSurface() {
           transition: `background ${token.motionDurationFast}`,
         }}
       >
-        {selectedId && (
-          <style>{`[${NODE_ID_ATTR}="${CSS.escape(selectedId)}"] > * {
-          outline: 2px solid ${token.colorPrimary};
-          outline-offset: 2px;
-        }`}</style>
+        {selectedId && <style>{outlineRule(selectedId, `2px solid ${token.colorPrimary}`)}</style>}
+        {hoveredId && hoveredId !== selectedId && (
+          <style>{outlineRule(hoveredId, `1px dashed ${token.colorPrimary}`)}</style>
         )}
         <CanvasNode node={root} />
       </div>

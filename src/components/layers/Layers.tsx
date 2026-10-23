@@ -7,12 +7,19 @@ import { useNodeMenu } from '@/components/commandMenu';
 import { useEditorStore } from '@/lib/editor/store';
 import { type LayerNode, expandedIds, filterLayers, toLayerTree } from './layerTree';
 
-/** A layer's label, with the same right-click menu as its component on the canvas. */
+/**
+ * A layer's label, with the same right-click menu as its component on the canvas. Pointing at it
+ * outlines the component on the canvas.
+ */
 function LayerTitle({ node }: { node: LayerNode }) {
   const menu = useNodeMenu(node.key);
   return (
     <Dropdown trigger={['contextMenu']} menu={menu}>
-      <span onContextMenu={() => useEditorStore.getState().select(node.key)}>
+      <span
+        onContextMenu={() => useEditorStore.getState().select(node.key)}
+        onMouseEnter={() => useEditorStore.getState().hover(node.key)}
+        onMouseLeave={() => useEditorStore.getState().hover(null)}
+      >
         <span>{node.label}</span>
         {node.hint && (
           <Typography.Text type="secondary" style={{ marginInlineStart: 6 }}>
