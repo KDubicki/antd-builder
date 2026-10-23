@@ -2,7 +2,7 @@
 
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { ConfigProvider, Typography, theme } from 'antd';
-import { type MouseEvent, useMemo } from 'react';
+import { type MouseEvent, type RefObject, useEffect, useMemo, useRef } from 'react';
 import type { DragData } from '@/lib/editor/drop';
 import { useEditorStore } from '@/lib/editor/store';
 import { resolveProps } from '@/lib/mockData';
@@ -111,6 +111,28 @@ function CanvasNode({ node }: { node: BuilderNode }) {
   );
 }
 
+/**
+ * Scrolls the selected node into view when it is entirely outside the editor's scroll area (the
+ * canvas's parent), as after picking it in the layers or with the keyboard. A partly visible
+ * node stays put: it was likely just clicked, and scrolling would close its right-click menu.
+ */
+function useRevealSelection(selectedId: string | null, canvas: RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const scroller = canvas.current?.parentElement;
+    if (!selectedId || selectedId === ROOT_ID || !scroller) return;
+    const element = scroller.querySelector(`[${NODE_ID_ATTR}="${CSS.escape(selectedId)}"] > *`);
+    if (!element) return;
+    const node = element.getBoundingClientRect();
+    const view = scroller.getBoundingClientRect();
+    const outside =
+      node.bottom < view.top ||
+      node.top > view.bottom ||
+      node.right < view.left ||
+      node.left > view.right;
+    if (outside) element.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [selectedId, canvas]);
+}
+
 function CanvasSurface() {
   const { token } = theme.useToken();
   const root = useEditorStore((state) => state.root);
@@ -120,11 +142,16 @@ function CanvasSurface() {
   const preview = useEditorStore((state) => state.previewMode);
   const { setNodeRef, isOver } = useDroppable({ id: CANVAS_DROPPABLE_ID, disabled: preview });
   const width = viewports[viewport].width;
+  const surface = useRef<HTMLDivElement | null>(null);
+  useRevealSelection(selectedId, surface);
 
   return (
     <NodeContextMenu>
       <div
-        ref={setNodeRef}
+        ref={(element) => {
+          surface.current = element;
+          setNodeRef(element);
+        }}
         data-testid="canvas"
         data-viewport={viewport}
         data-preview={preview || undefined}

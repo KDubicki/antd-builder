@@ -1,6 +1,6 @@
 import { DndContext } from '@dnd-kit/core';
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useEditorStore } from '@/lib/editor/store';
 import { components, createNode, createPlaceableNode } from '@/lib/registry';
 import { createTheme } from '@/lib/theme';
@@ -96,6 +96,48 @@ describe('Canvas', () => {
     renderCanvas();
     // Dark algorithm: colorBgContainer is #141414.
     expect(screen.getByTestId('canvas')).toHaveStyle({ backgroundColor: 'rgb(20, 20, 20)' });
+  });
+});
+
+describe('Canvas selection', () => {
+  // jsdom has no scrollIntoView; the test defines one and puts things back afterwards.
+  const { scrollIntoView } = Element.prototype;
+  afterEach(() => {
+    vi.restoreAllMocks();
+    Element.prototype.scrollIntoView = scrollIntoView;
+  });
+
+  /** Lays out the scroll area at 0–500px and each node at `tops[id]`, 40px tall. */
+  const layOut = (tops: Record<string, number>) => {
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element,
+    ) {
+      const id = this.parentElement?.getAttribute('data-node-id');
+      const top = id && id in tops ? tops[id]! : 0;
+      const height = id && id in tops ? 40 : 500;
+      return DOMRect.fromRect({ x: 0, y: top, width: 300, height });
+    });
+    const scrolled: string[] = [];
+    Element.prototype.scrollIntoView = vi.fn(function (this: Element) {
+      scrolled.push(this.parentElement!.getAttribute('data-node-id')!);
+    });
+    return scrolled;
+  };
+
+  it('scrolls a selected component into view only when it is out of sight', () => {
+    setRoot([createNode('Tag', 'near'), createNode('Tag', 'far')]);
+    const scrolled = layOut({ near: 100, far: 2000 });
+    render(
+      <div>
+        <DndContext>
+          <Canvas />
+        </DndContext>
+      </div>,
+    );
+    act(() => useEditorStore.getState().select('near'));
+    expect(scrolled).toEqual([]);
+    act(() => useEditorStore.getState().select('far'));
+    expect(scrolled).toEqual(['far']);
   });
 });
 

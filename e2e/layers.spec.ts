@@ -62,3 +62,21 @@ test('right-clicking a layer opens its commands', async ({ page }) => {
   await expect(layers.getByText('Tag', { exact: true })).toHaveCount(2);
   await expect(canvas.locator('.ant-tag')).toHaveCount(2);
 });
+
+test('picking a layer scrolls its component into view', async ({ page }) => {
+  await page.goto('/');
+  const palette = page.getByLabel('Component palette');
+  const canvas = page.getByTestId('canvas');
+  for (let i = 0; i < 8; i += 1) {
+    await palette.getByRole('button', { name: 'Card', exact: true }).click();
+    await page.keyboard.press('Escape'); // add the next one to the page, not inside this card
+  }
+  const cards = canvas.locator('.ant-card');
+  await expect(cards).toHaveCount(8);
+  await cards.last().scrollIntoViewIfNeeded();
+  await expect(cards.first()).not.toBeInViewport();
+
+  await page.getByRole('tab', { name: 'Layers' }).click();
+  await page.getByLabel('Layers').getByText('Card', { exact: true }).first().click();
+  await expect(cards.first()).toBeInViewport();
+});
