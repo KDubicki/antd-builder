@@ -6,7 +6,6 @@ allowBuilds:
   unrs-resolver: true
 minimumReleaseAgeExclude:
   - prettier@3.9.10
-  - antd@6.6.6
 auditConfig:
   ignoreGhsas:
     # braces ReDoS via eslint-config-next > fast-glob > micromatch. Dev-only (lint time,
