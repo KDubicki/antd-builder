@@ -47,4 +47,8 @@ test('saves a version with the keyboard', async ({ page }) => {
   await expect(page.getByText('Saved "Version 1"')).toBeVisible();
   await page.getByRole('button', { name: 'Version history' }).click();
   await expect(page.getByLabel('Saved versions').getByText('Version 1')).toBeVisible();
+
+  // Also while typing a version name, instead of the browser's "Save page" dialog.
+  await page.getByLabel('Version name').press('ControlOrMeta+s');
+  await expect(page.getByLabel('Saved versions').getByText('Version 2')).toBeVisible();
 });

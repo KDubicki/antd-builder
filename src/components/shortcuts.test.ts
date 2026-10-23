@@ -10,7 +10,7 @@ const examples: Record<string, KeyboardEvent[]> = {
     key({ key: 'Z', metaKey: true, shiftKey: true }),
     key({ key: 'y', ctrlKey: true }),
   ],
-  'Save a version of the project': [key({ key: 's', ctrlKey: true })],
+  'Save a version of the project, even while typing': [key({ key: 's', ctrlKey: true })],
   'Copy the selected component': [key({ key: 'c', metaKey: true })],
   'Cut the selected component': [key({ key: 'x', ctrlKey: true })],
   'Paste into or after the selected component': [key({ key: 'v', ctrlKey: true })],

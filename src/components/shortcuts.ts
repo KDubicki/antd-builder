@@ -11,6 +11,8 @@ export interface Shortcut {
   keys: readonly string[];
   description: string;
   matches: (event: KeyboardEvent) => boolean;
+  /** Also runs from text fields and editor dialogs, which otherwise keep their keys. */
+  anywhere?: boolean;
   /**
    * Runs the command, telling the user about the outcome with `notify` where nothing on the
    * page shows it. Returns whether the key was consumed, which keeps the browser's own action
@@ -122,8 +124,10 @@ export const shortcuts: readonly Shortcut[] = [
   },
   {
     keys: [MOD, 'S'],
-    description: 'Save a version of the project',
+    description: 'Save a version of the project, even while typing',
     matches: modKey('s'),
+    // Never the browser's "Save page" dialog, wherever focus is.
+    anywhere: true,
     run: (state, _event, notify) => {
       state.saveVersion();
       notify(`Saved "${useEditorStore.getState().versions[0]!.name}"`);
@@ -236,12 +240,14 @@ export const shortcuts: readonly Shortcut[] = [
 
 /**
  * Runs the first shortcut matching `event`. Text fields keep their own native shortcuts, and
- * editor dialogs their own keys.
+ * editor dialogs their own keys, except for shortcuts marked `anywhere`.
  */
 export function handleShortcut(event: KeyboardEvent, notify: Notify = () => {}) {
-  if (isEditableTarget(event.target) || isEditorDialogTarget(event.target)) return;
   const shortcut = shortcuts.find((candidate) => candidate.matches(event));
-  if (shortcut?.run(useEditorStore.getState(), event, notify)) event.preventDefault();
+  if (!shortcut) return;
+  const ownKeys = isEditableTarget(event.target) || isEditorDialogTarget(event.target);
+  if (ownKeys && !shortcut.anywhere) return;
+  if (shortcut.run(useEditorStore.getState(), event, notify)) event.preventDefault();
 }
 
 export function useEditorShortcuts(notify: Notify) {

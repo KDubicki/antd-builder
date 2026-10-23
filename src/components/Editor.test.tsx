@@ -207,6 +207,16 @@ describe('Editor', () => {
       'Version 1',
     ]);
     expect(await screen.findByText('Saved "Version 1"')).toBeInTheDocument();
+
+    // Also while typing in a text field, where other shortcuts stay with the field.
+    const name = screen.getByLabelText('Project name');
+    fireEvent.keyDown(name, { key: 's', ctrlKey: true });
+    expect(useEditorStore.getState().versions).toHaveLength(2);
+    act(() => {
+      useEditorStore.getState().addNode('Tag', { parentId: ROOT_ID, index: 0 });
+    });
+    fireEvent.keyDown(name, { key: 'z', ctrlKey: true });
+    expect(useEditorStore.getState().root.children).toHaveLength(1);
   });
 
   it('copies, cuts and pastes nodes with keyboard shortcuts', () => {
