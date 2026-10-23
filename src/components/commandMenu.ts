@@ -1,13 +1,20 @@
 'use client';
 
 import type { MenuProps } from 'antd';
-import { type NodeCommand, nodeCommands, wrapCommands } from '@/components/nodeCommands';
+import {
+  type CommandGroup,
+  type NodeCommand,
+  nodeCommands,
+  wrapGroup,
+} from '@/components/nodeCommands';
 import { useShallow } from 'zustand/react/shallow';
 import { useEditorStore } from '@/lib/editor/store';
 import { ROOT_ID } from '@/lib/tree';
 
-/** A menu entry: a command, or a divider between groups. */
-export type CommandEntry = NodeCommand | 'divider';
+type MenuItem = NonNullable<MenuProps['items']>[number];
+
+/** A menu entry: a command, a submenu of commands, or a divider between groups. */
+export type CommandEntry = NodeCommand | CommandGroup | 'divider';
 
 const {
   duplicate,
@@ -27,7 +34,7 @@ const NODE_ENTRIES: readonly CommandEntry[] = [
   cut,
   paste,
   'divider',
-  ...wrapCommands,
+  wrapGroup,
   unwrap,
   'divider',
   moveUp,
@@ -42,23 +49,40 @@ const ROOT_ENTRIES: readonly CommandEntry[] = [paste];
 
 /**
  * Menu props listing `entries` for node `nodeId`, with commands that can't run right now
- * disabled. Clicking an item runs its command on the node.
+ * disabled (a submenu too, when none of its commands can). Clicking an item runs its command on
+ * the node.
  */
 export function useCommandMenu(entries: readonly CommandEntry[], nodeId: string): MenuProps {
-  const commands = entries.filter((entry): entry is NodeCommand => entry !== 'divider');
+  const commands = entries.flatMap((entry) =>
+    entry === 'divider' ? [] : 'commands' in entry ? entry.commands : [entry],
+  );
   const enabled = useEditorStore(
     useShallow((state) => commands.map((command) => command.enabled(state, nodeId))),
   );
+  const isEnabled = (command: NodeCommand) => enabled[commands.indexOf(command)];
+
+  const toItem = (command: NodeCommand, label = command.label): MenuItem => ({
+    key: command.label,
+    label,
+    icon: command.icon,
+    danger: command.danger,
+    extra: command.keys?.join('+'),
+    disabled: !isEnabled(command),
+  });
+
   return {
     items: entries.map((entry, i) => {
       if (entry === 'divider') return { type: 'divider', key: `divider-${i}` };
+      if (!('commands' in entry)) return toItem(entry);
       return {
-        key: entry.label,
+        key: `group-${entry.label}`,
         label: entry.label,
         icon: entry.icon,
-        danger: entry.danger,
-        extra: entry.keys?.join('+'),
-        disabled: !enabled[commands.indexOf(entry)],
+        disabled: !entry.commands.some(isEnabled),
+        // "Wrap in" › "Card", not "Wrap in Card" again.
+        children: entry.commands.map((command) =>
+          toItem(command, command.label.replace(`${entry.label} `, '')),
+        ),
       };
     }),
     onClick: ({ key }) =>

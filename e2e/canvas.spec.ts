@@ -307,6 +307,15 @@ test('right-clicking a component opens its menu', async ({ page }) => {
   await card.getByText('Drop components here').click({ button: 'right' });
   await page.getByRole('menu').getByRole('menuitem', { name: /Paste/ }).click();
   await expect(card.getByRole('button', { name: 'Button' })).toBeVisible();
+
+  // Wrap commands sit in a submenu.
+  await card.getByRole('button', { name: 'Button' }).click({ button: 'right' });
+  await page
+    .getByRole('menu')
+    .getByRole('menuitem', { name: /Wrap in/ })
+    .hover();
+  await page.getByRole('menuitem', { name: /^border-outer Space$/ }).click();
+  await expect(card.locator('.ant-space').getByRole('button', { name: 'Button' })).toBeVisible();
 });
 
 test('walks the component path from the inspector and the keyboard', async ({ page }) => {

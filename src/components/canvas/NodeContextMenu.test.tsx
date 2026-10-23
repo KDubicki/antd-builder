@@ -62,6 +62,16 @@ describe('NodeContextMenu', () => {
     expect(ids()).toHaveLength(3);
   });
 
+  it('groups the wrap commands in a submenu', async () => {
+    render(<Canvas />);
+    const menu = openMenu(screen.getByText('First'));
+    expect(within(menu).queryByRole('menuitem', { name: /Wrap in Card/ })).toBeNull();
+    fireEvent.mouseEnter(item(menu, /Wrap in/));
+    fireEvent.click(await screen.findByRole('menuitem', { name: /^border-outer Card$/ }));
+    expect(state().root.children[0]?.component).toBe('Card');
+    expect(state().root.children[0]?.children.map((child) => child.id)).toEqual(['a']);
+  });
+
   it('selects the parent', () => {
     render(<Canvas />);
     fireEvent.click(item(openMenu(screen.getByText('First')), /Select parent/));

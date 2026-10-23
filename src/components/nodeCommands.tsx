@@ -142,6 +142,19 @@ export const wrapInFlex = wrapIn('Flex', [MOD, 'G']);
 /** The containers offered by "Wrap in", in menu order. */
 export const wrapCommands: readonly NodeCommand[] = [wrapInFlex, wrapIn('Card'), wrapIn('Space')];
 
+/** Commands shown together under one menu item, e.g. "Wrap in" › Flex, Card, Space. */
+export interface CommandGroup {
+  label: string;
+  icon: ReactNode;
+  commands: readonly NodeCommand[];
+}
+
+export const wrapGroup: CommandGroup = {
+  label: 'Wrap in',
+  icon: <BorderOuterOutlined />,
+  commands: wrapCommands,
+};
+
 /** "Duplicate (Ctrl/⌘+D)": a command's tooltip with its keys. */
 export function commandTitle(command: NodeCommand): string {
   return command.keys ? `${command.label} (${command.keys.join('+')})` : command.label;
