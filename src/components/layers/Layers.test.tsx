@@ -72,6 +72,7 @@ describe('Layers', () => {
     render(<Layers />);
     const filter = screen.getByLabelText('Filter layers');
     fireEvent.change(filter, { target: { value: 'button' } });
+    expect(screen.getByText('Button').tagName).toBe('MARK');
     expect(screen.getByText('Page')).toBeInTheDocument();
     expect(screen.getByText('Card')).toBeInTheDocument();
     expect(screen.getByText('Button')).toBeInTheDocument();

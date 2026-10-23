@@ -40,6 +40,7 @@ test('selects nested components from the layers panel', async ({ page }) => {
 
   // The filter keeps matches and the layers leading to them.
   await layers.getByLabel('Filter layers').fill('submit');
+  await expect(layers.locator('mark')).toHaveText(['Submit']);
   await expect(layers.getByText('Card', { exact: true })).toBeVisible();
   await expect(layers.getByText('Submit')).toBeVisible();
   await layers.getByLabel('Filter layers').fill('nothing like this');

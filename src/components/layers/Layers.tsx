@@ -4,14 +4,15 @@ import { SearchOutlined } from '@ant-design/icons';
 import { Dropdown, Empty, Flex, Input, Tree, Typography, theme } from 'antd';
 import { useMemo, useState } from 'react';
 import { useNodeMenu } from '@/components/commandMenu';
+import { Highlight } from '@/components/Highlight';
 import { useEditorStore } from '@/lib/editor/store';
 import { type LayerNode, expandedIds, filterLayers, toLayerTree } from './layerTree';
 
 /**
  * A layer's label, with the same right-click menu as its component on the canvas. Pointing at it
- * outlines the component on the canvas.
+ * outlines the component on the canvas. Filter matches are marked.
  */
-function LayerTitle({ node }: { node: LayerNode }) {
+function LayerTitle({ node, query }: { node: LayerNode; query: string }) {
   const menu = useNodeMenu(node.key);
   return (
     <Dropdown trigger={['contextMenu']} menu={menu}>
@@ -20,10 +21,12 @@ function LayerTitle({ node }: { node: LayerNode }) {
         onMouseEnter={() => useEditorStore.getState().hover(node.key)}
         onMouseLeave={() => useEditorStore.getState().hover(null)}
       >
-        <span>{node.label}</span>
+        <span>
+          <Highlight text={node.label} query={query} />
+        </span>
         {node.hint && (
           <Typography.Text type="secondary" style={{ marginInlineStart: 6 }}>
-            {node.hint}
+            <Highlight text={node.hint} query={query} />
           </Typography.Text>
         )}
       </span>
@@ -73,7 +76,7 @@ export function Layers() {
         blockNode
         showLine
         treeData={filtered ? [filtered] : []}
-        titleRender={(node) => <LayerTitle node={node} />}
+        titleRender={(node) => <LayerTitle node={node} query={query} />}
         selectedKeys={selectedId ? [selectedId] : []}
         expandedKeys={expandedKeys}
         onExpand={(_keys, { node, expanded }) => {
