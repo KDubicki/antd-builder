@@ -19,6 +19,7 @@ beforeEach(() =>
     },
     selectedId: null,
     clipboard: null,
+    propsClipboard: null,
     previewMode: false,
     past: [],
     future: [],
@@ -70,6 +71,19 @@ describe('NodeContextMenu', () => {
     fireEvent.click(await screen.findByRole('menuitem', { name: /^border-outer Card$/ }));
     expect(state().root.children[0]?.component).toBe('Card');
     expect(state().root.children[0]?.children.map((child) => child.id)).toEqual(['a']);
+  });
+
+  it('copies props from one component onto another in a submenu', async () => {
+    render(<Canvas />);
+    fireEvent.mouseEnter(item(openMenu(screen.getByText('First')), /Props/));
+    fireEvent.click(await screen.findByRole('menuitem', { name: /Copy props/ }));
+    expect(state().propsClipboard?.props).toEqual({ children: 'First' });
+
+    // The submenu stays rendered once opened, so reopening the menu shows Paste props again.
+    fireEvent.contextMenu(screen.getByText('Second'));
+    expect(state().selectedId).toBe('b');
+    fireEvent.click(screen.getByRole('menuitem', { name: /Paste props/ }));
+    expect(state().root.children.map((child) => child.props.children)).toEqual(['First', 'First']);
   });
 
   it('selects the parent', () => {

@@ -5,6 +5,7 @@ import {
   type CommandGroup,
   type NodeCommand,
   nodeCommands,
+  propsGroup,
   wrapGroup,
 } from '@/components/nodeCommands';
 import { useShallow } from 'zustand/react/shallow';
@@ -33,6 +34,7 @@ const NODE_ENTRIES: readonly CommandEntry[] = [
   copy,
   cut,
   paste,
+  propsGroup,
   'divider',
   wrapGroup,
   unwrap,

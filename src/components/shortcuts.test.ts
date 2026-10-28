@@ -11,6 +11,13 @@ const examples: Record<string, KeyboardEvent[]> = {
     key({ key: 'y', ctrlKey: true }),
   ],
   'Save a version of the project, even while typing': [key({ key: 's', ctrlKey: true })],
+  "Copy the selected component's props": [
+    key({ key: 'c', code: 'KeyC', ctrlKey: true, altKey: true }),
+    key({ key: 'ç', code: 'KeyC', metaKey: true, altKey: true }),
+  ],
+  'Paste copied props onto a component of the same kind': [
+    key({ key: '√', code: 'KeyV', metaKey: true, altKey: true }),
+  ],
   'Copy the selected component': [key({ key: 'c', metaKey: true })],
   'Cut the selected component': [key({ key: 'x', ctrlKey: true })],
   'Paste into or after the selected component': [key({ key: 'v', ctrlKey: true })],

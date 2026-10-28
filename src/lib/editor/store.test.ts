@@ -14,6 +14,7 @@ beforeEach(() =>
     future: [],
     lastEdit: null,
     clipboard: null,
+    propsClipboard: null,
     mockData: [],
     customBlocks: [],
     versions: [],
@@ -391,6 +392,58 @@ describe('copy/cut/paste', () => {
     state().cutNode(ROOT_ID);
     expect(state().clipboard).toBeNull();
     expect(state().past).toEqual([]);
+  });
+});
+
+describe('copy/paste props', () => {
+  it('pastes a snapshot of the props onto a component of the same kind, undoably', () => {
+    const from = state().addNode('Button', { parentId: ROOT_ID, index: 0 });
+    const to = state().addNode('Button', { parentId: ROOT_ID, index: 1 });
+    state().updateProps(from, { children: 'Buy', danger: true });
+    state().updateProps(to, { block: true });
+    expect(findNode(state().root, to)?.props).toEqual({
+      type: 'primary',
+      children: 'Button',
+      block: true,
+    });
+    state().copyProps(from);
+    state().updateProps(from, { children: 'Changed' }); // the copy is a snapshot
+
+    state().pasteProps(to);
+    expect(findNode(state().root, to)?.props).toEqual({
+      type: 'primary',
+      children: 'Buy',
+      danger: true,
+    });
+    expect(state().past.at(-1)?.label).toBe('Paste props into Button');
+
+    // Pasted props are a copy too.
+    state().updateProps(to, { children: 'Mine' });
+    expect(state().propsClipboard?.props.children).toBe('Buy');
+
+    state().undo();
+    state().undo();
+    expect(findNode(state().root, to)?.props).toEqual({
+      type: 'primary',
+      children: 'Button',
+      block: true,
+    });
+  });
+
+  it('ignores other components, the root and pastes that change nothing', () => {
+    const button = state().addNode('Button', { parentId: ROOT_ID, index: 0 });
+    const tag = state().addNode('Tag', { parentId: ROOT_ID, index: 1 });
+    state().copyProps(ROOT_ID);
+    expect(state().propsClipboard).toBeNull();
+    state().pasteProps(button); // nothing copied
+
+    state().copyProps(button);
+    const before = state();
+    state().pasteProps(tag);
+    state().pasteProps(ROOT_ID);
+    state().pasteProps(button); // same props
+    state().pasteProps('missing');
+    expect(state()).toBe(before);
   });
 });
 

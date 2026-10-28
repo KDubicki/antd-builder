@@ -4,6 +4,9 @@ import {
   CopyOutlined,
   BlockOutlined,
   BorderOuterOutlined,
+  ClearOutlined,
+  FormatPainterFilled,
+  FormatPainterOutlined,
   VerticalAlignTopOutlined,
   DeleteOutlined,
   ExpandOutlined,
@@ -13,7 +16,16 @@ import {
 import type { ReactNode } from 'react';
 import { type EditorState } from '@/lib/editor/store';
 import { getComponentMeta } from '@/lib/registry';
-import { findParent, resolveDrop, ROOT_ID, siblingId, unwrapNode, wrapNode } from '@/lib/tree';
+import {
+  findNode,
+  findParent,
+  resolveDrop,
+  ROOT_ID,
+  sameProps,
+  siblingId,
+  unwrapNode,
+  wrapNode,
+} from '@/lib/tree';
 
 /** Something to do with one component on the page, shared by buttons, menus and shortcuts. */
 export interface NodeCommand {
@@ -110,6 +122,37 @@ export const nodeCommands = {
       if (parent) state.select(parent.id);
     },
   },
+  copyProps: {
+    label: 'Copy props',
+    name: 'Copy props',
+    icon: <FormatPainterOutlined />,
+    keys: [MOD, 'Alt', 'C'],
+    enabled: notRoot,
+    run: (state, id) => state.copyProps(id),
+  },
+  /** Only onto a component of the kind the props were copied from. */
+  pasteProps: {
+    label: 'Paste props',
+    name: 'Paste props',
+    icon: <FormatPainterFilled />,
+    keys: [MOD, 'Alt', 'V'],
+    enabled: ({ propsClipboard, root }, id) =>
+      id !== ROOT_ID &&
+      !!propsClipboard &&
+      findNode(root, id)?.component === propsClipboard.component,
+    run: (state, id) => state.pasteProps(id),
+  },
+  resetProps: {
+    label: 'Reset props',
+    name: 'Reset props',
+    icon: <ClearOutlined />,
+    enabled: (state, id) => {
+      const node = id === ROOT_ID ? undefined : findNode(state.root, id);
+      const meta = node && getComponentMeta(node.component);
+      return !!node && !!meta && !sameProps(node.props, meta.defaultProps);
+    },
+    run: (state, id) => state.resetProps(id),
+  },
   /** Removes a container, keeping what's inside it. */
   unwrap: {
     label: 'Unwrap',
@@ -153,6 +196,13 @@ export const wrapGroup: CommandGroup = {
   label: 'Wrap in',
   icon: <BorderOuterOutlined />,
   commands: wrapCommands,
+};
+
+/** Moving props between components of the same kind, and back to the defaults. */
+export const propsGroup: CommandGroup = {
+  label: 'Props',
+  icon: <FormatPainterOutlined />,
+  commands: [nodeCommands.copyProps, nodeCommands.pasteProps, nodeCommands.resetProps],
 };
 
 /** "Duplicate (Ctrl/⌘+D)": a command's tooltip with its keys. */

@@ -321,6 +321,31 @@ describe('Editor', () => {
     expect(canvas).toHaveAttribute('data-viewport', 'desktop');
   });
 
+  it('copies and pastes props with Ctrl/Cmd+Alt+C and V', () => {
+    useEditorStore.setState({
+      root: {
+        ...createRoot(),
+        children: [
+          { ...createNode('Tag', 't1'), props: { children: 'Hot', color: 'red' } },
+          createNode('Tag', 't2'),
+        ],
+      },
+      selectedId: 't1',
+      propsClipboard: null,
+    });
+    render(<Editor />);
+    fireEvent.keyDown(window, { key: 'ç', code: 'KeyC', metaKey: true, altKey: true });
+    expect(useEditorStore.getState().clipboard).toBeNull(); // not a component copy
+
+    act(() => useEditorStore.getState().select('t2'));
+    fireEvent.keyDown(window, { key: 'v', code: 'KeyV', ctrlKey: true, altKey: true });
+    expect(useEditorStore.getState().root.children[1]?.props).toEqual({
+      children: 'Hot',
+      color: 'red',
+    });
+    expect(useEditorStore.getState().root.children).toHaveLength(2); // not a component paste
+  });
+
   it('ignores shortcuts while typing in a field', () => {
     useEditorStore.setState({
       root: { ...createRoot(), children: [createNode('Input', 'in')] },

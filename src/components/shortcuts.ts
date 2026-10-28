@@ -32,8 +32,18 @@ const modKey =
   (key: string, shift?: boolean) =>
   (event: KeyboardEvent): boolean =>
     isMod(event) &&
+    !event.altKey &&
     event.key.toLowerCase() === key &&
     (shift === undefined || event.shiftKey === shift);
+
+/**
+ * Matches Ctrl/Cmd + Alt + the letter `letter`. Checked by physical key, because Option changes
+ * the character on a Mac (Option+C types "ç").
+ */
+const modAltKey =
+  (letter: string) =>
+  (event: KeyboardEvent): boolean =>
+    isMod(event) && event.altKey && event.code === `Key${letter.toUpperCase()}`;
 
 export const SIDE_PANEL_ATTR = 'data-side-panel';
 
@@ -134,6 +144,18 @@ export const shortcuts: readonly Shortcut[] = [
       notify(`Saved "${useEditorStore.getState().versions[0]!.name}"`);
       return true;
     },
+  },
+  {
+    keys: [MOD, 'Alt', 'C'],
+    description: "Copy the selected component's props",
+    matches: modAltKey('c'),
+    run: onSelection(nodeCommands.copyProps, hasTextSelection),
+  },
+  {
+    keys: [MOD, 'Alt', 'V'],
+    description: 'Paste copied props onto a component of the same kind',
+    matches: modAltKey('v'),
+    run: onSelection(nodeCommands.pasteProps),
   },
   {
     keys: [MOD, 'C'],

@@ -187,6 +187,29 @@ test('copies, cuts and pastes components', async ({ page }) => {
   await expect(cardButtons).toHaveCount(1);
 });
 
+test('copies props from one component onto another', async ({ page }) => {
+  await page.goto('/');
+  const palette = page.getByLabel('Component palette');
+  const canvas = page.getByTestId('canvas');
+  const inspector = page.getByLabel('Inspector');
+  await dragTo(page, palette.getByRole('button', { name: 'Tag', exact: true }), canvas);
+  await inspector.getByLabel('Text').fill('Hot');
+  await canvas.click(); // back to the page, so the keys aren't typing
+  await dragTo(page, palette.getByRole('button', { name: 'Tag', exact: true }), canvas);
+  const tags = canvas.locator('.ant-tag');
+  await expect(tags).toHaveText(['Hot', 'Tag']);
+
+  await tags.first().click();
+  await page.keyboard.press('ControlOrMeta+Alt+c');
+  await tags.last().click();
+  await page.keyboard.press('ControlOrMeta+Alt+v');
+  await expect(tags).toHaveText(['Hot', 'Hot']);
+  await expect(page.getByRole('button', { name: 'Undo' })).toHaveAttribute(
+    'title',
+    /^Undo Paste props into Tag/,
+  );
+});
+
 test('reorders the selected component with Alt+Arrow keys and the inspector', async ({ page }) => {
   await page.goto('/');
   const palette = page.getByLabel('Component palette');

@@ -112,6 +112,18 @@ export interface EditorState extends History {
    */
   pasteNode: () => string | null;
   /**
+   * Props copied with "Copy props", for pasting onto another component of the same kind. A
+   * snapshot taken at copy time, not part of the project or the history.
+   */
+  propsClipboard: { component: string; props: Record<string, unknown> } | null;
+  /** Copies node `id`'s props. Not the root. */
+  copyProps: (id: string) => void;
+  /**
+   * Gives node `id` a copy of the copied props, replacing its own, as one undo step. Only for a
+   * component of the copied kind, and not the root.
+   */
+  pasteProps: (id: string) => void;
+  /**
    * Merges `patch` into a node's props; `undefined` values remove the prop.
    * With `coalesce`, quick successive edits of the same props become one undo step (typing).
    */
@@ -194,6 +206,16 @@ function commit(
 /** Node `id`, unless it is the page root (which can't be copied, saved or reset). */
 function findNonRoot(root: BuilderNode, id: string): BuilderNode | undefined {
   return id === ROOT_ID ? undefined : findNode(root, id);
+}
+
+/** The tree with node `node`'s props replaced by a copy of `props` (keys it lacks are removed). */
+function replaceProps(
+  root: BuilderNode,
+  node: BuilderNode,
+  props: Readonly<Record<string, unknown>>,
+): BuilderNode {
+  const cleared = Object.fromEntries(Object.keys(node.props).map((key) => [key, undefined]));
+  return updateNodeProps(root, node.id, { ...cleared, ...structuredClone(props) });
 }
 
 /** A node's component label, e.g. "Button", for naming edits. */
@@ -404,6 +426,24 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     set((state) => insertAndSelect(state, node, target, `Paste ${labelOf(node, node.id)}`));
     return node.id;
   },
+  propsClipboard: null,
+  copyProps: (id) => {
+    const node = findNonRoot(get().root, id);
+    if (node) {
+      set({ propsClipboard: { component: node.component, props: structuredClone(node.props) } });
+    }
+  },
+  pasteProps: (id) =>
+    set((state) => {
+      const node = findNonRoot(state.root, id);
+      const copied = state.propsClipboard;
+      if (!node || copied?.component !== node.component || sameProps(node.props, copied.props)) {
+        return state;
+      }
+      return commit(state, `Paste props into ${labelOf(state.root, id)}`, {
+        root: replaceProps(state.root, node, copied.props),
+      });
+    }),
   updateProps: (id, patch, options) =>
     set((state) =>
       commit(
@@ -418,10 +458,8 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       const node = findNonRoot(state.root, id);
       const meta = node && getComponentMeta(node.component);
       if (!node || !meta || sameProps(node.props, meta.defaultProps)) return state;
-      const defaults = structuredClone(meta.defaultProps);
-      const cleared = Object.fromEntries(Object.keys(node.props).map((key) => [key, undefined]));
       return commit(state, `Reset ${meta.label}`, {
-        root: updateNodeProps(state.root, id, { ...cleared, ...defaults }),
+        root: replaceProps(state.root, node, meta.defaultProps),
       });
     }),
   setThemeMode: (mode) => set((state) => commitTheme(state, { mode })),
