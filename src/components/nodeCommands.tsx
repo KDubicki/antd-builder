@@ -21,10 +21,11 @@ import { type EditorState } from '@/lib/editor/store';
 import { getComponentMeta } from '@/lib/registry';
 import {
   findNode,
+  findNonRoot,
   findParent,
+  hasDefaultProps,
   resolveDrop,
   ROOT_ID,
-  sameProps,
   siblingId,
   unwrapNode,
   wrapNode,
@@ -165,9 +166,7 @@ export const nodeCommands = {
     icon: <FormatPainterFilled />,
     keys: [MOD, 'Alt', 'V'],
     enabled: ({ propsClipboard, root }, id) =>
-      id !== ROOT_ID &&
-      !!propsClipboard &&
-      findNode(root, id)?.component === propsClipboard.component,
+      !!propsClipboard && findNonRoot(root, id)?.component === propsClipboard.component,
     run: (state, id) => state.pasteProps(id),
   },
   resetProps: {
@@ -175,9 +174,8 @@ export const nodeCommands = {
     name: 'Reset props',
     icon: <ClearOutlined />,
     enabled: (state, id) => {
-      const node = id === ROOT_ID ? undefined : findNode(state.root, id);
-      const meta = node && getComponentMeta(node.component);
-      return !!node && !!meta && !sameProps(node.props, meta.defaultProps);
+      const node = findNonRoot(state.root, id);
+      return !!node && !hasDefaultProps(node);
     },
     run: (state, id) => state.resetProps(id),
   },

@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
+import { createNode } from '@/lib/registry';
 import type { BuilderNode } from '@/lib/schema';
 import {
   cloneNode,
   duplicateNode,
   findNode,
+  findNonRoot,
   findParent,
+  hasDefaultProps,
   insertNode,
   isWithin,
   moveNode,
@@ -312,5 +315,25 @@ describe('sameProps', () => {
     expect(sameProps({ a: 1 }, { a: 2 })).toBe(false);
     expect(sameProps({ a: 1 }, { a: 1, b: 2 })).toBe(false);
     expect(sameProps({ a: undefined }, { b: undefined })).toBe(false);
+  });
+});
+
+describe('findNonRoot', () => {
+  it('finds any node but the page root', () => {
+    expect(findNonRoot(tree, 'btn')?.component).toBe('Button');
+    expect(findNonRoot(tree, 'root')).toBeUndefined();
+    expect(findNonRoot(tree, 'nope')).toBeUndefined();
+  });
+});
+
+describe('hasDefaultProps', () => {
+  it("compares a node's props with its component's defaults", () => {
+    expect(hasDefaultProps(createNode('Button'))).toBe(true);
+    expect(hasDefaultProps({ ...createNode('Button'), props: { type: 'primary' } })).toBe(false);
+    expect(hasDefaultProps({ ...createNode('Tag'), props: { children: 'Tag' } })).toBe(true);
+  });
+
+  it('counts unknown components as default, having nothing to reset to', () => {
+    expect(hasDefaultProps(node('x', 'MyWidget'))).toBe(true);
   });
 });

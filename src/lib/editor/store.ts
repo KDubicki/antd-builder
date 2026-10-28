@@ -28,6 +28,8 @@ import {
   cloneNode,
   duplicateNode,
   findNode,
+  findNonRoot,
+  hasDefaultProps,
   insertNode,
   moveNode,
   nudgeNode,
@@ -201,11 +203,6 @@ function commit(
   const content = { ...snapshot(state), ...next };
   if (sameEntry(state, content)) return state;
   return { ...next, ...record(state, state, label, coalesceKey) };
-}
-
-/** Node `id`, unless it is the page root (which can't be copied, saved or reset). */
-function findNonRoot(root: BuilderNode, id: string): BuilderNode | undefined {
-  return id === ROOT_ID ? undefined : findNode(root, id);
 }
 
 /** The tree with node `node`'s props replaced by a copy of `props` (keys it lacks are removed). */
@@ -457,7 +454,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     set((state) => {
       const node = findNonRoot(state.root, id);
       const meta = node && getComponentMeta(node.component);
-      if (!node || !meta || sameProps(node.props, meta.defaultProps)) return state;
+      if (!node || !meta || hasDefaultProps(node)) return state;
       return commit(state, `Reset ${meta.label}`, {
         root: replaceProps(state.root, node, meta.defaultProps),
       });

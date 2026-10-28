@@ -31,7 +31,7 @@ import { SaveBlockButton } from './SaveBlockButton';
 import { useEditorStore } from '@/lib/editor/store';
 import { type PropDefinition, getComponentMeta } from '@/lib/registry';
 import { matchesQuery } from '@/lib/search';
-import { pathTo, findNode, ROOT_ID, sameProps } from '@/lib/tree';
+import { pathTo, findNode, hasDefaultProps, ROOT_ID } from '@/lib/tree';
 import { useShallow } from 'zustand/react/shallow';
 
 interface FieldProps {
@@ -183,7 +183,7 @@ export function Inspector() {
   const shownEntries = propEntries.filter(([key, def]) =>
     matchesQuery({ label: def.label, name: key, description: '' }, query),
   );
-  const isDefault = sameProps(node.props, meta.defaultProps);
+  const isDefault = hasDefaultProps(node);
 
   return (
     <Flex vertical gap="middle" style={{ padding: token.padding }} aria-label="Inspector">

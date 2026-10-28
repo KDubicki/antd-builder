@@ -29,6 +29,11 @@ export function findNode(root: BuilderNode, id: string): BuilderNode | undefined
   return undefined;
 }
 
+/** Node `id`, unless it is the page root (which can't be copied, saved or reset). */
+export function findNonRoot(root: BuilderNode, id: string): BuilderNode | undefined {
+  return id === ROOT_ID ? undefined : findNode(root, id);
+}
+
 export function findParent(root: BuilderNode, id: string): BuilderNode | undefined {
   for (const child of root.children) {
     if (child.id === id) return root;
@@ -112,6 +117,15 @@ export function sameProps(
     keys.length === Object.keys(b).length &&
     keys.every((key) => key in b && JSON.stringify(a[key]) === JSON.stringify(b[key]))
   );
+}
+
+/**
+ * Whether a node's props are its component's defaults, i.e. there is nothing to reset. Unknown
+ * components have no defaults to go back to, so they count as default.
+ */
+export function hasDefaultProps(node: BuilderNode): boolean {
+  const meta = getComponentMeta(node.component);
+  return !meta || sameProps(node.props, meta.defaultProps);
 }
 
 /** Deep copy of a subtree in which every node gets a fresh id from `newId`. */
