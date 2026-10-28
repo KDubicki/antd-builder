@@ -45,9 +45,9 @@ describe('CanvasToolbar', () => {
 
   it('labels each preset with its width', () => {
     renderEditorArea();
-    expect(screen.getByTitle('Mobile (375px)')).toBeInTheDocument();
-    expect(screen.getByTitle('Tablet (768px)')).toBeInTheDocument();
-    expect(screen.getByTitle('Desktop (full width)')).toBeInTheDocument();
+    expect(screen.getByTitle('Mobile (375px, key 3)')).toBeInTheDocument();
+    expect(screen.getByTitle('Tablet (768px, key 2)')).toBeInTheDocument();
+    expect(screen.getByTitle('Desktop (full width, key 1)')).toBeInTheDocument();
   });
 });
 

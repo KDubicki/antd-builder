@@ -47,3 +47,19 @@ test('wraps a component in a container and unwraps it', async ({ page }) => {
   await page.getByRole('menuitem', { name: /Wrap in Card/ }).click();
   await expect(canvas.locator('.ant-card').getByRole('button', { name: 'Button' })).toBeVisible();
 });
+
+test('switches the canvas width and preview from the keyboard', async ({ page }) => {
+  await page.goto('/');
+  const canvas = page.getByTestId('canvas');
+  await canvas.click();
+  await page.keyboard.press('3');
+  await expect(canvas).toHaveAttribute('data-viewport', 'mobile');
+  await page.keyboard.press('1');
+  await expect(canvas).toHaveAttribute('data-viewport', 'desktop');
+
+  await page.keyboard.press('p');
+  await expect(page.getByRole('button', { name: 'Exit preview' })).toBeVisible();
+  await expect(page.getByLabel('Component palette')).toBeHidden();
+  await page.keyboard.press('p');
+  await expect(page.getByLabel('Component palette')).toBeVisible();
+});

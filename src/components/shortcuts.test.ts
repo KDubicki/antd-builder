@@ -28,6 +28,10 @@ const examples: Record<string, KeyboardEvent[]> = {
     key({ key: 'Backspace' }),
   ],
   'Clear the selection, or leave preview': [key({ key: 'Escape' })],
+  'Show the canvas at desktop width': [key({ key: '1' })],
+  'Show the canvas at tablet width': [key({ key: '2' })],
+  'Show the canvas at mobile width': [key({ key: '3' })],
+  'Preview the page, or go back to editing': [key({ key: 'p' })],
   'Show keyboard shortcuts': [key({ key: '?', shiftKey: true })],
 };
 
@@ -46,6 +50,20 @@ describe('shortcuts', () => {
   it('ignores plain letters', () => {
     for (const letter of ['z', 'y', 'c', 'x', 'v', 'd', 'g', 's']) {
       expect(shortcuts.some((s) => s.matches(key({ key: letter })))).toBe(false);
+    }
+  });
+
+  it('leaves digits and P with modifiers to the browser', () => {
+    for (const init of [
+      { key: '1', ctrlKey: true },
+      { key: '2', metaKey: true },
+      { key: 'p', ctrlKey: true },
+      { key: 'P', shiftKey: true },
+    ]) {
+      expect(
+        shortcuts.some((s) => s.matches(key(init))),
+        init.key,
+      ).toBe(false);
     }
   });
 });

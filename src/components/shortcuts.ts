@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect } from 'react';
+import { PREVIEW_KEY, viewports } from '@/components/canvas/CanvasToolbar';
 import { NODE_ID_ATTR } from '@/components/canvas/nodeChain';
 import { MOD, type NodeCommand, nodeCommands, wrapInFlex } from '@/components/nodeCommands';
-import { type EditorState, useEditorStore } from '@/lib/editor/store';
+import { type EditorState, type Viewport, useEditorStore } from '@/lib/editor/store';
 import { findNode, siblingId } from '@/lib/tree';
 
 export interface Shortcut {
@@ -225,6 +226,24 @@ export const shortcuts: readonly Shortcut[] = [
       if (previewMode) setPreviewMode(false);
       else select(null);
       return false; // let open popups close too
+    },
+  },
+  ...(Object.keys(viewports) as Viewport[]).map((viewport): Shortcut => ({
+    keys: [viewports[viewport].key],
+    description: `Show the canvas at ${viewports[viewport].label.toLowerCase()} width`,
+    matches: plainKey(viewports[viewport].key),
+    run: ({ setViewport }) => {
+      setViewport(viewport);
+      return true;
+    },
+  })),
+  {
+    keys: [PREVIEW_KEY],
+    description: 'Preview the page, or go back to editing',
+    matches: plainKey(PREVIEW_KEY.toLowerCase()),
+    run: ({ previewMode, setPreviewMode }) => {
+      setPreviewMode(!previewMode);
+      return true;
     },
   },
   {

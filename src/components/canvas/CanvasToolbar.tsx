@@ -11,14 +11,20 @@ import { Button, Flex, Segmented, theme } from 'antd';
 import type { ReactNode } from 'react';
 import { type Viewport, useEditorStore } from '@/lib/editor/store';
 
-/** Canvas widths: `null` fills the editor; the others match common device widths. */
+/**
+ * Canvas widths: `null` fills the editor; the others match common device widths. `key` picks
+ * the preset from the keyboard.
+ */
 export const viewports: Readonly<
-  Record<Viewport, { label: string; width: number | null; icon: ReactNode }>
+  Record<Viewport, { label: string; width: number | null; icon: ReactNode; key: string }>
 > = {
-  desktop: { label: 'Desktop', width: null, icon: <DesktopOutlined /> },
-  tablet: { label: 'Tablet', width: 768, icon: <TabletOutlined /> },
-  mobile: { label: 'Mobile', width: 375, icon: <MobileOutlined /> },
+  desktop: { label: 'Desktop', width: null, icon: <DesktopOutlined />, key: '1' },
+  tablet: { label: 'Tablet', width: 768, icon: <TabletOutlined />, key: '2' },
+  mobile: { label: 'Mobile', width: 375, icon: <MobileOutlined />, key: '3' },
 };
+
+/** The preview toggle's key. */
+export const PREVIEW_KEY = 'P';
 
 /** The canvas width preset. */
 export function ViewportSwitch() {
@@ -30,12 +36,12 @@ export function ViewportSwitch() {
       value={viewport}
       onChange={setViewport}
       options={(Object.keys(viewports) as Viewport[]).map((key) => {
-        const { label, width, icon } = viewports[key];
+        const { label, width, icon, key: shortcut } = viewports[key];
         return {
           value: key,
           icon,
           label,
-          title: width ? `${label} (${width}px)` : `${label} (full width)`,
+          title: `${label} (${width ? `${width}px` : 'full width'}, key ${shortcut})`,
         };
       })}
     />
@@ -64,7 +70,11 @@ export function CanvasToolbar() {
         type={preview ? 'primary' : 'default'}
         icon={preview ? <EditOutlined /> : <EyeOutlined />}
         aria-pressed={preview}
-        title={preview ? 'Back to editing (Esc)' : 'See the page as users will'}
+        title={
+          preview
+            ? `Back to editing (Esc or ${PREVIEW_KEY})`
+            : `See the page as users will (${PREVIEW_KEY})`
+        }
         onClick={() => setPreviewMode(!preview)}
       >
         {preview ? 'Exit preview' : 'Preview'}

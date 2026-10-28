@@ -14,6 +14,7 @@ beforeEach(() =>
     clipboard: null,
     shortcutHelpOpen: false,
     previewMode: false,
+    viewport: 'desktop',
     versions: [],
   }),
 );
@@ -296,6 +297,28 @@ describe('Editor', () => {
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(useEditorStore.getState().previewMode).toBe(false);
     expect(palette).not.toHaveStyle({ display: 'none' });
+  });
+
+  it('switches the canvas width and preview from the keyboard', () => {
+    render(<Editor />);
+    const canvas = screen.getByTestId('canvas');
+    fireEvent.keyDown(window, { key: '3' });
+    expect(canvas).toHaveAttribute('data-viewport', 'mobile');
+    fireEvent.keyDown(window, { key: '2' });
+    expect(canvas).toHaveAttribute('data-viewport', 'tablet');
+    fireEvent.keyDown(window, { key: '1' });
+    expect(canvas).toHaveAttribute('data-viewport', 'desktop');
+
+    fireEvent.keyDown(window, { key: 'p' });
+    expect(useEditorStore.getState().previewMode).toBe(true);
+    fireEvent.keyDown(window, { key: 'p' });
+    expect(useEditorStore.getState().previewMode).toBe(false);
+
+    // Typing a digit or a P in a field is just typing.
+    fireEvent.keyDown(screen.getByLabelText('Project name'), { key: 'p' });
+    fireEvent.keyDown(screen.getByLabelText('Project name'), { key: '3' });
+    expect(useEditorStore.getState().previewMode).toBe(false);
+    expect(canvas).toHaveAttribute('data-viewport', 'desktop');
   });
 
   it('ignores shortcuts while typing in a field', () => {
