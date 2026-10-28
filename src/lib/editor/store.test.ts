@@ -598,6 +598,20 @@ describe('versions', () => {
     expect(state().versions[0]?.root.children[0]?.props.children).not.toBe('Edited');
   });
 
+  it('renames versions outside the undo history, ignoring blank names', () => {
+    const version = state().saveVersion('Draft');
+    const steps = state().past.length;
+    state().renameVersion(version, '  Launch ');
+    expect(state().versions[0]?.name).toBe('Launch');
+    expect(state().past).toHaveLength(steps);
+
+    const before = state();
+    state().renameVersion(version, '   ');
+    state().renameVersion(version, 'Launch');
+    state().renameVersion('missing', 'Other');
+    expect(state()).toBe(before);
+  });
+
   it('removes versions and ignores missing ones', () => {
     const version = state().saveVersion();
     const before = state();

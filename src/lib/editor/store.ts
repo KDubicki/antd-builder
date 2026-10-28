@@ -67,6 +67,8 @@ export interface EditorState extends History {
   saveVersion: (name?: string) => string;
   /** Replaces the project content with a version's, as one undo step. */
   restoreVersion: (id: string) => void;
+  /** Renames a version. Blank names are ignored. Not undoable, like saving one. */
+  renameVersion: (id: string, name: string) => void;
   removeVersion: (id: string) => void;
   selectedId: string | null;
   undo: () => void;
@@ -270,6 +272,17 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         ...content,
         selectedId: keptSelection(content.root, state.selectedId),
       });
+    }),
+  renameVersion: (id, name) =>
+    set((state) => {
+      const trimmed = name.trim();
+      const version = state.versions.find((candidate) => candidate.id === id);
+      if (!version || !trimmed || trimmed === version.name) return state;
+      return {
+        versions: state.versions.map((candidate) =>
+          candidate === version ? { ...version, name: trimmed } : candidate,
+        ),
+      };
     }),
   removeVersion: (id) =>
     set((state) => {

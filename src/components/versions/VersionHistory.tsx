@@ -11,6 +11,7 @@ function VersionItem({ version }: { version: ProjectVersion }) {
   const { token } = theme.useToken();
   const { message } = App.useApp();
   const restoreVersion = useEditorStore((state) => state.restoreVersion);
+  const renameVersion = useEditorStore((state) => state.renameVersion);
   const removeVersion = useEditorStore((state) => state.removeVersion);
 
   return (
@@ -24,7 +25,15 @@ function VersionItem({ version }: { version: ProjectVersion }) {
       }}
     >
       <Flex vertical style={{ flex: 1, minWidth: 0 }}>
-        <Typography.Text strong ellipsis>
+        <Typography.Text
+          strong
+          ellipsis
+          editable={{
+            tooltip: `Rename ${version.name}`,
+            maxLength: 100,
+            onChange: (name) => renameVersion(version.id, name),
+          }}
+        >
           {version.name}
         </Typography.Text>
         <Typography.Text type="secondary">
@@ -62,7 +71,7 @@ function VersionItem({ version }: { version: ProjectVersion }) {
   );
 }
 
-/** Header button and panel for named project snapshots: save, restore and delete. */
+/** Header button and panel for named project snapshots: save, rename, restore and delete. */
 export function VersionHistory() {
   const versions = useEditorStore((state) => state.versions);
   const saveVersion = useEditorStore((state) => state.saveVersion);
@@ -86,8 +95,8 @@ export function VersionHistory() {
         <Flex vertical gap="middle">
           <Typography.Text type="secondary">
             Save named snapshots of the page, theme, mock data and blocks, and go back to them
-            later. Versions are saved with the project. Ctrl/⌘+S saves one from anywhere in the
-            editor.
+            later. Click the pencil to rename one. Versions are saved with the project. Ctrl/⌘+S
+            saves one from anywhere in the editor.
           </Typography.Text>
           <Flex gap="small">
             <Input

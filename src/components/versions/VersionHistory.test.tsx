@@ -47,6 +47,21 @@ describe('VersionHistory', () => {
     expect(warnings).toEqual([]);
   });
 
+  it('renames a version in place', () => {
+    act(() => {
+      useEditorStore.getState().saveVersion('Draft');
+    });
+    const panel = open();
+    fireEvent.click(within(panel).getByRole('button', { name: 'Rename Draft' }));
+    const field = within(within(panel).getByRole('list')).getByRole('textbox');
+    fireEvent.change(field, { target: { value: 'Launch' } });
+    fireEvent.keyDown(field, { key: 'Enter', keyCode: 13 });
+    fireEvent.keyUp(field, { key: 'Enter', keyCode: 13 });
+    expect(useEditorStore.getState().versions[0]?.name).toBe('Launch');
+    expect(within(panel).getByText('Launch')).toBeInTheDocument();
+    expect(warnings).toEqual([]);
+  });
+
   it('restores after confirming', async () => {
     act(() => {
       useEditorStore.getState().saveVersion('Empty page');
