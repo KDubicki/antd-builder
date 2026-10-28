@@ -1,12 +1,18 @@
 'use client';
 
-import { SearchOutlined } from '@ant-design/icons';
-import { Dropdown, Empty, Flex, Input, Tree, Typography, theme } from 'antd';
+import { MinusSquareOutlined, PlusSquareOutlined, SearchOutlined } from '@ant-design/icons';
+import { Button, Dropdown, Empty, Flex, Input, Space, Tree, Typography, theme } from 'antd';
 import { useMemo, useState } from 'react';
 import { useNodeMenu } from '@/components/commandMenu';
 import { Highlight } from '@/components/Highlight';
 import { useEditorStore } from '@/lib/editor/store';
-import { type LayerNode, expandedIds, filterLayers, toLayerTree } from './layerTree';
+import {
+  type LayerNode,
+  collapsibleIds,
+  expandedIds,
+  filterLayers,
+  toLayerTree,
+} from './layerTree';
 
 /**
  * A layer's label, with the same right-click menu as its component on the canvas. Pointing at it
@@ -38,7 +44,7 @@ function LayerTitle({ node, query }: { node: LayerNode; query: string }) {
  * Outline of the page. Clicking a layer selects its node, which helps with nested or
  * hard-to-click components, and right-clicking one opens its commands. Everything starts
  * expanded, and the selection is always revealed. The filter narrows the outline to matching
- * layers.
+ * layers, and the buttons beside it collapse or expand every layer at once.
  */
 export function Layers() {
   const { token } = theme.useToken();
@@ -53,6 +59,9 @@ export function Layers() {
     () => expandedIds(root, selectedId, collapsed),
     [root, selectedId, collapsed],
   );
+  const collapsible = useMemo(() => collapsibleIds(root), [root]);
+  const allCollapsed = collapsible.every((id) => collapsed.has(id));
+  const noneCollapsed = collapsible.every((id) => !collapsed.has(id));
 
   // A new filter starts fully expanded, so no match hides in a collapsed layer.
   const filter = (next: string) => {
@@ -62,15 +71,33 @@ export function Layers() {
 
   return (
     <Flex vertical gap="small" style={{ padding: token.padding }} aria-label="Layers">
-      <Input
-        allowClear
-        prefix={<SearchOutlined />}
-        placeholder="Filter layers"
-        aria-label="Filter layers"
-        value={query}
-        onChange={(event) => filter(event.target.value)}
-        onKeyDown={(event) => event.key === 'Escape' && filter('')}
-      />
+      <Flex gap="small">
+        <Input
+          allowClear
+          prefix={<SearchOutlined />}
+          placeholder="Filter layers"
+          aria-label="Filter layers"
+          value={query}
+          onChange={(event) => filter(event.target.value)}
+          onKeyDown={(event) => event.key === 'Escape' && filter('')}
+        />
+        <Space.Compact>
+          <Button
+            icon={<MinusSquareOutlined />}
+            aria-label="Collapse all layers"
+            title="Collapse all layers"
+            disabled={allCollapsed}
+            onClick={() => setCollapsed(new Set(collapsible))}
+          />
+          <Button
+            icon={<PlusSquareOutlined />}
+            aria-label="Expand all layers"
+            title="Expand all layers"
+            disabled={noneCollapsed}
+            onClick={() => setCollapsed(new Set())}
+          />
+        </Space.Compact>
+      </Flex>
       {!filtered && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No layers match" />}
       <Tree<LayerNode>
         blockNode

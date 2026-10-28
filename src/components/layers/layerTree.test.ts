@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { BuilderNode } from '@/lib/schema';
-import { ancestorIds, expandableIds, expandedIds, filterLayers, toLayerTree } from './layerTree';
+import {
+  ancestorIds,
+  collapsibleIds,
+  expandableIds,
+  expandedIds,
+  filterLayers,
+  toLayerTree,
+} from './layerTree';
 import { createRoot } from '@/lib/tree';
 
 const node = (
@@ -79,6 +86,13 @@ describe('expandableIds', () => {
   it('lists nodes with children', () => {
     expect(expandableIds(root)).toEqual(['root', 'card', 'row']);
     expect(expandableIds(createRoot())).toEqual([]);
+  });
+});
+
+describe('collapsibleIds', () => {
+  it('lists nodes with children below the page', () => {
+    expect(collapsibleIds(root)).toEqual(['card', 'row']);
+    expect(collapsibleIds(createRoot())).toEqual([]);
   });
 });
 

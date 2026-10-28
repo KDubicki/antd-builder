@@ -64,6 +64,11 @@ export function expandableIds(node: BuilderNode): string[] {
   return [node.id, ...node.children.flatMap(expandableIds)];
 }
 
+/** Every expandable layer below the page, for "Collapse all": the page's own children stay listed. */
+export function collapsibleIds(root: BuilderNode): string[] {
+  return expandableIds(root).filter((id) => id !== root.id);
+}
+
 /** Expandable layers minus the ones the user collapsed, except those holding the selection. */
 export function expandedIds(
   root: BuilderNode,

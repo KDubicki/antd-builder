@@ -31,6 +31,13 @@ test('selects nested components from the layers panel', async ({ page }) => {
   await cardLayer.locator('.ant-tree-switcher').click();
   await expect(layers.getByText('Button', { exact: true })).toBeVisible();
 
+  // Or all layers at once.
+  await layers.getByRole('button', { name: 'Collapse all layers' }).click();
+  await expect(layers.getByText('Button', { exact: true })).toHaveCount(0);
+  await expect(layers.getByText('Card', { exact: true })).toBeVisible();
+  await layers.getByRole('button', { name: 'Expand all layers' }).click();
+  await expect(layers.getByText('Button', { exact: true })).toBeVisible();
+
   await layers.getByText('Button', { exact: true }).click();
   await expect(inspector.getByRole('heading', { name: 'Button' })).toBeVisible();
 

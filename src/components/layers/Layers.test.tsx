@@ -105,6 +105,25 @@ describe('Layers', () => {
       expect(screen.queryByText('Button')).not.toBeInTheDocument();
     });
 
+    it('collapses every layer at once, keeping the page open', () => {
+      renderLayers();
+      const collapseAll = screen.getByRole('button', { name: 'Collapse all layers' });
+      const expandAll = screen.getByRole('button', { name: 'Expand all layers' });
+      expect(expandAll).toBeDisabled();
+      fireEvent.click(collapseAll);
+      expect(screen.queryByText('Button')).not.toBeInTheDocument();
+      expect(screen.getByText('Card')).toBeInTheDocument();
+      expect(collapseAll).toBeDisabled();
+      expect(expandAll).toBeEnabled();
+    });
+
+    it('disables both buttons when nothing can collapse', () => {
+      act(() => useEditorStore.setState({ root: createRoot() }));
+      renderLayers();
+      expect(screen.getByRole('button', { name: 'Collapse all layers' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Expand all layers' })).toBeDisabled();
+    });
+
     it('reveals the selection inside a collapsed layer', () => {
       renderLayers();
       toggle('Card');
