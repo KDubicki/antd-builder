@@ -22,6 +22,7 @@ import {
   type NodeCommand,
   commandTitle,
   nodeCommands,
+  useNotify,
   wrapCommands,
 } from '@/components/nodeCommands';
 import { useState } from 'react';
@@ -95,6 +96,7 @@ function PropField({ id, def, value, onChange }: FieldProps) {
 
 /** Icon button running a node command, disabled while it can't run. */
 function CommandButton({ command, nodeId }: { command: NodeCommand; nodeId: string }) {
+  const notify = useNotify();
   const enabled = useEditorStore((state) => command.enabled(state, nodeId));
   return (
     <Button
@@ -103,7 +105,7 @@ function CommandButton({ command, nodeId }: { command: NodeCommand; nodeId: stri
       aria-label={command.name}
       title={commandTitle(command)}
       disabled={!enabled}
-      onClick={() => command.run(useEditorStore.getState(), nodeId)}
+      onClick={() => command.run(useEditorStore.getState(), nodeId, notify)}
     />
   );
 }

@@ -5,6 +5,7 @@ import {
   BlockOutlined,
   BorderOuterOutlined,
   ClearOutlined,
+  CodeOutlined,
   FormatPainterFilled,
   FormatPainterOutlined,
   VerticalAlignTopOutlined,
@@ -13,7 +14,9 @@ import {
   ScissorOutlined,
   SnippetsOutlined,
 } from '@ant-design/icons';
-import type { ReactNode } from 'react';
+import { App } from 'antd';
+import { type ReactNode, useCallback } from 'react';
+import { nodeToJsx } from '@/lib/codegen';
 import { type EditorState } from '@/lib/editor/store';
 import { getComponentMeta } from '@/lib/registry';
 import {
@@ -27,6 +30,15 @@ import {
   wrapNode,
 } from '@/lib/tree';
 
+/** Shows a short message where nothing on the page shows a command's outcome, e.g. "Saved Version 2". */
+export type Notify = (text: string, type?: 'success' | 'error') => void;
+
+/** `Notify` through antd's `App` messages; the component must be inside `App`. */
+export function useNotify(): Notify {
+  const { message } = App.useApp();
+  return useCallback((text, type = 'success') => void message[type](text), [message]);
+}
+
 /** Something to do with one component on the page, shared by buttons, menus and shortcuts. */
 export interface NodeCommand {
   /** Menu text, e.g. "Duplicate". */
@@ -39,7 +51,7 @@ export interface NodeCommand {
   danger?: boolean;
   /** Whether the command can run on node `id` right now. */
   enabled: (state: EditorState, id: string) => boolean;
-  run: (state: EditorState, id: string) => void;
+  run: (state: EditorState, id: string, notify: Notify) => void;
 }
 
 export const MOD = 'Ctrl/⌘';
@@ -90,6 +102,22 @@ export const nodeCommands = {
     keys: [MOD, 'X'],
     enabled: notRoot,
     run: (state, id) => state.cutNode(id),
+  },
+  /** The component and its children as JSX, to paste into an app's code. */
+  copyJsx: {
+    label: 'Copy JSX',
+    name: 'Copy component as JSX',
+    icon: <CodeOutlined />,
+    enabled: notRoot,
+    run: (state, id, notify) => {
+      const node = findNode(state.root, id);
+      if (!node) return;
+      const label = getComponentMeta(node.component)?.label ?? node.component;
+      navigator.clipboard.writeText(nodeToJsx(node, 0, state.mockData)).then(
+        () => notify(`Copied ${label} as JSX`),
+        () => notify('Copying is not allowed here; use Export code instead', 'error'),
+      );
+    },
   },
   paste: {
     label: 'Paste',

@@ -6,6 +6,7 @@ import {
   type NodeCommand,
   nodeCommands,
   propsGroup,
+  useNotify,
   wrapGroup,
 } from '@/components/nodeCommands';
 import { useShallow } from 'zustand/react/shallow';
@@ -20,6 +21,7 @@ export type CommandEntry = NodeCommand | CommandGroup | 'divider';
 const {
   duplicate,
   copy,
+  copyJsx,
   cut,
   paste,
   moveUp,
@@ -35,6 +37,7 @@ const NODE_ENTRIES: readonly CommandEntry[] = [
   cut,
   paste,
   propsGroup,
+  copyJsx,
   'divider',
   wrapGroup,
   unwrap,
@@ -55,6 +58,7 @@ const ROOT_ENTRIES: readonly CommandEntry[] = [paste];
  * the node.
  */
 export function useCommandMenu(entries: readonly CommandEntry[], nodeId: string): MenuProps {
+  const notify = useNotify();
   const commands = entries.flatMap((entry) =>
     entry === 'divider' ? [] : 'commands' in entry ? entry.commands : [entry],
   );
@@ -88,7 +92,9 @@ export function useCommandMenu(entries: readonly CommandEntry[], nodeId: string)
       };
     }),
     onClick: ({ key }) =>
-      commands.find((command) => command.label === key)?.run(useEditorStore.getState(), nodeId),
+      commands
+        .find((command) => command.label === key)
+        ?.run(useEditorStore.getState(), nodeId, notify),
   };
 }
 

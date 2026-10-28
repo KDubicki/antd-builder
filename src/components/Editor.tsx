@@ -9,7 +9,7 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import { App as AntApp, ConfigProvider, Flex, Layout, Tabs, Tag, Typography, theme } from 'antd';
-import { useCallback, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import { Canvas } from '@/components/canvas/Canvas';
 import { CanvasToolbar } from '@/components/canvas/CanvasToolbar';
 import { DataPanel } from '@/components/data/DataPanel';
@@ -26,6 +26,7 @@ import { Palette } from '@/components/palette/Palette';
 import { ProjectActions } from '@/components/project/ProjectActions';
 import { useAutosave } from '@/components/project/autosave';
 import { ShortcutHelp } from '@/components/ShortcutHelp';
+import { useNotify } from '@/components/nodeCommands';
 import { SIDE_PANEL_ATTR, useEditorShortcuts } from '@/components/shortcuts';
 import { ThemeEditor } from '@/components/theme/ThemeEditor';
 import { VersionHistory } from '@/components/versions/VersionHistory';
@@ -64,8 +65,7 @@ function AppHeader() {
 
 /** Keyboard shortcuts, inside antd's App so they can show confirmations. */
 function EditorShortcuts() {
-  const { message } = AntApp.useApp();
-  useEditorShortcuts(useCallback((text: string) => void message.success(text), [message]));
+  useEditorShortcuts(useNotify());
   return null;
 }
 

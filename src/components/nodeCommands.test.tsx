@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useEditorStore } from '@/lib/editor/store';
 import { createNode } from '@/lib/registry';
 import { commandTitle, nodeCommands } from './nodeCommands';
@@ -72,6 +72,27 @@ describe('node commands', () => {
     expect(resetProps.enabled(state(), 'b')).toBe(true);
     resetProps.run(state(), 'b');
     expect(resetProps.enabled(state(), 'b')).toBe(false);
+  });
+
+  it('copy JSX of anything but the page, with its data bindings', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } });
+    const notify = vi.fn();
+    useEditorStore.setState({
+      root: {
+        ...createRoot(),
+        children: [{ ...createNode('Tag', 'a'), props: { children: { $data: 'src', path: '0' } } }],
+      },
+      mockData: [{ id: 'src', name: 'tags', data: ['New'] }],
+    });
+    expect(nodeCommands.copyJsx.enabled(state(), ROOT_ID)).toBe(false);
+    nodeCommands.copyJsx.run(state(), 'missing', notify);
+    expect(writeText).not.toHaveBeenCalled();
+
+    nodeCommands.copyJsx.run(state(), 'a', notify);
+    expect(writeText).toHaveBeenCalledWith('<Tag>{tags[0]}</Tag>');
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Copied Tag as JSX'));
+    vi.unstubAllGlobals();
   });
 
   it('show their keys in the title', () => {

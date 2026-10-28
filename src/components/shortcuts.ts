@@ -3,7 +3,13 @@
 import { useEffect } from 'react';
 import { PREVIEW_KEY, viewports } from '@/components/canvas/CanvasToolbar';
 import { NODE_ID_ATTR } from '@/components/canvas/nodeChain';
-import { MOD, type NodeCommand, nodeCommands, wrapInFlex } from '@/components/nodeCommands';
+import {
+  MOD,
+  type NodeCommand,
+  type Notify,
+  nodeCommands,
+  wrapInFlex,
+} from '@/components/nodeCommands';
 import { type EditorState, type Viewport, useEditorStore } from '@/lib/editor/store';
 import { findNode, siblingId } from '@/lib/tree';
 
@@ -22,8 +28,7 @@ export interface Shortcut {
   run: (state: EditorState, event: KeyboardEvent, notify: Notify) => boolean;
 }
 
-/** Shows a short confirmation, e.g. "Saved Version 2". */
-export type Notify = (text: string) => void;
+export type { Notify } from '@/components/nodeCommands';
 
 const isMod = (event: KeyboardEvent) => event.metaKey || event.ctrlKey;
 
@@ -92,10 +97,10 @@ function isEditorDialogTarget(target: EventTarget | null): boolean {
  */
 const onSelection =
   (command: NodeCommand, skip?: (event: KeyboardEvent) => boolean) =>
-  (state: EditorState, event: KeyboardEvent): boolean => {
+  (state: EditorState, event: KeyboardEvent, notify: Notify): boolean => {
     const { selectedId } = state;
     if (!selectedId || skip?.(event)) return false;
-    if (command.enabled(state, selectedId)) command.run(state, selectedId);
+    if (command.enabled(state, selectedId)) command.run(state, selectedId, notify);
     return true;
   };
 

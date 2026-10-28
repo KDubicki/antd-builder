@@ -73,3 +73,20 @@ test('downloads a runnable Next.js project with the mock data', async ({ page })
   });
   expect(JSON.parse(data)).toEqual(expect.arrayContaining([expect.objectContaining({ key: '1' })]));
 });
+
+test('copies one component as JSX from its right-click menu', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.goto('/');
+  const canvas = page.getByTestId('canvas');
+  await page
+    .getByLabel('Component palette')
+    .getByRole('button', { name: 'Tag', exact: true })
+    .click();
+  await canvas.locator('.ant-tag').click({ button: 'right' });
+  await page
+    .getByRole('menu')
+    .getByRole('menuitem', { name: /Copy JSX/ })
+    .click();
+  await expect(page.getByText('Copied Tag as JSX')).toBeVisible();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('<Tag>Tag</Tag>');
+});

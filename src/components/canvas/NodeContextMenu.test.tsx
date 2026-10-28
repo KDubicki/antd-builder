@@ -1,5 +1,6 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { App } from 'antd';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useEditorStore } from '@/lib/editor/store';
 import { createNode } from '@/lib/registry';
 import { Canvas } from './Canvas';
@@ -49,7 +50,7 @@ describe('NodeContextMenu', () => {
 
   it('copies and pastes, and offers only Paste on the page itself', () => {
     render(<Canvas />);
-    fireEvent.click(item(openMenu(screen.getByText('First')), /Copy/));
+    fireEvent.click(item(openMenu(screen.getByText('First')), /^copy Copy/));
     expect(state().clipboard?.props.children).toBe('First');
 
     const menu = openMenu(screen.getByTestId('canvas'));
@@ -84,6 +85,37 @@ describe('NodeContextMenu', () => {
     expect(state().selectedId).toBe('b');
     fireEvent.click(screen.getByRole('menuitem', { name: /Paste props/ }));
     expect(state().root.children.map((child) => child.props.children)).toEqual(['First', 'First']);
+  });
+
+  it('copies a component as JSX and says so', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } });
+    render(
+      <App>
+        <Canvas />
+      </App>,
+    );
+    fireEvent.click(item(openMenu(screen.getByText('First')), /Copy JSX/));
+    expect(writeText).toHaveBeenCalledWith('<Tag>First</Tag>');
+    expect(await screen.findByText('Copied Tag as JSX')).toBeInTheDocument();
+    vi.unstubAllGlobals();
+  });
+
+  it('explains when the clipboard refuses the JSX', async () => {
+    const writeText = vi.fn().mockRejectedValue(new Error('denied'));
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } });
+    render(
+      <App>
+        <Canvas />
+      </App>,
+    );
+    fireEvent.click(item(openMenu(screen.getByText('First')), /Copy JSX/));
+    await waitFor(() =>
+      expect(
+        screen.getByText('Copying is not allowed here; use Export code instead'),
+      ).toBeInTheDocument(),
+    );
+    vi.unstubAllGlobals();
   });
 
   it('selects the parent', () => {
