@@ -95,3 +95,16 @@ test('the settings template binds billing details to editable data', async ({ pa
   await expect(canvas.getByText('Business (yearly)')).toBeVisible();
   await expect(canvas.getByText('8 of 10 used')).toHaveCount(0);
 });
+
+test('the product page loads its pictures without the network', async ({ page }) => {
+  const blocked: string[] = [];
+  page.on('requestfailed', (request) => blocked.push(request.url()));
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Templates' }).click();
+  await page.getByRole('button', { name: 'Use Product page' }).click();
+  const canvas = page.getByTestId('canvas');
+  await expect(canvas.getByRole('heading', { name: 'Cloud Runner 3' })).toBeVisible();
+  await expect(canvas.getByRole('img', { name: 'Cloud Runner 3, side view' })).toBeVisible();
+  await expect(canvas.getByText('Trail Runner GTX')).toBeVisible();
+  expect(blocked).toEqual([]);
+});

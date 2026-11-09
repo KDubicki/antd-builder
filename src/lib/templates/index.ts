@@ -5,6 +5,7 @@ import { signIn, signUp } from './pages/auth';
 import { crudList } from './pages/crudList';
 import { dashboard } from './pages/dashboard';
 import { landing } from './pages/landing';
+import { product } from './pages/product';
 import { settings } from './pages/settings';
 import type { PageTemplate, SourceLookup, TemplateContent } from './types';
 
@@ -17,6 +18,7 @@ export const templates: readonly PageTemplate[] = [
   signIn,
   signUp,
   settings,
+  product,
 ];
 
 export function getTemplate(id: string): PageTemplate | undefined {

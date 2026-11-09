@@ -103,3 +103,16 @@ it('the settings page shows its sections and billing data', () => {
   expect(screen.getByText('Visa ending 4242')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Delete account' })).toBeInTheDocument();
 });
+
+it('the product page shows the product and related items', () => {
+  useEditorStore.getState().loadTemplate('product');
+  render(
+    <DndContext>
+      <Canvas />
+    </DndContext>,
+  );
+  expect(screen.getByRole('heading', { name: 'Cloud Runner 3' })).toBeInTheDocument();
+  expect(screen.getByText('128 reviews')).toBeInTheDocument();
+  expect(screen.getByText('Race Day Elite')).toBeInTheDocument();
+  expect(screen.getByRole('radio', { name: '42' })).toBeChecked();
+});
