@@ -65,3 +65,17 @@ test('account templates centre their form, full width on phones', async ({ page 
   await page.getByText('Mobile', { exact: true }).click();
   await expect.poll(widthShare).toBeGreaterThan(0.8);
 });
+
+test('the customer list exports with its data declared', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Templates' }).click();
+  await page.getByRole('button', { name: 'Use Customer list' }).click();
+  const canvas = page.getByTestId('canvas');
+  await expect(canvas.getByRole('cell', { name: 'Frank Moore' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Export code' }).click();
+  const code = page.getByLabel('Generated TSX');
+  await expect(code).toContainText('const customers = [');
+  await expect(code).toContainText('dataSource={customers}');
+  await expect(code).toContainText('<Input.Search');
+});

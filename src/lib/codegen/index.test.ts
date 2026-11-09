@@ -5,6 +5,7 @@ import { blocks } from '@/lib/blocks';
 import { useEditorStore } from '@/lib/editor/store';
 import { components, createNode, createPlaceableNode } from '@/lib/registry';
 import type { BuilderNode, DataSource } from '@/lib/schema';
+import { instantiateTemplate, templates } from '@/lib/templates';
 import { createTheme } from '@/lib/theme';
 import { boundSourceIds, collectImports, generatePage, nodeToJsx, pageComponentName } from '.';
 import { ROOT_ID, createRoot } from '@/lib/tree';
@@ -319,6 +320,17 @@ describe('blocks', () => {
     expect(source).toContain('const users = [');
     expect(typeErrors(source)).toEqual([]);
   }, 30_000);
+});
+
+describe('templates', () => {
+  it.each(templates.map((template) => [template.id, template] as const))(
+    '%s exports code that type-checks against antd',
+    (_id, template) => {
+      const source = generatePage(instantiateTemplate(template));
+      expect(typeErrors(source)).toEqual([]);
+    },
+    30_000,
+  );
 });
 
 describe('props in antd shape (toProps)', () => {

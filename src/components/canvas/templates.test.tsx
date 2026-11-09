@@ -77,3 +77,17 @@ it('the account pages show their forms', () => {
   expect(screen.getByRole('checkbox', { name: 'Remember me' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeInTheDocument();
 });
+
+it('the customer list shows its records and filters', () => {
+  useEditorStore.getState().loadTemplate('crud-list');
+  render(
+    <DndContext>
+      <Canvas />
+    </DndContext>,
+  );
+  expect(screen.getByRole('cell', { name: 'eve@example.com' })).toBeInTheDocument();
+  expect(screen.getByPlaceholderText('Search by name or email')).toBeInTheDocument();
+  expect(
+    screen.getByText('Churned', { selector: '.ant-segmented-item-label' }),
+  ).toBeInTheDocument();
+});
