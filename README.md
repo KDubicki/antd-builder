@@ -35,9 +35,10 @@ theme tokens, and then copy everything into code by hand. antd-builder aims to:
 
 - Drag components from the palette, or search it by name or description. Clicking an item (or
   <kbd>Enter</kbd> on it) adds it next to the selection instead: inside it when it fits, otherwise
-  after it. The **Blocks** group at the top adds ready-made fragments: a page header, a sign-in
-  form, a stats row, a user table, pricing plans, an FAQ, a contact form and a footer. The data
-  blocks bring their own mock data, already bound, and fit a phone screen.
+  after it. The **Blocks** group at the top adds ready-made fragments: a navigation bar, a hero,
+  a feature grid, testimonials, a page header, a sign-in form, a stats row, a user table, pricing
+  plans, an FAQ, a contact form and a footer. The data blocks bring their own mock data, already
+  bound, and fit a phone screen.
 - **Save as block** in the inspector keeps the selected component and its children as your own
   block, under **My blocks** in the palette.
 - Select components on the canvas or in the **Layers** outline, then edit them in the inspector.
@@ -60,6 +61,24 @@ theme tokens, and then copy everything into code by hand. antd-builder aims to:
   ("Undo Add Button").
 - The **Theme** tab starts from presets (Ocean, Forest, Midnight…) that you can fine-tune.
 - **New** (header) starts an empty project after a confirmation. Your saved blocks carry over.
+- **Templates** (header) opens a gallery of whole pages to start from, each with a live preview,
+  its theme preset and its own mock data, already bound. Search it, or filter by category:
+
+  | Category          | Templates                                        |
+  | ----------------- | ------------------------------------------------ |
+  | Apps & dashboards | Admin dashboard, Customer list                   |
+  | Marketing         | Landing page                                     |
+  | Account           | Sign-in page, Sign-up page, Account settings     |
+  | Content & shop    | Product page, Blog article                       |
+  | Status pages      | Order confirmation, Not found (404), Maintenance |
+
+  **Use template** replaces the project, like New (asking first when there is work to lose).
+  **Add to page** (+) appends the template below the current page as one undo step instead,
+  keeping your theme; its data sources come along, renamed if the name is taken. The link button
+  copies `/?template=<id>`, which opens the editor on that template. Templates live in
+  `src/lib/templates/pages`, one per file, and tests check that each is a valid project whose
+  bindings resolve, renders without warnings and exports code that type-checks.
+
 - **Version history** (header) saves named snapshots of the project, renames them and restores
   them. Restoring can be undone. <kbd>Ctrl/⌘</kbd>+<kbd>S</kbd> saves a version from anywhere in
   the editor, text fields included.
@@ -153,6 +172,8 @@ antd-builder/
 │       ├── schema/             # Project / page / node types + Zod validation
 │       ├── registry/           # antd component metadata: props, defaults, nesting rules
 │       ├── tree/               # Page root, immutable page-tree operations, drop resolution
+│       ├── blocks/             # Ready-made blocks (page fragments)
+│       ├── templates/          # Whole-page templates, built from blocks and their data
 │       ├── editor/             # Editor state (Zustand), undo history, drag-and-drop planning
 │       ├── search/             # Search matching for the palette and inspector
 │       ├── project/            # Project file: build, validate, read from API requests
@@ -333,8 +354,10 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). To report security issues, see [SECURITY
 - [x] Version history (named snapshots)
 - [x] Canvas width presets (desktop, tablet, mobile) and preview mode
 - [x] Responsive grid spans and scrolling tables that follow the canvas width
-- [x] Ready-made blocks (page header, sign-in form, stats, user table, pricing, FAQ, contact form,
-      footer)
+- [x] Ready-made blocks (navigation bar, hero, features, testimonials, page header, sign-in form,
+      stats, user table, pricing, FAQ, contact form, footer)
+- [x] Page templates (gallery with live previews, search and categories; start from one, add one
+      to the page, or link to one)
 - [x] User-defined blocks (Save as block)
 - [x] Export a full project scaffold (Next.js app with data stubs)
 - [x] Share links (read-only snapshots)
