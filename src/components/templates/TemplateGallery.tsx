@@ -1,8 +1,7 @@
 'use client';
 
-import { AppstoreOutlined, SearchOutlined } from '@ant-design/icons';
+import { AppstoreOutlined, LinkOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import {
-  App,
   Button,
   Card,
   Col,
@@ -17,9 +16,6 @@ import {
   theme,
 } from 'antd';
 import { useState } from 'react';
-import { hasWork } from '@/components/project/startOver';
-import { useEditorStore } from '@/lib/editor/store';
-import { TemplatePreview } from './TemplatePreview';
 import {
   type PageTemplate,
   type TemplateCategory,
@@ -27,10 +23,23 @@ import {
   templateCategoryLabels,
   usedCategories,
 } from '@/lib/templates';
+import { TemplatePreview } from './TemplatePreview';
+import { useTemplateActions } from './templateActions';
 
 const ALL = 'all';
 
-function TemplateCard({ template, onUse }: { template: PageTemplate; onUse: () => void }) {
+interface CardActions {
+  onUse: (template: PageTemplate) => void;
+  onAdd: (template: PageTemplate) => void;
+  onCopyLink: (template: PageTemplate) => void;
+}
+
+function TemplateCard({
+  template,
+  onUse,
+  onAdd,
+  onCopyLink,
+}: CardActions & { template: PageTemplate }) {
   const { token } = theme.useToken();
   const sources = template.data?.map((sample) => sample.name) ?? [];
   return (
@@ -52,20 +61,34 @@ function TemplateCard({ template, onUse }: { template: PageTemplate; onUse: () =
           Mock data: {sources.join(', ')}
         </Typography.Text>
       )}
-      <Button
-        type="primary"
-        onClick={onUse}
-        aria-label={`Use ${template.label}`}
-        style={{ marginTop: 'auto' }}
-      >
-        Use template
-      </Button>
+      <Flex gap="small" style={{ marginTop: 'auto' }}>
+        <Button
+          type="primary"
+          onClick={() => onUse(template)}
+          aria-label={`Use ${template.label}`}
+          style={{ flex: 1 }}
+        >
+          Use template
+        </Button>
+        <Button
+          icon={<PlusOutlined />}
+          onClick={() => onAdd(template)}
+          aria-label={`Add ${template.label} to page`}
+          title="Add to the current page"
+        />
+        <Button
+          icon={<LinkOutlined />}
+          onClick={() => onCopyLink(template)}
+          aria-label={`Copy link to ${template.label}`}
+          title="Copy a link that opens this template"
+        />
+      </Flex>
     </Card>
   );
 }
 
 /** Search, category filter and the matching templates. */
-function TemplateBrowser({ onUse }: { onUse: (template: PageTemplate) => void }) {
+function TemplateBrowser(actions: CardActions) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<TemplateCategory | typeof ALL>(ALL);
   const matching = findTemplates(query, category === ALL ? null : category);
@@ -74,7 +97,8 @@ function TemplateBrowser({ onUse }: { onUse: (template: PageTemplate) => void })
   return (
     <Flex vertical gap="middle">
       <Typography.Text type="secondary">
-        A whole page with its theme and sample data, ready to edit. It replaces the current project.
+        A whole page with its theme and sample data, ready to edit. Use one to start over, or add it
+        below the current page.
       </Typography.Text>
       <Input
         allowClear
@@ -111,7 +135,7 @@ function TemplateBrowser({ onUse }: { onUse: (template: PageTemplate) => void })
               role="listitem"
               style={{ display: 'flex' }}
             >
-              <TemplateCard template={template} onUse={() => onUse(template)} />
+              <TemplateCard template={template} {...actions} />
             </Col>
           ))}
         </Row>
@@ -122,31 +146,11 @@ function TemplateBrowser({ onUse }: { onUse: (template: PageTemplate) => void })
 
 /** Header button opening the list of page templates to start a project from. */
 export function TemplateGallery() {
-  const { message, modal } = App.useApp();
+  const { start, add, copyLink } = useTemplateActions();
   const [open, setOpen] = useState(false);
   // Each opening gets a fresh browser: no search or category left over from last time.
   const [openings, setOpenings] = useState(0);
-
-  const start = (template: PageTemplate) => {
-    useEditorStore.getState().loadTemplate(template.id);
-    setOpen(false);
-    message.success(`Started from the ${template.label} template`);
-  };
-
-  const use = (template: PageTemplate) => {
-    const state = useEditorStore.getState();
-    if (!hasWork(state)) {
-      start(template);
-      return;
-    }
-    modal.confirm({
-      title: `Start from the ${template.label} template?`,
-      content: `"${state.name}" will be replaced, and its versions and undo history will be gone. Save it first to keep a copy. Your saved blocks stay.`,
-      okText: 'Use template',
-      okButtonProps: { danger: true },
-      onOk: () => start(template),
-    });
-  };
+  const close = () => setOpen(false);
 
   return (
     <>
@@ -159,14 +163,16 @@ export function TemplateGallery() {
       >
         Templates
       </Button>
-      <Modal
-        title="Start from a template"
-        open={open}
-        onCancel={() => setOpen(false)}
-        footer={null}
-        width={880}
-      >
-        <TemplateBrowser key={openings} onUse={use} />
+      <Modal title="Page templates" open={open} onCancel={close} footer={null} width={880}>
+        <TemplateBrowser
+          key={openings}
+          onUse={(template) => start(template, close)}
+          onAdd={(template) => {
+            add(template);
+            close();
+          }}
+          onCopyLink={copyLink}
+        />
       </Modal>
     </>
   );

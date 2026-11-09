@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { App } from 'antd';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useEditorStore } from '@/lib/editor/store';
 import { createNode } from '@/lib/registry';
 import { templates } from '@/lib/templates';
@@ -100,5 +100,34 @@ describe('TemplateGallery', () => {
     list = await openGallery();
     expect(screen.getByLabelText('Search templates')).toHaveValue('');
     expect(within(list).getAllByRole('listitem')).toHaveLength(templates.length);
+  });
+
+  it('adds a template below the current page, undoably and without asking', async () => {
+    useEditorStore.setState({ root: { ...createRoot(), children: [createNode('Tag', 'tag')] } });
+    renderGallery();
+    await openGallery();
+    fireEvent.click(screen.getByRole('button', { name: 'Add Sign-in page to page' }));
+    expect(
+      await screen.findByText('Added the Sign-in page template to the page'),
+    ).toBeInTheDocument();
+    const { root, name, past } = useEditorStore.getState();
+    expect(name).toBe('Shop');
+    expect(root.children[0]!.id).toBe('tag');
+    expect(root.children).toHaveLength(2);
+    expect(past.at(-1)!.label).toBe('Add Sign-in page template');
+  });
+
+  it('copies a link that opens a template', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    renderGallery();
+    await openGallery();
+    fireEvent.click(screen.getByRole('button', { name: 'Copy link to Landing page' }));
+    expect(await screen.findByText('Link copied')).toBeInTheDocument();
+    expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/?template=landing`);
+
+    writeText.mockRejectedValueOnce(new Error('denied'));
+    fireEvent.click(screen.getByRole('button', { name: 'Copy link to Landing page' }));
+    expect(await screen.findByText('Copying is not allowed here')).toBeInTheDocument();
   });
 });

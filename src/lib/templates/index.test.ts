@@ -169,3 +169,53 @@ describe('findTemplates', () => {
     expect(usedCategories([templates.at(-1)!])).toEqual(['status']);
   });
 });
+
+describe('insertTemplate', () => {
+  it('appends the page and its data as one undo step, keeping the theme', () => {
+    const tag = state().addNode('Tag', { parentId: ROOT_ID, index: 0 });
+    state().applyTheme({ ...createTheme(), mode: 'dark' }, 'Dark');
+    const steps = state().past.length;
+
+    const added = state().insertTemplate('landing')!;
+    expect(state().root.children[0]!.id).toBe(tag);
+    expect(
+      state()
+        .root.children.slice(1)
+        .map((node) => node.id),
+    ).toEqual(added);
+    expect(state().selectedId).toBe(added[0]);
+    expect(state().theme.mode).toBe('dark');
+    expect(state().name).toBe('Mine');
+    expect(state().mockData.map((source) => source.name)).toEqual([
+      'features',
+      'plans',
+      'testimonials',
+      'faqs',
+    ]);
+    expect(state().past).toHaveLength(steps + 1);
+    expect(state().past.at(-1)!.label).toBe('Add Landing page template');
+
+    state().undo();
+    expect(state().root.children.map((node) => node.id)).toEqual([tag]);
+    expect(state().mockData).toEqual([]);
+  });
+
+  it('renames data sources whose name is taken, keeping bindings valid', () => {
+    const mine = state().addDataSource('orders');
+    state().insertTemplate('dashboard');
+    expect(state().mockData.map((source) => source.name)).toEqual(['orders', 'stats', 'orders2']);
+    expect(state().mockData[0]!.id).toBe(mine);
+    const result = parseProject(JSON.stringify(toProject(state())));
+    expect(result.ok ? null : result.error).toBeNull();
+    const table = allNodes(state().root).find((node) => node.component === 'Table')!;
+    const bound = state().mockData.find(
+      (source) => source.id === (table.props.dataSource as { $data: string }).$data,
+    );
+    expect(bound?.name).toBe('orders2');
+  });
+
+  it('ignores unknown templates', () => {
+    expect(state().insertTemplate('nope')).toBeNull();
+    expect(state().past).toEqual([]);
+  });
+});

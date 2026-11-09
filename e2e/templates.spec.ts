@@ -180,3 +180,41 @@ test('gallery cards show a live preview of each page', async ({ page }) => {
     page.getByTestId('template-preview-maintenance').locator(':scope > div > div'),
   ).toHaveCSS('background-color', 'rgb(20, 20, 20)');
 });
+
+test('adds a template below the current page as one undo step', async ({ page }) => {
+  await page.goto('/');
+  const canvas = page.getByTestId('canvas');
+  await page.getByLabel('Project name').fill('My page');
+  await page.getByLabel('Component palette').getByRole('button', { name: 'Hero' }).click();
+
+  await page.getByRole('button', { name: 'Templates' }).click();
+  await page.getByRole('button', { name: 'Add Customer list to page' }).click();
+  await expect(canvas.getByRole('heading', { name: 'Build antd pages in minutes' })).toBeVisible();
+  await expect(canvas.getByRole('cell', { name: 'Frank Moore' })).toBeVisible();
+  await expect(page.getByLabel('Project name')).toHaveValue('My page');
+
+  const undo = page.getByRole('button', { name: 'Undo' });
+  await expect(undo).toHaveAttribute('title', /^Undo Add Customer list template/);
+  await undo.click();
+  await expect(canvas.getByRole('cell', { name: 'Frank Moore' })).toHaveCount(0);
+  await expect(canvas.getByRole('heading', { name: 'Build antd pages in minutes' })).toBeVisible();
+});
+
+test('a template link opens the editor on that template, once', async ({ page }) => {
+  await page.goto('/?template=product');
+  const canvas = page.getByTestId('canvas');
+  await expect(canvas.getByRole('heading', { name: 'Cloud Runner 3' })).toBeVisible();
+  await expect(page.getByLabel('Project name')).toHaveValue('Product page');
+  await expect(page).toHaveURL(/\/$/);
+
+  // With work on the page, a link asks before replacing it.
+  await page.getByLabel('Project name').fill('Kept');
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem('antd-builder:project') ?? ''))
+    .toContain('"Kept"');
+  await page.goto('/?template=not-found');
+  await expect(page.getByRole('dialog')).toContainText('Start from the Not found (404) template?');
+  await page.getByRole('button', { name: 'Cancel' }).click();
+  await expect(page.getByLabel('Project name')).toHaveValue('Kept');
+  await expect(canvas.getByRole('heading', { name: 'Cloud Runner 3' })).toBeVisible();
+});

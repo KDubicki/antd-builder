@@ -28,6 +28,7 @@ import { useAutosave } from '@/components/project/autosave';
 import { ShortcutHelp } from '@/components/ShortcutHelp';
 import { useNotify } from '@/components/nodeCommands';
 import { SIDE_PANEL_ATTR, useEditorShortcuts } from '@/components/shortcuts';
+import { TemplateLink } from '@/components/templates/TemplateLink';
 import { ThemeEditor } from '@/components/theme/ThemeEditor';
 import { VersionHistory } from '@/components/versions/VersionHistory';
 import { getBlock } from '@/lib/blocks';
@@ -84,6 +85,7 @@ export function Editor() {
     <ConfigProvider>
       <AntApp>
         <EditorShortcuts />
+        <TemplateLink />
         <DndContext
           id={dndId}
           sensors={sensors}

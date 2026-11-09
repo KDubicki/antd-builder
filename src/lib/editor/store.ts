@@ -183,6 +183,12 @@ export interface EditorState extends History {
    * stay, history and versions are cleared. Returns `false` for an unknown template.
    */
   loadTemplate: (templateId: string) => boolean;
+  /**
+   * Appends a template's page to the current one, as one undo step, keeping the project's theme.
+   * Its data sources come along, renamed when a name is taken. Selects the first added node and
+   * returns the added top-level ids, or `null` for an unknown template.
+   */
+  insertTemplate: (templateId: string) => string[] | null;
   /** Replaces the whole project (e.g. after opening a file); clears the selection and history. */
   loadProject: (content: {
     name: string;
@@ -555,6 +561,27 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
     if (!template) return false;
     get().loadProject({ ...instantiateTemplate(template), customBlocks: get().customBlocks });
     return true;
+  },
+  insertTemplate: (templateId) => {
+    const template = getTemplate(templateId);
+    if (!template) return null;
+    const { root, mockData } = instantiateTemplate(template);
+    const nodes = root.children;
+    set((state) => {
+      // Bindings refer to sources by id, so renaming a source keeps them working.
+      const names = state.mockData.map((source) => source.name);
+      const added = mockData.map((source) => {
+        const name = uniqueName(source.name, names, '');
+        names.push(name);
+        return { ...source, name };
+      });
+      return commit(state, `Add ${template.label} template`, {
+        root: { ...state.root, children: [...state.root.children, ...nodes] },
+        mockData: [...state.mockData, ...added],
+        selectedId: nodes[0]?.id ?? state.selectedId,
+      });
+    });
+    return nodes.map((node) => node.id);
   },
   loadProject: ({ name, root, theme, mockData = [], customBlocks = [], versions = [] }) =>
     set({
