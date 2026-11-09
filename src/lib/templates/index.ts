@@ -2,6 +2,7 @@ import { createDataSource } from '@/lib/mockData';
 import { createTheme, themePresets } from '@/lib/theme';
 import { createRoot } from '@/lib/tree';
 import { signIn, signUp } from './pages/auth';
+import { article } from './pages/article';
 import { crudList } from './pages/crudList';
 import { dashboard } from './pages/dashboard';
 import { landing } from './pages/landing';
@@ -19,6 +20,7 @@ export const templates: readonly PageTemplate[] = [
   signUp,
   settings,
   product,
+  article,
 ];
 
 export function getTemplate(id: string): PageTemplate | undefined {

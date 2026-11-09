@@ -108,3 +108,17 @@ test('the product page loads its pictures without the network', async ({ page })
   await expect(canvas.getByText('Trail Runner GTX')).toBeVisible();
   expect(blocked).toEqual([]);
 });
+
+test('the blog article keeps a readable column on desktop', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Templates' }).click();
+  await page.getByRole('button', { name: 'Use Blog article' }).click();
+  const canvas = page.getByTestId('canvas');
+  const title = canvas.getByRole('heading', { name: /How we rebuilt our admin panel/ });
+  await expect(title).toBeVisible();
+  await expect(canvas.getByText(/saved us a sprint/)).toBeVisible();
+
+  const column = (await title.boundingBox())!;
+  const page_ = (await canvas.boundingBox())!;
+  expect(column.width).toBeLessThan(page_.width * 0.8);
+});

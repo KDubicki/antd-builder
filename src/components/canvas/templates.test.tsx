@@ -116,3 +116,17 @@ it('the product page shows the product and related items', () => {
   expect(screen.getByText('Race Day Elite')).toBeInTheDocument();
   expect(screen.getByRole('radio', { name: '42' })).toBeChecked();
 });
+
+it('the blog article shows its post, author and comments', () => {
+  useEditorStore.getState().loadTemplate('article');
+  render(
+    <DndContext>
+      <Canvas />
+    </DndContext>,
+  );
+  expect(
+    screen.getByRole('heading', { name: 'How we rebuilt our admin panel in two weeks' }),
+  ).toBeInTheDocument();
+  expect(screen.getAllByText('Maria Lopez')).toHaveLength(2);
+  expect(screen.getByText(/Would love a follow-up/)).toBeInTheDocument();
+});
