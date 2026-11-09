@@ -10,6 +10,7 @@ import type {
   ProjectTheme,
   ProjectVersion,
 } from '@/lib/schema';
+import { getTemplate, instantiateTemplate } from '@/lib/templates';
 import { createTheme } from '@/lib/theme';
 import {
   type History,
@@ -177,6 +178,11 @@ export interface EditorState extends History {
    * own toolbox). Like opening a file, it clears the history and versions.
    */
   newProject: () => void;
+  /**
+   * Starts over from a page template (see `lib/templates`), like `newProject`: the saved blocks
+   * stay, history and versions are cleared. Returns `false` for an unknown template.
+   */
+  loadTemplate: (templateId: string) => boolean;
   /** Replaces the whole project (e.g. after opening a file); clears the selection and history. */
   loadProject: (content: {
     name: string;
@@ -544,6 +550,12 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       theme: createTheme(),
       customBlocks: get().customBlocks,
     }),
+  loadTemplate: (templateId) => {
+    const template = getTemplate(templateId);
+    if (!template) return false;
+    get().loadProject({ ...instantiateTemplate(template), customBlocks: get().customBlocks });
+    return true;
+  },
   loadProject: ({ name, root, theme, mockData = [], customBlocks = [], versions = [] }) =>
     set({
       name,
