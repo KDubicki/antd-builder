@@ -1,13 +1,14 @@
 import { createDataSource } from '@/lib/mockData';
 import { createTheme, themePresets } from '@/lib/theme';
 import { createRoot } from '@/lib/tree';
+import { signIn, signUp } from './pages/auth';
 import { dashboard } from './pages/dashboard';
 import { landing } from './pages/landing';
 import type { PageTemplate, SourceLookup, TemplateContent } from './types';
 
 export * from './types';
 
-export const templates: readonly PageTemplate[] = [dashboard, landing];
+export const templates: readonly PageTemplate[] = [dashboard, landing, signIn, signUp];
 
 export function getTemplate(id: string): PageTemplate | undefined {
   return templates.find((template) => template.id === id);

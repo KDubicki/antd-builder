@@ -47,3 +47,21 @@ test('the landing page template brings its theme and fits a phone', async ({ pag
     expect(box.x + box.width).toBeLessThanOrEqual(edge!.x + edge!.width + 1);
   }
 });
+
+test('account templates centre their form, full width on phones', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Templates' }).click();
+  await page.getByRole('button', { name: 'Use Sign-in page' }).click();
+  const canvas = page.getByTestId('canvas');
+  const card = canvas.locator('.ant-card');
+  await expect(card.getByRole('button', { name: 'Sign in' })).toBeVisible();
+
+  const widthShare = async () => {
+    const outer = (await canvas.boundingBox())!;
+    const inner = (await card.boundingBox())!;
+    return inner.width / outer.width;
+  };
+  expect(await widthShare()).toBeLessThan(0.7);
+  await page.getByText('Mobile', { exact: true }).click();
+  await expect.poll(widthShare).toBeGreaterThan(0.8);
+});

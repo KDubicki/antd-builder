@@ -56,3 +56,24 @@ it('the landing page shows every section with its data', () => {
   expect(screen.getByText('Is there a free trial?')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Start for free' })).toBeInTheDocument();
 });
+
+it('the account pages show their forms', () => {
+  useEditorStore.getState().loadTemplate('sign-up');
+  const { unmount } = render(
+    <DndContext>
+      <Canvas />
+    </DndContext>,
+  );
+  expect(screen.getByText('Workspace')).toBeInTheDocument();
+  expect(screen.getByPlaceholderText('you@company.com')).toBeInTheDocument();
+  unmount();
+
+  useEditorStore.getState().loadTemplate('sign-in');
+  render(
+    <DndContext>
+      <Canvas />
+    </DndContext>,
+  );
+  expect(screen.getByRole('checkbox', { name: 'Remember me' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeInTheDocument();
+});
