@@ -130,3 +130,28 @@ it('the blog article shows its post, author and comments', () => {
   expect(screen.getAllByText('Maria Lopez')).toHaveLength(2);
   expect(screen.getByText(/Would love a follow-up/)).toBeInTheDocument();
 });
+
+it('the status pages show their results', () => {
+  for (const [id, title] of [
+    ['not-found', 'Page not found'],
+    ['maintenance', 'We’ll be right back'],
+    ['order-confirmed', 'Thank you, your order is placed'],
+  ]) {
+    useEditorStore.getState().loadTemplate(id!);
+    const { unmount } = render(
+      <DndContext>
+        <Canvas />
+      </DndContext>,
+    );
+    expect(screen.getByText(title!)).toBeInTheDocument();
+    expect(screen.queryByText('Drop components here')).not.toBeInTheDocument();
+    unmount();
+  }
+  useEditorStore.getState().loadTemplate('order-confirmed');
+  render(
+    <DndContext>
+      <Canvas />
+    </DndContext>,
+  );
+  expect(screen.getByText('1 Market St, Springfield')).toBeInTheDocument();
+});

@@ -122,3 +122,20 @@ test('the blog article keeps a readable column on desktop', async ({ page }) => 
   const page_ = (await canvas.boundingBox())!;
   expect(column.width).toBeLessThan(page_.width * 0.8);
 });
+
+test('status templates preview as finished pages', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Templates' }).click();
+  await page.getByRole('button', { name: 'Use Not found (404)' }).click();
+  const canvas = page.getByTestId('canvas');
+  await expect(canvas.getByText('Page not found')).toBeVisible();
+  await expect(canvas.getByRole('button', { name: 'Back to home' })).toBeVisible();
+
+  // A second template replaces the first after confirming, and dark presets come along.
+  await page.getByRole('button', { name: 'Templates' }).click();
+  await page.getByRole('button', { name: 'Use Maintenance' }).click();
+  await page.getByRole('button', { name: 'Use template' }).click();
+  await expect(canvas.getByText('We’ll be right back')).toBeVisible();
+  await expect(canvas.getByText('Page not found')).toHaveCount(0);
+  await expect(canvas).toHaveCSS('background-color', 'rgb(20, 20, 20)');
+});

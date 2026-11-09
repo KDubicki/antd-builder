@@ -8,6 +8,7 @@ import { dashboard } from './pages/dashboard';
 import { landing } from './pages/landing';
 import { product } from './pages/product';
 import { settings } from './pages/settings';
+import { maintenance, notFound, orderConfirmed } from './pages/status';
 import type { PageTemplate, SourceLookup, TemplateContent } from './types';
 
 export * from './types';
@@ -21,6 +22,9 @@ export const templates: readonly PageTemplate[] = [
   settings,
   product,
   article,
+  orderConfirmed,
+  notFound,
+  maintenance,
 ];
 
 export function getTemplate(id: string): PageTemplate | undefined {
