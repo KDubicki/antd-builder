@@ -84,3 +84,27 @@ test('pricing and FAQ blocks read their own mock data', async ({ page }) => {
   await expect(canvas.getByText('Every plan starts with 14 days free.')).toBeVisible();
   await expect(data.getByText('faqs', { exact: true })).toBeVisible();
 });
+
+test('landing blocks: navigation bar, hero, features and testimonials', async ({ page }) => {
+  await page.goto('/');
+  const palette = page.getByLabel('Component palette');
+  const canvas = page.getByTestId('canvas');
+
+  await dragTo(page, palette.getByRole('button', { name: 'Navigation bar' }), canvas);
+  await expect(canvas.getByRole('link', { name: 'Pricing' })).toBeVisible();
+
+  await dragTo(page, palette.getByRole('button', { name: 'Hero' }), canvas);
+  await expect(canvas.getByRole('heading', { name: 'Build antd pages in minutes' })).toBeVisible();
+
+  await dragTo(page, palette.getByRole('button', { name: 'Feature grid' }), canvas);
+  await expect(canvas.getByText('Sample data', { exact: true })).toBeVisible();
+
+  await dragTo(page, palette.getByRole('button', { name: 'Testimonials' }), canvas);
+  await expect(canvas.getByText('Maria Lopez')).toBeVisible();
+  await expect(canvas.getByText('AS', { exact: true })).toBeVisible();
+
+  await page.getByRole('tab', { name: 'Data' }).click();
+  const data = page.getByLabel('Mock data');
+  await expect(data.getByText('features', { exact: true })).toBeVisible();
+  await expect(data.getByText('testimonials', { exact: true })).toBeVisible();
+});

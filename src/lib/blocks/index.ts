@@ -13,7 +13,8 @@ export interface Block {
   build: (sourceId: string) => BuilderNode;
 }
 
-function node(
+/** A node with a fresh id, for building block and template trees. */
+export function node(
   component: string,
   props: Record<string, unknown> = {},
   children: BuilderNode[] = [],
@@ -21,15 +22,17 @@ function node(
   return { id: crypto.randomUUID(), component, props, children };
 }
 
+/** A full row on phones, three across from 576px: the grid every three-up block uses. */
+const thirdCol = (children: BuilderNode[]) => node('Col', { span: 8, xs: 24, sm: 8 }, children);
+
 const statTile = (title: string, sourceId: string, path: string, props = {}) =>
-  // A full row each on phones, three across from 576px.
-  node('Col', { span: 8, xs: 24, sm: 8 }, [
+  thirdCol([
     node('Card', {}, [node('Statistic', { title, value: { $data: sourceId, path }, ...props })]),
   ]);
 
 const planCard = (index: number, sourceId: string, featured = false) => {
   const plan = (field: string) => ({ $data: sourceId, path: `${index}.${field}` });
-  return node('Col', { span: 8, xs: 24, sm: 8 }, [
+  return thirdCol([
     node('Card', { title: plan('name') }, [
       node('Statistic', { value: plan('price'), prefix: '$', suffix: '/ month' }),
       node('Typography.Paragraph', { children: plan('description'), type: 'secondary' }),
@@ -45,7 +48,125 @@ const planCard = (index: number, sourceId: string, featured = false) => {
 const footerLink = (children: string) =>
   node('Typography.Link', { children, href: '#', type: 'secondary' });
 
+const featureCard = (index: number, sourceId: string) => {
+  const feature = (field: string) => ({ $data: sourceId, path: `${index}.${field}` });
+  return thirdCol([
+    node('Card', { title: feature('title') }, [
+      node('Typography.Paragraph', { children: feature('description'), type: 'secondary' }),
+    ]),
+  ]);
+};
+
+const testimonialCard = (index: number, sourceId: string) => {
+  const quote = (field: string) => ({ $data: sourceId, path: `${index}.${field}` });
+  return thirdCol([
+    node('Card', {}, [
+      node('Typography.Paragraph', { children: quote('quote') }),
+      node('Flex', { gap: 'small', align: 'center' }, [
+        node('Avatar', { children: quote('initials') }),
+        node('Flex', { vertical: true }, [
+          node('Typography.Text', { children: quote('name'), strong: true }),
+          node('Typography.Text', { children: quote('role'), type: 'secondary' }),
+        ]),
+      ]),
+    ]),
+  ]);
+};
+
 export const blocks: readonly Block[] = [
+  {
+    id: 'nav-bar',
+    label: 'Navigation bar',
+    description: 'Brand name, links and sign-in buttons, wrapping on narrow screens.',
+    component: 'Flex',
+    build: () =>
+      node('Flex', { justify: 'space-between', align: 'center', wrap: true, gap: 'small' }, [
+        node('Typography.Text', { children: 'Acme', strong: true }),
+        node('Space', { size: 'middle', wrap: true }, [
+          node('Typography.Link', { children: 'Features', href: '#features' }),
+          node('Typography.Link', { children: 'Pricing', href: '#pricing' }),
+          node('Typography.Link', { children: 'Docs', href: '#' }),
+        ]),
+        node('Space', {}, [
+          node('Button', { children: 'Sign in', type: 'text' }),
+          node('Button', { children: 'Get started', type: 'primary' }),
+        ]),
+      ]),
+  },
+  {
+    id: 'hero',
+    label: 'Hero',
+    description: 'Centred headline, tagline and two calls to action.',
+    component: 'Flex',
+    build: () =>
+      node('Flex', { vertical: true, align: 'center', gap: 'middle' }, [
+        node('Tag', { children: 'New: page templates', color: 'blue' }),
+        node('Typography.Title', { children: 'Build antd pages in minutes', level: 1 }),
+        node('Typography.Paragraph', {
+          children: 'Drag real components, bind sample data and export clean React code.',
+          type: 'secondary',
+        }),
+        node('Space', { wrap: true }, [
+          node('Button', { children: 'Get started', type: 'primary', size: 'large' }),
+          node('Button', { children: 'See examples', type: 'default', size: 'large' }),
+        ]),
+      ]),
+  },
+  {
+    id: 'features',
+    label: 'Feature grid',
+    description: 'Three feature cards bound to a `features` response.',
+    component: 'Row',
+    data: {
+      name: 'features',
+      data: [
+        { title: 'Real components', description: 'The canvas renders antd itself, not a mockup.' },
+        { title: 'Sample data', description: 'Bind props to API responses and see them live.' },
+        { title: 'Clean export', description: 'Download typed React code or a whole Next.js app.' },
+      ],
+    },
+    build: (sourceId) =>
+      node('Row', { gutter: 16, verticalGutter: 16 }, [
+        featureCard(0, sourceId),
+        featureCard(1, sourceId),
+        featureCard(2, sourceId),
+      ]),
+  },
+  {
+    id: 'testimonials',
+    label: 'Testimonials',
+    description: 'Three customer quotes with avatars, bound to a `testimonials` response.',
+    component: 'Row',
+    data: {
+      name: 'testimonials',
+      data: [
+        {
+          quote: 'We shipped our admin panel a week early.',
+          name: 'Maria Lopez',
+          role: 'CTO, Brightly',
+          initials: 'ML',
+        },
+        {
+          quote: 'Designers and developers finally work on the same thing.',
+          name: 'Tom Becker',
+          role: 'Lead designer, Northwind',
+          initials: 'TB',
+        },
+        {
+          quote: 'The exported code reads like we wrote it ourselves.',
+          name: 'Aiko Sato',
+          role: 'Frontend engineer, Kumo',
+          initials: 'AS',
+        },
+      ],
+    },
+    build: (sourceId) =>
+      node('Row', { gutter: 16, verticalGutter: 16 }, [
+        testimonialCard(0, sourceId),
+        testimonialCard(1, sourceId),
+        testimonialCard(2, sourceId),
+      ]),
+  },
   {
     id: 'page-header',
     label: 'Page header',
