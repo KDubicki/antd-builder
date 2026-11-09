@@ -19,6 +19,7 @@ import {
 import { useState } from 'react';
 import { hasWork } from '@/components/project/startOver';
 import { useEditorStore } from '@/lib/editor/store';
+import { TemplatePreview } from './TemplatePreview';
 import {
   type PageTemplate,
   type TemplateCategory,
@@ -37,7 +38,9 @@ function TemplateCard({ template, onUse }: { template: PageTemplate; onUse: () =
       size="small"
       title={template.label}
       extra={<Tag>{templateCategoryLabels[template.category]}</Tag>}
-      styles={{ body: { display: 'flex', flexDirection: 'column', gap: token.marginXS } }}
+      cover={<TemplatePreview template={template} />}
+      style={{ width: '100%', display: 'flex', flexDirection: 'column' }}
+      styles={{ body: { display: 'flex', flexDirection: 'column', gap: token.marginXS, flex: 1 } }}
       aria-label={template.label}
       role="group"
     >
@@ -49,7 +52,12 @@ function TemplateCard({ template, onUse }: { template: PageTemplate; onUse: () =
           Mock data: {sources.join(', ')}
         </Typography.Text>
       )}
-      <Button type="primary" onClick={onUse} aria-label={`Use ${template.label}`}>
+      <Button
+        type="primary"
+        onClick={onUse}
+        aria-label={`Use ${template.label}`}
+        style={{ marginTop: 'auto' }}
+      >
         Use template
       </Button>
     </Card>
@@ -95,7 +103,14 @@ function TemplateBrowser({ onUse }: { onUse: (template: PageTemplate) => void })
       ) : (
         <Row gutter={[16, 16]} aria-label="Page templates" role="list">
           {matching.map((template) => (
-            <Col key={template.id} xs={24} sm={12} lg={8} role="listitem">
+            <Col
+              key={template.id}
+              xs={24}
+              sm={12}
+              lg={8}
+              role="listitem"
+              style={{ display: 'flex' }}
+            >
               <TemplateCard template={template} onUse={() => onUse(template)} />
             </Col>
           ))}

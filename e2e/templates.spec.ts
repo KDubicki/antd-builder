@@ -157,3 +157,22 @@ test('searches the template gallery and filters it by category', async ({ page }
   await page.getByRole('button', { name: 'Use Blog article' }).click();
   await expect(page.getByLabel('Project name')).toHaveValue('Blog article');
 });
+
+test('gallery cards show a live preview of each page', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Templates' }).click();
+  const preview = page.getByTestId('template-preview-dashboard');
+  await expect(preview).toBeVisible();
+  await expect(preview).toContainText('Recent orders');
+
+  // The page is laid out at desktop width and scaled to fit the card.
+  const frame = (await preview.boundingBox())!;
+  const scaled = (await preview.locator(':scope > div').boundingBox())!;
+  expect(Math.abs(scaled.width - frame.width)).toBeLessThan(2);
+
+  // The dark preset shows in the maintenance preview.
+  await page.getByLabel('Search templates').fill('maintenance');
+  await expect(
+    page.getByTestId('template-preview-maintenance').locator(':scope > div > div'),
+  ).toHaveCSS('background-color', 'rgb(20, 20, 20)');
+});
