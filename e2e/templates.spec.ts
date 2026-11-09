@@ -79,3 +79,19 @@ test('the customer list exports with its data declared', async ({ page }) => {
   await expect(code).toContainText('dataSource={customers}');
   await expect(code).toContainText('<Input.Search');
 });
+
+test('the settings template binds billing details to editable data', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Templates' }).click();
+  await page.getByRole('button', { name: 'Use Account settings' }).click();
+  const canvas = page.getByTestId('canvas');
+  await expect(canvas.getByText('8 of 10 used')).toBeVisible();
+
+  await page.getByRole('tab', { name: 'Data' }).click();
+  await page
+    .getByLabel('Mock data')
+    .getByLabel('Response (JSON)')
+    .fill(JSON.stringify([{ key: 'plan', label: 'Plan', children: 'Business (yearly)' }]));
+  await expect(canvas.getByText('Business (yearly)')).toBeVisible();
+  await expect(canvas.getByText('8 of 10 used')).toHaveCount(0);
+});

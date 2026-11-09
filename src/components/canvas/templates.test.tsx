@@ -91,3 +91,15 @@ it('the customer list shows its records and filters', () => {
     screen.getByText('Churned', { selector: '.ant-segmented-item-label' }),
   ).toBeInTheDocument();
 });
+
+it('the settings page shows its sections and billing data', () => {
+  useEditorStore.getState().loadTemplate('settings');
+  render(
+    <DndContext>
+      <Canvas />
+    </DndContext>,
+  );
+  expect(screen.getAllByRole('switch')).toHaveLength(3);
+  expect(screen.getByText('Visa ending 4242')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Delete account' })).toBeInTheDocument();
+});

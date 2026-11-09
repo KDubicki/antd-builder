@@ -5,11 +5,19 @@ import { signIn, signUp } from './pages/auth';
 import { crudList } from './pages/crudList';
 import { dashboard } from './pages/dashboard';
 import { landing } from './pages/landing';
+import { settings } from './pages/settings';
 import type { PageTemplate, SourceLookup, TemplateContent } from './types';
 
 export * from './types';
 
-export const templates: readonly PageTemplate[] = [dashboard, crudList, landing, signIn, signUp];
+export const templates: readonly PageTemplate[] = [
+  dashboard,
+  crudList,
+  landing,
+  signIn,
+  signUp,
+  settings,
+];
 
 export function getTemplate(id: string): PageTemplate | undefined {
   return templates.find((template) => template.id === id);
