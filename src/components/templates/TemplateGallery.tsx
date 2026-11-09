@@ -1,11 +1,33 @@
 'use client';
 
-import { AppstoreOutlined } from '@ant-design/icons';
-import { App, Button, Card, Col, Flex, Modal, Row, Tag, Typography, theme } from 'antd';
+import { AppstoreOutlined, SearchOutlined } from '@ant-design/icons';
+import {
+  App,
+  Button,
+  Card,
+  Col,
+  Empty,
+  Flex,
+  Input,
+  Modal,
+  Row,
+  Segmented,
+  Tag,
+  Typography,
+  theme,
+} from 'antd';
 import { useState } from 'react';
 import { hasWork } from '@/components/project/startOver';
 import { useEditorStore } from '@/lib/editor/store';
-import { type PageTemplate, templateCategoryLabels, templates } from '@/lib/templates';
+import {
+  type PageTemplate,
+  type TemplateCategory,
+  findTemplates,
+  templateCategoryLabels,
+  usedCategories,
+} from '@/lib/templates';
+
+const ALL = 'all';
 
 function TemplateCard({ template, onUse }: { template: PageTemplate; onUse: () => void }) {
   const { token } = theme.useToken();
@@ -34,10 +56,61 @@ function TemplateCard({ template, onUse }: { template: PageTemplate; onUse: () =
   );
 }
 
+/** Search, category filter and the matching templates. */
+function TemplateBrowser({ onUse }: { onUse: (template: PageTemplate) => void }) {
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState<TemplateCategory | typeof ALL>(ALL);
+  const matching = findTemplates(query, category === ALL ? null : category);
+  const count = (of: TemplateCategory | null) => findTemplates('', of).length;
+
+  return (
+    <Flex vertical gap="middle">
+      <Typography.Text type="secondary">
+        A whole page with its theme and sample data, ready to edit. It replaces the current project.
+      </Typography.Text>
+      <Input
+        allowClear
+        autoFocus
+        prefix={<SearchOutlined />}
+        placeholder="Search templates"
+        aria-label="Search templates"
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+      />
+      <Segmented<TemplateCategory | typeof ALL>
+        aria-label="Template categories"
+        value={category}
+        onChange={setCategory}
+        style={{ alignSelf: 'flex-start', maxWidth: '100%', overflowX: 'auto' }}
+        options={[
+          { value: ALL, label: `All (${count(null)})` },
+          ...usedCategories().map((value) => ({
+            value,
+            label: `${templateCategoryLabels[value]} (${count(value)})`,
+          })),
+        ]}
+      />
+      {matching.length === 0 ? (
+        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No templates match" />
+      ) : (
+        <Row gutter={[16, 16]} aria-label="Page templates" role="list">
+          {matching.map((template) => (
+            <Col key={template.id} xs={24} sm={12} lg={8} role="listitem">
+              <TemplateCard template={template} onUse={() => onUse(template)} />
+            </Col>
+          ))}
+        </Row>
+      )}
+    </Flex>
+  );
+}
+
 /** Header button opening the list of page templates to start a project from. */
 export function TemplateGallery() {
   const { message, modal } = App.useApp();
   const [open, setOpen] = useState(false);
+  // Each opening gets a fresh browser: no search or category left over from last time.
+  const [openings, setOpenings] = useState(0);
 
   const start = (template: PageTemplate) => {
     useEditorStore.getState().loadTemplate(template.id);
@@ -62,7 +135,13 @@ export function TemplateGallery() {
 
   return (
     <>
-      <Button icon={<AppstoreOutlined />} onClick={() => setOpen(true)}>
+      <Button
+        icon={<AppstoreOutlined />}
+        onClick={() => {
+          setOpenings((count) => count + 1);
+          setOpen(true);
+        }}
+      >
         Templates
       </Button>
       <Modal
@@ -71,21 +150,8 @@ export function TemplateGallery() {
         onCancel={() => setOpen(false)}
         footer={null}
         width={880}
-        destroyOnHidden
       >
-        <Flex vertical gap="middle">
-          <Typography.Text type="secondary">
-            A whole page with its theme and sample data, ready to edit. It replaces the current
-            project.
-          </Typography.Text>
-          <Row gutter={[16, 16]} aria-label="Page templates" role="list">
-            {templates.map((template) => (
-              <Col key={template.id} xs={24} sm={12} lg={8} role="listitem">
-                <TemplateCard template={template} onUse={() => use(template)} />
-              </Col>
-            ))}
-          </Row>
-        </Flex>
+        <TemplateBrowser key={openings} onUse={use} />
       </Modal>
     </>
   );

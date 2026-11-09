@@ -8,10 +8,12 @@ import { createTheme, themePresets } from '@/lib/theme';
 import { ROOT_ID, createRoot } from '@/lib/tree';
 import {
   type PageTemplate,
+  findTemplates,
   getTemplate,
   instantiateTemplate,
   templateCategoryLabels,
   templates,
+  usedCategories,
 } from '.';
 
 const state = () => useEditorStore.getState();
@@ -139,5 +141,31 @@ describe('loadTemplate', () => {
   it('ignores unknown templates', () => {
     expect(state().loadTemplate('nope')).toBe(false);
     expect(state().name).toBe('Mine');
+  });
+});
+
+describe('findTemplates', () => {
+  const ids = (list: readonly PageTemplate[]) => list.map((template) => template.id);
+
+  it('lists everything for an empty search', () => {
+    expect(findTemplates('')).toEqual(templates);
+  });
+
+  it('searches names, descriptions, categories and data names', () => {
+    expect(ids(findTemplates('404'))).toEqual(['not-found']);
+    expect(ids(findTemplates('size picker'))).toEqual(['product']);
+    expect(ids(findTemplates('marketing'))).toEqual(['landing']);
+    expect(ids(findTemplates('customers'))).toEqual(['crud-list']);
+    expect(findTemplates('nothing like this')).toEqual([]);
+  });
+
+  it('filters by category', () => {
+    expect(ids(findTemplates('', 'account'))).toEqual(['sign-in', 'sign-up', 'settings']);
+    expect(ids(findTemplates('sign', 'account'))).toEqual(['sign-in', 'sign-up']);
+  });
+
+  it('lists the categories in use, in gallery order', () => {
+    expect(usedCategories()).toEqual(['app', 'marketing', 'account', 'content', 'status']);
+    expect(usedCategories([templates.at(-1)!])).toEqual(['status']);
   });
 });

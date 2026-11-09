@@ -1,4 +1,5 @@
 import { createDataSource } from '@/lib/mockData';
+import { matchesQuery } from '@/lib/search';
 import { createTheme, themePresets } from '@/lib/theme';
 import { createRoot } from '@/lib/tree';
 import { signIn, signUp } from './pages/auth';
@@ -9,7 +10,13 @@ import { landing } from './pages/landing';
 import { product } from './pages/product';
 import { settings } from './pages/settings';
 import { maintenance, notFound, orderConfirmed } from './pages/status';
-import type { PageTemplate, SourceLookup, TemplateContent } from './types';
+import {
+  type PageTemplate,
+  type SourceLookup,
+  type TemplateCategory,
+  type TemplateContent,
+  templateCategoryLabels,
+} from './types';
 
 export * from './types';
 
@@ -26,6 +33,37 @@ export const templates: readonly PageTemplate[] = [
   notFound,
   maintenance,
 ];
+
+/**
+ * Templates in `category` (all when `null`) matching a search over their name, description,
+ * category and the data they bring, in gallery order.
+ */
+export function findTemplates(
+  query: string,
+  category: TemplateCategory | null = null,
+  list: readonly PageTemplate[] = templates,
+): PageTemplate[] {
+  return list.filter(
+    (template) =>
+      (category === null || template.category === category) &&
+      matchesQuery(
+        {
+          label: template.label,
+          name: [
+            templateCategoryLabels[template.category],
+            ...(template.data ?? []).map((sample) => sample.name),
+          ].join(' '),
+          description: template.description,
+        },
+        query,
+      ),
+  );
+}
+
+/** The categories that have templates, in the order they first appear. */
+export function usedCategories(list: readonly PageTemplate[] = templates): TemplateCategory[] {
+  return [...new Set(list.map((template) => template.category))];
+}
 
 export function getTemplate(id: string): PageTemplate | undefined {
   return templates.find((template) => template.id === id);

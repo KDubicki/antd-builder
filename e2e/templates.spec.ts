@@ -139,3 +139,21 @@ test('status templates preview as finished pages', async ({ page }) => {
   await expect(canvas.getByText('Page not found')).toHaveCount(0);
   await expect(canvas).toHaveCSS('background-color', 'rgb(20, 20, 20)');
 });
+
+test('searches the template gallery and filters it by category', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Templates' }).click();
+  const search = page.getByLabel('Search templates');
+  await expect(search).toBeFocused();
+  const cards = page.getByRole('list', { name: 'Page templates' }).getByRole('group');
+
+  await search.fill('pricing');
+  await expect(cards).toHaveCount(1);
+  await expect(cards.first()).toHaveAccessibleName('Landing page');
+
+  await search.fill('');
+  await page.getByText('Content & shop (2)').click();
+  await expect(cards).toHaveCount(2);
+  await page.getByRole('button', { name: 'Use Blog article' }).click();
+  await expect(page.getByLabel('Project name')).toHaveValue('Blog article');
+});

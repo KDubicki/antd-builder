@@ -74,4 +74,31 @@ describe('TemplateGallery', () => {
     ).toBeInTheDocument();
     expect(useEditorStore.getState().name).toBe('Admin dashboard');
   });
+
+  it('searches and filters by category, starting over on each opening', async () => {
+    renderGallery();
+    let list = await openGallery();
+    const search = screen.getByLabelText('Search templates');
+    fireEvent.change(search, { target: { value: 'sign' } });
+    list = screen.getByRole('list', { name: 'Page templates' });
+    expect(
+      within(list)
+        .getAllByRole('group')
+        .map((card) => card.getAttribute('aria-label')),
+    ).toEqual(['Sign-in page', 'Sign-up page']);
+
+    fireEvent.change(search, { target: { value: '' } });
+    fireEvent.click(screen.getByText('Status pages (3)'));
+    list = screen.getByRole('list', { name: 'Page templates' });
+    expect(within(list).getAllByRole('listitem')).toHaveLength(3);
+
+    fireEvent.change(search, { target: { value: 'dashboard' } });
+    expect(screen.getByText('No templates match')).toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: 'Page templates' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    list = await openGallery();
+    expect(screen.getByLabelText('Search templates')).toHaveValue('');
+    expect(within(list).getAllByRole('listitem')).toHaveLength(templates.length);
+  });
 });
