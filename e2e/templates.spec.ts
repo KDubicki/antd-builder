@@ -1,0 +1,28 @@
+import { expect, test } from '@playwright/test';
+
+test('starts a project from a page template', async ({ page }) => {
+  await page.goto('/');
+  const canvas = page.getByTestId('canvas');
+  await page
+    .getByLabel('Component palette')
+    .getByRole('button', { name: 'Tag', exact: true })
+    .click();
+
+  await page.getByRole('button', { name: 'Templates' }).click();
+  const gallery = page.getByRole('list', { name: 'Page templates' });
+  await expect(gallery.getByRole('group', { name: 'Admin dashboard' })).toBeVisible();
+  await gallery.getByRole('button', { name: 'Use Admin dashboard' }).click();
+
+  // There is work on the page, so it asks first.
+  await page.getByRole('button', { name: 'Use template' }).click();
+  await expect(page.getByLabel('Project name')).toHaveValue('Admin dashboard');
+  await expect(canvas.getByRole('cell', { name: 'Carol White' })).toBeVisible();
+  await expect(canvas.getByText('Goals this month')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Undo' })).toBeDisabled();
+
+  // Its data came along and stays editable.
+  await page.getByRole('tab', { name: 'Data' }).click();
+  const data = page.getByLabel('Mock data');
+  await expect(data.getByText('orders', { exact: true })).toBeVisible();
+  await expect(data.getByText('stats', { exact: true })).toBeVisible();
+});

@@ -3,21 +3,13 @@
 import { FileAddOutlined, FolderOpenOutlined, SaveOutlined } from '@ant-design/icons';
 import { App, Button, Input, Space } from 'antd';
 import { type ChangeEvent, useRef } from 'react';
-import { DEFAULT_PROJECT_NAME, type EditorState, useEditorStore } from '@/lib/editor/store';
+import { DEFAULT_PROJECT_NAME, useEditorStore } from '@/lib/editor/store';
 import { parseProject, projectFileName, toProject } from '@/lib/project';
 import { ShareButton } from '@/components/share/ShareButton';
+import { TemplateGallery } from '@/components/templates/TemplateGallery';
 import { ExportCode } from './ExportCode';
 import { downloadFile } from './download';
-
-/** Whether there's anything to lose by starting over. */
-function hasWork(state: EditorState): boolean {
-  return (
-    state.root.children.length > 0 ||
-    state.mockData.length > 0 ||
-    state.versions.length > 0 ||
-    state.past.length > 0
-  );
-}
+import { hasWork } from './startOver';
 
 /** Project name plus New, and Open/Save of the project JSON file. */
 export function ProjectActions() {
@@ -81,6 +73,7 @@ export function ProjectActions() {
       <Button icon={<FileAddOutlined />} onClick={startNew}>
         New
       </Button>
+      <TemplateGallery />
       <Button icon={<FolderOpenOutlined />} onClick={() => fileInput.current?.click()}>
         Open
       </Button>

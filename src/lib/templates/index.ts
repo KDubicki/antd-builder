@@ -64,7 +64,7 @@ export const templates: readonly PageTemplate[] = [
   {
     id: 'dashboard',
     label: 'Admin dashboard',
-    description: 'Side menu, key numbers, recent orders, goals and team activity.',
+    description: 'Top menu, key numbers, recent orders, monthly goals and team activity.',
     category: 'app',
     data: [
       blockData('stats'),
@@ -79,66 +79,57 @@ export const templates: readonly PageTemplate[] = [
       },
     ],
     build: (source) => [
-      node('Row', { gutter: 24, verticalGutter: 16 }, [
-        node('Col', { span: 5, xs: 24, md: 6, lg: 5 }, [
-          node('Card', { title: 'Acme admin', size: 'small' }, [
-            node('Menu', {
-              mode: 'inline',
-              selectedKeys: ['dashboard'],
-              items: [
-                { key: 'dashboard', label: 'Dashboard' },
-                { key: 'orders', label: 'Orders' },
-                { key: 'customers', label: 'Customers' },
-                { key: 'reports', label: 'Reports' },
-                { key: 'settings', label: 'Settings' },
+      node('Menu', {
+        mode: 'horizontal',
+        selectedKeys: ['dashboard'],
+        items: [
+          { key: 'dashboard', label: 'Dashboard' },
+          { key: 'orders', label: 'Orders' },
+          { key: 'customers', label: 'Customers' },
+          { key: 'reports', label: 'Reports' },
+          { key: 'settings', label: 'Settings' },
+        ],
+      }),
+      fromBlock('page-header', source),
+      fromBlock('stats', source),
+      // Side by side from 992px, stacked below.
+      node('Row', { gutter: 16, verticalGutter: 16 }, [
+        node('Col', { span: 24, lg: 16 }, [
+          node('Card', { title: 'Recent orders' }, [
+            node('Table', {
+              columns: [
+                { title: 'Order', dataIndex: 'order', key: 'order' },
+                { title: 'Customer', dataIndex: 'customer', key: 'customer' },
+                { title: 'Status', dataIndex: 'status', key: 'status' },
+                { title: 'Total ($)', dataIndex: 'total', key: 'total' },
               ],
+              dataSource: { $data: source('orders') },
+              pagination: false,
+              size: 'small',
+              horizontalScroll: true,
             }),
           ]),
         ]),
-        node('Col', { span: 19, xs: 24, md: 18, lg: 19 }, [
+        node('Col', { span: 24, lg: 8 }, [
           node('Flex', { vertical: true, gap: 'middle' }, [
-            fromBlock('page-header', source),
-            fromBlock('stats', source),
-            node('Row', { gutter: 16, verticalGutter: 16 }, [
-              node('Col', { span: 16, xs: 24, lg: 16 }, [
-                node('Card', { title: 'Recent orders' }, [
-                  node('Table', {
-                    columns: [
-                      { title: 'Order', dataIndex: 'order', key: 'order' },
-                      { title: 'Customer', dataIndex: 'customer', key: 'customer' },
-                      { title: 'Status', dataIndex: 'status', key: 'status' },
-                      { title: 'Total ($)', dataIndex: 'total', key: 'total' },
-                    ],
-                    dataSource: { $data: source('orders') },
-                    pagination: false,
-                    size: 'small',
-                    horizontalScroll: true,
-                  }),
-                ]),
+            node('Card', { title: 'Goals this month' }, [
+              node('Flex', { vertical: true }, [
+                node('Typography.Text', { children: 'Revenue', type: 'secondary' }),
+                node('Progress', { percent: 72 }),
+                node('Typography.Text', { children: 'New customers', type: 'secondary' }),
+                node('Progress', { percent: 45 }),
+                node('Typography.Text', { children: 'Tickets closed', type: 'secondary' }),
+                node('Progress', { percent: 100, status: 'success' }),
               ]),
-              node('Col', { span: 8, xs: 24, lg: 8 }, [
-                node('Flex', { vertical: true, gap: 'middle' }, [
-                  node('Card', { title: 'Goals this month' }, [
-                    node('Flex', { vertical: true }, [
-                      node('Typography.Text', { children: 'Revenue', type: 'secondary' }),
-                      node('Progress', { percent: 72 }),
-                      node('Typography.Text', { children: 'New customers', type: 'secondary' }),
-                      node('Progress', { percent: 45 }),
-                      node('Typography.Text', { children: 'Tickets closed', type: 'secondary' }),
-                      node('Progress', { percent: 100, status: 'success' }),
-                    ]),
-                  ]),
-                  node('Card', { title: 'Activity' }, [
-                    node('Timeline', {
-                      items: [
-                        { title: '09:12', content: 'Alice paid order #1024' },
-                        { title: '10:40', content: 'Bob’s order #1023 shipped' },
-                        { title: '13:05', content: 'Carol placed order #1022' },
-                      ],
-                    }),
-                  ]),
-                ]),
-              ]),
+            ]),
+            node('Card', { title: 'Activity' }, [
+              node('Timeline', {
+                items: [
+                  { title: '09:12', content: 'Alice paid order #1024' },
+                  { title: '10:40', content: 'Bob’s order #1023 shipped' },
+                  { title: '13:05', content: 'Carol placed order #1022' },
+                ],
+              }),
             ]),
           ]),
         ]),
