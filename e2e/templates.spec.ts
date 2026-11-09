@@ -165,10 +165,14 @@ test('gallery cards show a live preview of each page', async ({ page }) => {
   await expect(preview).toBeVisible();
   await expect(preview).toContainText('Recent orders');
 
-  // The page is laid out at desktop width and scaled to fit the card.
-  const frame = (await preview.boundingBox())!;
-  const scaled = (await preview.locator(':scope > div').boundingBox())!;
-  expect(Math.abs(scaled.width - frame.width)).toBeLessThan(2);
+  // The page is laid out at desktop width and scaled to fit the card, once the card's width
+  // settles (the grid picks its breakpoint after the dialog opens).
+  const mismatch = async () => {
+    const frame = (await preview.boundingBox())!;
+    const scaled = (await preview.locator(':scope > div').boundingBox())!;
+    return Math.abs(scaled.width - frame.width);
+  };
+  await expect.poll(mismatch).toBeLessThan(2);
 
   // The dark preset shows in the maintenance preview.
   await page.getByLabel('Search templates').fill('maintenance');
