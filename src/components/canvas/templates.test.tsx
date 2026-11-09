@@ -42,3 +42,17 @@ it('the dashboard shows its orders', () => {
   expect(screen.getByRole('cell', { name: 'Carol White' })).toBeInTheDocument();
   expect(screen.getByText('Goals this month')).toBeInTheDocument();
 });
+
+it('the landing page shows every section with its data', () => {
+  useEditorStore.getState().loadTemplate('landing');
+  render(
+    <DndContext>
+      <Canvas />
+    </DndContext>,
+  );
+  expect(screen.getByRole('heading', { name: 'Build antd pages in minutes' })).toBeInTheDocument();
+  expect(screen.getByText('Business')).toBeInTheDocument();
+  expect(screen.getByText('Maria Lopez')).toBeInTheDocument();
+  expect(screen.getByText('Is there a free trial?')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Start for free' })).toBeInTheDocument();
+});

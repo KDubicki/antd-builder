@@ -26,3 +26,24 @@ test('starts a project from a page template', async ({ page }) => {
   await expect(data.getByText('orders', { exact: true })).toBeVisible();
   await expect(data.getByText('stats', { exact: true })).toBeVisible();
 });
+
+test('the landing page template brings its theme and fits a phone', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Templates' }).click();
+  await page.getByRole('button', { name: 'Use Landing page' }).click();
+  const canvas = page.getByTestId('canvas');
+  await expect(canvas.getByRole('heading', { name: 'Simple pricing' })).toBeVisible();
+
+  // The Ocean preset came with it.
+  await page.getByRole('tab', { name: 'Theme' }).click();
+  await expect(
+    page.getByRole('group', { name: 'Theme presets' }).getByRole('button', { name: /Ocean/ }),
+  ).toHaveAttribute('aria-pressed', 'true');
+
+  await page.getByText('Mobile', { exact: true }).click();
+  const edge = await canvas.boundingBox();
+  for (const card of await canvas.locator('.ant-card').all()) {
+    const box = (await card.boundingBox())!;
+    expect(box.x + box.width).toBeLessThanOrEqual(edge!.x + edge!.width + 1);
+  }
+});
