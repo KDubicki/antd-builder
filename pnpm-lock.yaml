@@ -21,8 +21,8 @@ importers:
         specifier: ^6.3.1
         version: 6.3.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@google/genai':
-        specifier: ^2.32.0
-        version: 2.32.0(supports-color@7.2.0)
+        specifier: ^3.2.0
+        version: 3.2.0(supports-color@7.2.0)
       antd:
         specifier: ^6.7.0
         version: 6.7.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -403,9 +403,9 @@ packages:
       '@noble/hashes':
         optional: true
 
-  '@google/genai@2.32.0':
-    resolution: {integrity: sha512-60c79uXpR0a47bmGqDxbXEBuQUalNmwo5mx5kqb91jIW4FoqpsLSt86DeVhRhtH5+s/16Wqxt3sXzFQn2U1OHQ==}
-    engines: {node: '>=20.0.0'}
+  '@google/genai@3.2.0':
+    resolution: {integrity: sha512-AyT5kezsBpxRr8ljz7RmfhrxfjTse0aIDv7DGoNmk6lyta0A13AEOiGpw7VFcrYSmXq8HtkbWYBAeqqdALv6gw==}
+    engines: {node: '>=22.0.0'}
     peerDependencies:
       '@modelcontextprotocol/sdk': ^1.25.2
     peerDependenciesMeta:
@@ -3650,7 +3650,7 @@ snapshots:
 
   '@exodus/bytes@1.16.0': {}
 
-  '@google/genai@2.32.0(supports-color@7.2.0)':
+  '@google/genai@3.2.0(supports-color@7.2.0)':
     dependencies:
       google-auth-library: 10.9.1(supports-color@7.2.0)
       p-retry: 4.6.2
